@@ -57,7 +57,21 @@ router.post("/", auth, uploadSinglePostMedia, async (req, res) => {
   // Determine content URL/path or emoji
   let contentValue = content || "🎨";
   if (req.file) {
-    contentValue = `/uploads/${req.file.filename}`;
+    try {
+      const filePath = req.file.path;
+      const fileBuffer = fs.readFileSync(filePath);
+      const mimeType = req.file.mimetype || "image/png";
+      const base64Data = fileBuffer.toString("base64");
+      contentValue = `data:${mimeType};base64,${base64Data}`;
+      
+      // Delete temporary file to save space
+      fs.unlink(filePath, (err) => {
+        if (err) console.error("Error deleting temp file:", err);
+      });
+    } catch (err) {
+      console.error("Error converting file to base64:", err);
+      contentValue = `/uploads/${req.file.filename}`;
+    }
   }
 
   if (mongoose.connection.readyState !== 1) {

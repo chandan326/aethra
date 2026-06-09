@@ -177,7 +177,24 @@ router.get("/user/:id", async (req, res) => {
 router.post("/profile", auth, uploadSingleQr, async (req, res) => {
   const mongoose = require("mongoose");
   const { displayName, bio, location, upiId, clearQrCodeImage } = req.body;
-  let qrCodeImage = req.file ? `/uploads/${req.file.filename}` : undefined;
+  let qrCodeImage = undefined;
+  if (req.file) {
+    try {
+      const filePath = req.file.path;
+      const fileBuffer = fs.readFileSync(filePath);
+      const mimeType = req.file.mimetype || "image/png";
+      const base64Data = fileBuffer.toString("base64");
+      qrCodeImage = `data:${mimeType};base64,${base64Data}`;
+      
+      // Delete temporary file to save space
+      fs.unlink(filePath, (err) => {
+        if (err) console.error("Error deleting temp file:", err);
+      });
+    } catch (err) {
+      console.error("Error converting QR file to base64:", err);
+      qrCodeImage = `/uploads/${req.file.filename}`;
+    }
+  }
 
   if (mongoose.connection.readyState !== 1) {
     return res.json({
