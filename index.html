@@ -1920,7 +1920,8 @@ async function populate() {
   $('initTime').textContent=fmtTime(new Date());
 
   try {
-    const postsRes = await fetch("/api/posts");
+    const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+    const postsRes = await fetch("/api/posts", { headers });
     const posts = postsRes.ok ? await postsRes.json() : [];
 
     displayedLimit = getDeviceLimitConfig().limit;
@@ -2083,7 +2084,8 @@ async function renderProfilePage() {
     }
 
     // Render Posts & Stats
-    const postsRes = await fetch("/api/posts");
+    const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+    const postsRes = await fetch("/api/posts", { headers });
     const posts = postsRes.ok ? await postsRes.json() : [];
     const creatorPosts = posts.filter(p => {
       const cId = p.creator?._id || p.creator?.id;
@@ -2688,16 +2690,17 @@ async function handleSubscribe(channelId, btn) {
 }
 
 function handlePurchase(postId, isFree) {
+  const item = allHomePosts.find(p => p._id === postId);
+  if (!item) return;
+
   if (isFree) {
-    toast("✅ Downloading file dynamically...");
+    downloadProductFile(item);
   } else {
     if (!token) {
       toast("🔑 Please log in to purchase!");
       openAuth();
       return;
     }
-    const item = allHomePosts.find(p => p._id === postId);
-    if (!item) return;
     
     // Add to cart if not already present
     if (!cart.some(c => c._id === item._id)) {

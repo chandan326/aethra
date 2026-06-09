@@ -7,6 +7,18 @@ const Post = require("../models/Post");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
 
+const mockPosts = [
+  { _id: "p1", title: "Cosmic Dreamscape", content: "🌌", contentType: "AI", pricing: "paid", price: 99, creator: { username: "artby_meera", displayName: "Meera Art", avatar: "🎨", verified: true, hasPremium: true }, likes: ["u1"], commentsCount: 89 },
+  { _id: "p2", title: "Neon Dragon", content: "🐉", contentType: "AI", pricing: "free", creator: { username: "vfx_ravi", displayName: "VFX Ravi", avatar: "🔮", verified: false }, likes: [], commentsCount: 67 },
+  { _id: "p3", title: "Sakura Rain", content: "🌸", contentType: "AI", pricing: "free", creator: { username: "pixel_priya", displayName: "Pixel Priya", avatar: "🌸", verified: true }, likes: [], commentsCount: 124 },
+  { _id: "p4", title: "Cyber Samurai", content: "🤖", contentType: "AI", pricing: "paid", price: 149, creator: { username: "ai_arjun", displayName: "AI Arjun", avatar: "⚡", verified: true }, likes: [], commentsCount: 203 },
+  { _id: "p5", title: "Galaxy Spin", content: "💫", contentType: "GIF", pricing: "free", creator: { username: "space_gifs", displayName: "Space Gifs", avatar: "💫", verified: false }, likes: [], commentsCount: 234 },
+  { _id: "p6", title: "Fire Dance", content: "🔥", contentType: "GIF", pricing: "free", creator: { username: "pyro_art", displayName: "Pyro Art", avatar: "🔥", verified: false }, likes: [], commentsCount: 98 },
+  { _id: "p7", title: "Cool Cat Pack", content: "😎", contentType: "STICKER", pricing: "free", creator: { username: "catlife", displayName: "Cat Life", avatar: "😺", verified: true }, likes: [], commentsCount: 567 },
+  { _id: "p8", title: "Love Hearts", content: "🥰", contentType: "STICKER", pricing: "free", creator: { username: "lovedesign", displayName: "Love Design", avatar: "🥰", verified: false }, likes: [], commentsCount: 423 },
+  { _id: "p9", title: "Midnight Vibes", content: "🌙", contentType: "STICKER", pricing: "paid", price: 29, creator: { username: "nocturnal", displayName: "Nocturnal", avatar: "🌙", verified: false }, likes: [], commentsCount: 298 }
+];
+
 // Ensure upload directory exists
 const isVercel = process.env.VERCEL === "1" || process.env.NOW_REGION !== undefined;
 const uploadDir = isVercel ? "/tmp/uploads" : path.join(__dirname, "../uploads");
@@ -85,7 +97,7 @@ router.post("/", auth, uploadSinglePostMedia, async (req, res) => {
   }
 
   if (mongoose.connection.readyState !== 1) {
-    return res.status(201).json({
+    const newMock = {
       _id: "mock_post_" + Date.now(),
       title,
       description,
@@ -98,7 +110,9 @@ router.post("/", auth, uploadSinglePostMedia, async (req, res) => {
       likes: [],
       commentsCount: 0,
       createdAt: new Date()
-    });
+    };
+    mockPosts.unshift(newMock);
+    return res.status(201).json(newMock);
   }
 
   try {
@@ -123,17 +137,7 @@ router.post("/", auth, uploadSinglePostMedia, async (req, res) => {
   }
 });
 
-const mockPosts = [
-  { _id: "p1", title: "Cosmic Dreamscape", content: "🌌", contentType: "AI", pricing: "paid", price: 99, creator: { username: "artby_meera", displayName: "Meera Art", avatar: "🎨", verified: true, hasPremium: true }, likes: ["u1"], commentsCount: 89 },
-  { _id: "p2", title: "Neon Dragon", content: "🐉", contentType: "AI", pricing: "free", creator: { username: "vfx_ravi", displayName: "VFX Ravi", avatar: "🔮", verified: false }, likes: [], commentsCount: 67 },
-  { _id: "p3", title: "Sakura Rain", content: "🌸", contentType: "AI", pricing: "free", creator: { username: "pixel_priya", displayName: "Pixel Priya", avatar: "🌸", verified: true }, likes: [], commentsCount: 124 },
-  { _id: "p4", title: "Cyber Samurai", content: "🤖", contentType: "AI", pricing: "paid", price: 149, creator: { username: "ai_arjun", displayName: "AI Arjun", avatar: "⚡", verified: true }, likes: [], commentsCount: 203 },
-  { _id: "p5", title: "Galaxy Spin", content: "💫", contentType: "GIF", pricing: "free", creator: { username: "space_gifs", displayName: "Space Gifs", avatar: "💫", verified: false }, likes: [], commentsCount: 234 },
-  { _id: "p6", title: "Fire Dance", content: "🔥", contentType: "GIF", pricing: "free", creator: { username: "pyro_art", displayName: "Pyro Art", avatar: "🔥", verified: false }, likes: [], commentsCount: 98 },
-  { _id: "p7", title: "Cool Cat Pack", content: "😎", contentType: "STICKER", pricing: "free", creator: { username: "catlife", displayName: "Cat Life", avatar: "😺", verified: true }, likes: [], commentsCount: 567 },
-  { _id: "p8", title: "Love Hearts", content: "🥰", contentType: "STICKER", pricing: "free", creator: { username: "lovedesign", displayName: "Love Design", avatar: "🥰", verified: false }, likes: [], commentsCount: 423 },
-  { _id: "p9", title: "Midnight Vibes", content: "🌙", contentType: "STICKER", pricing: "paid", price: 29, creator: { username: "nocturnal", displayName: "Nocturnal", avatar: "🌙", verified: false }, likes: [], commentsCount: 298 }
-];
+
 
 // Get Posts (with filters)
 router.get("/", async (req, res) => {
@@ -154,16 +158,42 @@ router.get("/", async (req, res) => {
 
   try {
     const { type, pricing, creator } = req.query;
-    const filter = { visibility: "public" }; // By default only show public posts
+    
+    // Optional Authentication to get current user ID
+    const jwt = require("jsonwebtoken");
+    const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === "production" ? (() => { throw new Error("JWT_SECRET environment variable is required in production!"); })() : "aethrasecretkey_change_in_production");
+    
+    let userId = null;
+    const authHeader = req.header("Authorization");
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        userId = decoded.id;
+      } catch (err) {
+        // Ignore invalid token for public feeds
+      }
+    }
+
+    let filter = {};
+    if (creator) {
+      if (userId && userId.toString() === creator.toString()) {
+        // Owner is viewing their own profile: show all posts (public, private, followers)
+        filter = { creator };
+      } else {
+        // Guest is viewing: show only public posts of this creator
+        filter = { creator, visibility: "public" };
+      }
+    } else {
+      // General feed: show only public posts
+      filter = { visibility: "public" };
+    }
 
     if (type && type !== "all") {
       filter.contentType = type.toUpperCase();
     }
     if (pricing && pricing !== "all") {
       filter.pricing = pricing;
-    }
-    if (creator) {
-      filter.creator = creator;
     }
 
     const posts = await Post.find(filter)
