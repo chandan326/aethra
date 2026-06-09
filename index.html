@@ -1591,10 +1591,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
       <!-- Right side: Details and Actions -->
       <div class="prod-details-col" style="padding: 2.2rem 2rem; display: flex; flex-direction: column; justify-content: space-between; background: var(--panel); height: 100%; min-width: 0; min-height: 0;">
         <div style="overflow-y: auto; flex: 1; min-height: 0; margin-bottom: 1.2rem; padding-right: 4px;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 1rem;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; cursor: pointer; width: fit-content;" onclick="if(currentSelectedProduct?.creator) { closeProductModal(); showUserProfile(currentSelectedProduct.creator._id || currentSelectedProduct.creator.id || ''); }">
             <div id="prodModalAvatar" class="av" style="width: 32px; height: 32px; font-size: 13px; font-weight: 700; background: rgba(59,130,246,0.15); color: var(--blue2); display: flex; align-items: center; justify-content: center;"></div>
             <div>
-              <div id="prodModalUsername" style="font-size: 13px; font-weight: 700; color: var(--text);"></div>
+              <div id="prodModalUsername" style="font-size: 13px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 4px;"></div>
               <div id="prodModalType" style="font-size: 10px; text-transform: uppercase; color: var(--text3); font-weight: 600; letter-spacing: 0.5px;"></div>
             </div>
           </div>
@@ -2839,7 +2839,8 @@ function openProductDetail(id) {
   const username = document.getElementById("prodModalUsername");
   const creatorAvatar = item.creator ? (item.creator.avatar || item.creator.username.slice(0, 2).toUpperCase()) : "👤";
   avatar.textContent = creatorAvatar;
-  username.textContent = `@${item.creator?.username || 'user'}`;
+  const redTick = item.creator && item.creator.hasPremium ? ' <span class="red-tick">✓</span>' : '';
+  username.innerHTML = `@${escapeHtml(item.creator?.username || 'user')}${redTick}`;
 
   // Set title, description, type
   document.getElementById("prodModalTitle").textContent = item.title;
