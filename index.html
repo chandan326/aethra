@@ -785,8 +785,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
     min-height: auto !important;
   }
   #prodModalMedia {
-    aspect-ratio: 16/9 !important;
-    height: 240px !important;
+    aspect-ratio: auto !important;
+    height: 360px !important;
+    background: #090d16 !important;
+  }
+  #prodModalMedia img {
+    object-fit: contain !important;
   }
   .prod-details-col {
     height: auto !important;
@@ -1585,8 +1589,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
       <div id="prodModalMedia" style="background: var(--panel2); display: flex; align-items: center; justify-content: center; position: relative; font-size: 5rem; height: 100%;">
       </div>
       <!-- Right side: Details and Actions -->
-      <div class="prod-details-col" style="padding: 2.2rem 2rem; display: flex; flex-direction: column; justify-content: space-between; background: var(--panel); height: 100%; min-width: 0;">
-        <div style="overflow-y: auto; flex: 1; margin-bottom: 1.2rem; padding-right: 4px;">
+      <div class="prod-details-col" style="padding: 2.2rem 2rem; display: flex; flex-direction: column; justify-content: space-between; background: var(--panel); height: 100%; min-width: 0; min-height: 0;">
+        <div style="overflow-y: auto; flex: 1; min-height: 0; margin-bottom: 1.2rem; padding-right: 4px;">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 1rem;">
             <div id="prodModalAvatar" class="av" style="width: 32px; height: 32px; font-size: 13px; font-weight: 700; background: rgba(59,130,246,0.15); color: var(--blue2); display: flex; align-items: center; justify-content: center;"></div>
             <div>
