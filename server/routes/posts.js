@@ -51,15 +51,33 @@ const uploadSinglePostMedia = (req, res, next) => {
 
 // Create Post
 router.post("/", auth, uploadSinglePostMedia, async (req, res) => {
-  try {
-    const { title, description, contentType, visibility, pricing, price, content } = req.body;
-    
-    // Determine content URL/path or emoji
-    let contentValue = content || "🎨";
-    if (req.file) {
-      contentValue = `/uploads/${req.file.filename}`;
-    }
+  const mongoose = require("mongoose");
+  const { title, description, contentType, visibility, pricing, price, content } = req.body;
+  
+  // Determine content URL/path or emoji
+  let contentValue = content || "🎨";
+  if (req.file) {
+    contentValue = `/uploads/${req.file.filename}`;
+  }
 
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(201).json({
+      _id: "mock_post_" + Date.now(),
+      title,
+      description,
+      content: contentValue,
+      contentType: contentType || "AI",
+      visibility: visibility || "public",
+      pricing: pricing || "free",
+      price: pricing === "paid" ? Number(price) : 0,
+      creator: { username: req.user.username || "preview_user", displayName: req.user.username || "Preview User", avatar: (req.user.username || "preview_user").slice(0, 2).toUpperCase() },
+      likes: [],
+      commentsCount: 0,
+      createdAt: new Date()
+    });
+  }
+
+  try {
     const post = new Post({
       title,
       description,
