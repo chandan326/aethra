@@ -13,7 +13,34 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Secure HTTP Headers
+app.use((req, res, next) => {
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
 
+// Restrict access to sensitive configurations, backups, scripts, and logs
+app.use((req, res, next) => {
+  const file = path.basename(req.path).toLowerCase();
+  if (
+    file.endsWith(".zip") ||
+    file.endsWith(".rar") ||
+    file.endsWith(".tar") ||
+    file.endsWith(".gz") ||
+    file.endsWith(".pdf") ||
+    file === "dockerfile" ||
+    file.endsWith(".yml") ||
+    file.endsWith(".yaml") ||
+    file.endsWith(".env") ||
+    file.endsWith(".json") ||
+    file.startsWith(".git")
+  ) {
+    return res.status(403).json({ message: "Access forbidden" });
+  }
+  next();
+});
 
 // Routes import
 const postRoutes = require("./routes/posts");
@@ -84,6 +111,11 @@ async function startServer(uri) {
     }
     console.log("⚠️ Running in offline mock-database mode. Static preview will still function.");
   }
+}
+
+// Print security warnings during startup
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+  console.warn("🚨 WARNING: JWT_SECRET environment variable is not set! Using default developer key. This is a severe security risk in production.");
 }
 
 // Initial connection attempt on startup

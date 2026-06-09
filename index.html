@@ -1842,7 +1842,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
   <div class="chat-msgs" id="chatMsgs">
     <div class="msg bot">
       <div class="msg-sender">Aethra AI</div>
-      <div class="msg-bubble">👋 Hi! I'm Aethra AI, your creative assistant powered by Gemini.<br><br>I can help with content strategy, AI art prompts, hashtag ideas, pricing advice, and growing your channel. What would you like to know?</div>
+      <div class="msg-bubble" data-en="👋 Hi! I'm Aethra AI, your creative assistant powered by Gemini.<br><br>I can help with content strategy, AI art prompts, hashtag ideas, pricing advice, and growing your channel. What would you like to know?" data-hi="👋 नमस्ते! मैं ऐथ्रा AI हूँ, जेमिनी द्वारा संचालित आपका रचनात्मक सहायक।<br><br>मैं सामग्री रणनीति, AI कला प्रॉम्प्ट, हैशटैग विचार, मूल्य निर्धारण सलाह और आपके चैनल को बढ़ाने में मदद कर सकता हूँ। आप क्या जानना चाहेंगे?">👋 Hi! I'm Aethra AI, your creative assistant powered by Gemini.<br><br>I can help with content strategy, AI art prompts, hashtag ideas, pricing advice, and growing your channel. What would you like to know?</div>
       <div class="msg-time" id="initTime"></div>
     </div>
   </div>
@@ -1881,7 +1881,7 @@ function escapeHtml(text) {
 
 function renderContent(content) {
   if (content && content.startsWith("/uploads/")) {
-    return `<img src="${content}" style="width:100%;height:100%;object-fit:cover;" alt="Content">`;
+    return `<img src="${escapeHtml(content)}" style="width:100%;height:100%;object-fit:cover;" alt="Content">`;
   }
   return escapeHtml(content) || "🎨";
 }
@@ -1937,15 +1937,16 @@ async function populate() {
     };
 
     setHtml('imgGrid', aiPosts.map(mkPCard).join(''));
-    setHtml('gifGrid', gifPosts.map((g, i) => `<div class="exp-item" style="background:linear-gradient(135deg,${gc(i)}1a,${gc(i+2)}0d)" onclick="toast('🎞 Playing ${g.title}')">${renderContent(g.content)}</div>`).join(''));
-    setHtml('stickerGrid', stickerPosts.map((s, i) => `<div class="exp-item" style="background:linear-gradient(135deg,${gc(i+3)}1a,${gc(i)}0d)" onclick="toast('😊 ${s.title}')">${renderContent(s.content)}</div>`).join(''));
+    setHtml('gifGrid', gifPosts.map((g, i) => `<div class="exp-item" style="background:linear-gradient(135deg,${gc(i)}1a,${gc(i+2)}0d)" data-title="${escapeHtml(g.title)}" onclick="toast('🎞 Playing ' + this.dataset.title)">${renderContent(g.content)}</div>`).join(''));
+    setHtml('stickerGrid', stickerPosts.map((s, i) => `<div class="exp-item" style="background:linear-gradient(135deg,${gc(i+3)}1a,${gc(i)}0d)" data-title="${escapeHtml(s.title)}" onclick="toast('😊 ' + this.dataset.title)">${renderContent(s.content)}</div>`).join(''));
 
     setHtml('mktGrid', posts.map((m, i) => {
       const isFree = m.pricing === "free";
+      const creatorDisplayName = m.creator?.displayName || m.creator?.username || 'Creator';
       return `
       <div class="mkt-card" onclick="openProductDetail('${m._id}')"><div class="mkt-img" style="background:linear-gradient(135deg,${gc(i)}1a,${gc(i+2)}0d)">${renderContent(m.content)}
         <span class="mkt-ptag" style="${isFree ? 'background:rgba(20,184,166,0.85);color:#fff' : 'background:rgba(59,130,246,0.85);color:#fff'}">${isFree ? 'Free' : '₹' + m.price}</span>
-      </div><div class="mkt-body"><div class="mkt-title">${m.title}</div><div class="mkt-sub">${m.contentType} Art · ${m.creator?.displayName || 'Creator'}</div>
+      </div><div class="mkt-body"><div class="mkt-title">${escapeHtml(m.title)}</div><div class="mkt-sub">${escapeHtml(m.contentType)} Art · ${escapeHtml(creatorDisplayName)}</div>
         <button class="btn-buy ${isFree ? 'btn-free-dl' : ''}" onclick="event.stopPropagation();handlePurchase('${m._id}', ${isFree})">${isFree ? 'Download Free' : 'Buy Now'}</button>
       </div></div>`;
     }).join(''));
@@ -1953,9 +1954,9 @@ async function populate() {
     const channelsRes = await fetch("/api/channels");
     const channels = channelsRes.ok ? await channelsRes.json() : [];
     setHtml('channelsList', channels.map((c, i) => `
-    <div class="channel-card"><span class="ch-icon">${c.icon}</span>
-      <div class="ch-name">${c.name}</div><div class="ch-handle">@${c.handle}</div>
-      <div class="ch-desc">${c.description}</div>
+    <div class="channel-card"><span class="ch-icon">${escapeHtml(c.icon || "📺")}</span>
+      <div class="ch-name">${escapeHtml(c.name)}</div><div class="ch-handle">@${escapeHtml(c.handle)}</div>
+      <div class="ch-desc">${escapeHtml(c.description || "")}</div>
       <div class="ch-meta"><div class="ch-meta-item">👥 ${c.subscribers?.length || 0} subscribers</div></div>
       <button class="ch-sub-btn" onclick="handleSubscribe('${c._id}', this)">${currentUser && c.subscribers?.includes(currentUser.id) ? 'Subscribed' : 'Subscribe'}</button></div>`).join(''));
 
@@ -1983,8 +1984,8 @@ async function populate() {
 
     $('topCreators').innerHTML = top7.map(c => `
     <div class="creator-card ${c.hasPremium ? 'premium' : ''}" onclick="showUserProfile('${c.id}')">
-      <div class="creator-av" style="background:${c.color}18;color:${c.color}">${c.icon}</div>
-      <div class="creator-name">${c.name}${c.hasPremium ? ' <span class="red-tick">✓</span>' : ''}</div><div class="creator-subs">${c.subs} subscribers</div>
+      <div class="creator-av" style="background:${c.color}18;color:${c.color}">${escapeHtml(c.icon || "👤")}</div>
+      <div class="creator-name">${escapeHtml(c.name)}${c.hasPremium ? ' <span class="red-tick">✓</span>' : ''}</div><div class="creator-subs">${c.subs} subscribers</div>
       <div class="chip chip-indigo" style="background:${c.color}15;color:${c.color};border-color:${c.color}28;margin-top:4px">${c.hasPremium ? 'VIP Creator' : (c.verified ? 'Verified' : 'Creator')}</div>
     </div>`).join('');
 
@@ -2070,7 +2071,8 @@ async function renderProfilePage() {
           <button class="btn-outline" style="padding:9px 18px;font-size:13px;border-color:rgba(239,68,68,0.45);color:#ef4444;" onclick="logout()">Log out</button>
         `;
       } else {
-        const isFollowing = currentUser && profileUser.followers && (profileUser.followers.includes(currentUser.id) || profileUser.followers.includes(currentUser._id));
+        const currentUserIdStr = (currentUser ? (currentUser.id || currentUser._id || '') : '').toString();
+        const isFollowing = currentUser && profileUser.followers && profileUser.followers.some(f => f.toString() === currentUserIdStr);
         const followText = isFollowing ? "Following" : "Follow";
         const followStyle = isFollowing ? "background: var(--border2); border-color: var(--border2); color: var(--text2);" : "";
         actionsContainer.innerHTML = `
@@ -2083,7 +2085,10 @@ async function renderProfilePage() {
     // Render Posts & Stats
     const postsRes = await fetch("/api/posts");
     const posts = postsRes.ok ? await postsRes.json() : [];
-    const creatorPosts = posts.filter(p => p.creator?._id === targetUserId || p.creator?.id === targetUserId);
+    const creatorPosts = posts.filter(p => {
+      const cId = p.creator?._id || p.creator?.id;
+      return cId && (cId.toString() === targetUserId.toString());
+    });
     $('profileGrid').innerHTML = creatorPosts.length ? creatorPosts.map(mkPCard).join('') : `<p style="color:var(--text3);padding:2rem">This creator hasn't uploaded any creations yet.</p>`;
     
     // Render Stats Dynamically
@@ -2386,7 +2391,10 @@ function switchPTab(el,tab){
   document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
   const g=document.getElementById('profileGrid');
   fetch("/api/posts").then(r => r.json()).then(posts => {
-    const myPosts = posts.filter(p => p.creator?._id === currentUser?.id);
+    const myPosts = posts.filter(p => {
+      const cId = p.creator?._id || p.creator?.id || p.creator;
+      return cId && currentUser && (cId.toString() === (currentUser.id || currentUser._id || '').toString());
+    });
     if(tab==='posts') g.innerHTML=myPosts.length ? myPosts.map(mkPCard).join('') : `<p style="color:var(--text3);padding:2rem">You haven't created any posts yet.</p>`;
     else if(tab==='private') g.innerHTML=myPosts.filter(i=>i.visibility==='private').length?myPosts.filter(i=>i.visibility==='private').map(mkPCard).join(''):`<p style="color:var(--text3);padding:2rem">🔒 Your private posts will appear here.</p>`;
     else if(tab==='paid') g.innerHTML=myPosts.filter(i=>i.pricing==='paid').length?myPosts.filter(i=>i.pricing==='paid').map(mkPCard).join(''):`<p style="color:var(--text3);padding:2rem">💰 Your paid posts will appear here.</p>`;
@@ -2399,7 +2407,7 @@ function setLang(l){
   lang=l;
   document.getElementById('lEN').className='lang-btn'+(l==='en'?' active':'');
   document.getElementById('lHI').className='lang-btn'+(l==='hi'?' active':'');
-  document.querySelectorAll('[data-en]').forEach(el=>{const v=el.getAttribute('data-'+l);if(v)el.textContent=v;});
+  document.querySelectorAll('[data-en]').forEach(el=>{const v=el.getAttribute('data-'+l);if(v)el.innerHTML=v;});
   document.getElementById('chatInput').placeholder=l==='hi'?'कुछ भी पूछें...':'Ask anything about creating content...';
 }
 
@@ -2445,7 +2453,7 @@ function showTyping(){
 function hideTyping(){const el=document.getElementById('typingDot');if(el)el.remove();}
 function escHtml(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
 function parseMarkdown(text){
-  return text
+  return escapeHtml(text)
     .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.*?)\*/g,'<em>$1</em>')
     .replace(/`(.*?)`/g,'<code>$1</code>')
@@ -2904,8 +2912,8 @@ function renderCartItems() {
       <div class="cart-item">
         <div class="cart-item-img">${renderContent(item.content)}</div>
         <div class="cart-item-details">
-          <div class="cart-item-title">${item.title}</div>
-          <div class="cart-item-creator">@${item.creator?.username || 'creator'}</div>
+          <div class="cart-item-title">${escapeHtml(item.title)}</div>
+          <div class="cart-item-creator">@${escapeHtml(item.creator?.username || 'creator')}</div>
         </div>
         <div class="cart-item-price">₹${price}</div>
         <button class="cart-item-remove" onclick="removeFromCart(${idx})" title="Remove">✕</button>
@@ -2948,7 +2956,7 @@ function showUpiQrModal(payeeName, payeeUpi, amount, purposeText = "Payment", pa
   if (scanLabel) {
     scanLabel.parentElement.innerHTML = `📲 <strong data-en="Scan with any UPI App" data-hi="किसी भी UPI ऐप से स्कैन करें">Scan with any UPI App</strong><br>
       <span style="font-size: 11px; color: #777;">Google Pay, PhonePe, Paytm, BHIM, etc.</span><br>
-      <span style="font-size: 11px; color: #026637; font-weight: 600;">Purpose: ${purposeText}</span>`;
+      <span style="font-size: 11px; color: #026637; font-weight: 600;">Purpose: ${escapeHtml(purposeText)}</span>`;
   }
   
   const defaultQr = document.getElementById("upiDefaultQr");
