@@ -54,6 +54,16 @@ router.post("/", auth, uploadSinglePostMedia, async (req, res) => {
   const mongoose = require("mongoose");
   const { title, description, contentType, visibility, pricing, price, content } = req.body;
   
+  // Type validation to prevent type-injection and object payload bypasses
+  if (typeof title !== "string" || 
+      (description && typeof description !== "string") || 
+      (contentType && typeof contentType !== "string") || 
+      (visibility && typeof visibility !== "string") || 
+      (pricing && typeof pricing !== "string") || 
+      (content && typeof content !== "string")) {
+    return res.status(400).json({ message: "Invalid input types. Fields must be strings." });
+  }
+  
   // Determine content URL/path or emoji
   let contentValue = content || "🎨";
   if (req.file) {

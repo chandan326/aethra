@@ -35,6 +35,11 @@ router.post("/", auth, async (req, res) => {
   try {
     const { name, handle, description, icon } = req.body;
     
+    // Type checking to prevent NoSQL injection / object payloads
+    if (typeof name !== "string" || typeof handle !== "string" || (description && typeof description !== "string") || (icon && typeof icon !== "string")) {
+      return res.status(400).json({ message: "Invalid input types. Fields must be strings." });
+    }
+    
     // Check if handle is already taken
     const existing = await Channel.findOne({ handle });
     if (existing) return res.status(400).json({ message: "Channel handle already in use" });

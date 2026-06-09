@@ -42,11 +42,16 @@ function getMockResponse(text) {
 router.post("/", async (req, res) => {
   try {
     const { messages } = req.body;
-    if (!messages || !messages.length) {
-      return res.status(400).json({ message: "Messages history is required" });
+    if (!Array.isArray(messages) || !messages.length) {
+      return res.status(400).json({ message: "Messages history must be a valid array and is required" });
     }
 
-    const lastMessage = messages[messages.length - 1].content;
+    const lastMsgObj = messages[messages.length - 1];
+    if (!lastMsgObj || typeof lastMsgObj.content !== "string") {
+      return res.status(400).json({ message: "Invalid message format" });
+    }
+
+    const lastMessage = lastMsgObj.content;
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
