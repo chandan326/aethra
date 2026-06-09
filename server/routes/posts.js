@@ -8,7 +8,8 @@ const User = require("../models/User");
 const auth = require("../middleware/auth");
 
 // Ensure upload directory exists
-const uploadDir = path.join(__dirname, "../uploads");
+const isVercel = process.env.VERCEL === "1" || process.env.NOW_REGION !== undefined;
+const uploadDir = isVercel ? "/tmp/uploads" : path.join(__dirname, "../uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
