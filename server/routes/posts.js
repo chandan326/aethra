@@ -106,7 +106,13 @@ router.post("/", auth, uploadSinglePostMedia, async (req, res) => {
       visibility: visibility || "public",
       pricing: pricing || "free",
       price: pricing === "paid" ? Number(price) : 0,
-      creator: { username: req.user.username || "preview_user", displayName: req.user.username || "Preview User", avatar: (req.user.username || "preview_user").slice(0, 2).toUpperCase() },
+      creator: { 
+        _id: req.user.id || "mock_user_id",
+        id: req.user.id || "mock_user_id",
+        username: req.user.username || "preview_user", 
+        displayName: req.user.username || "Preview User", 
+        avatar: (req.user.username || "preview_user").slice(0, 2).toUpperCase() 
+      },
       likes: [],
       commentsCount: 0,
       createdAt: new Date()

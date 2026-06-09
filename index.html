@@ -2004,7 +2004,7 @@ let activeProfileUserId = null;
 
 async function renderProfilePage() {
   const $=id=>document.getElementById(id);
-  const targetUserId = activeProfileUserId || (currentUser ? currentUser.id : null);
+  const targetUserId = activeProfileUserId || (currentUser ? (currentUser.id || currentUser._id) : null);
   
   if (!targetUserId) {
     $('profileGrid').innerHTML = `<p style="color:var(--text3);padding:2rem">Please log in to view your profile.</p>`;
@@ -2082,6 +2082,7 @@ async function renderProfilePage() {
         const followStyle = isFollowing ? "background: var(--border2); border-color: var(--border2); color: var(--text2);" : "";
         actionsContainer.innerHTML = `
           <button class="btn-primary" style="padding:9px 18px;font-size:13px;${followStyle}" onclick="handleProfileFollow('${profileUser.id || profileUser._id}', this)">${followText}</button>
+          <button class="btn-outline" style="padding:9px 18px;font-size:13px" onclick="startChatWithCreator('${profileUser.id || profileUser._id}', '${escapeHtml(profileUser.username)}')">💬 Chat</button>
           <button class="btn-ghost" style="padding:9px 18px;font-size:13px" onclick="goPage('home')">📺 Discover</button>
         `;
       }
@@ -2092,8 +2093,9 @@ async function renderProfilePage() {
     const postsRes = await fetch("/api/posts", { headers });
     const posts = postsRes.ok ? await postsRes.json() : [];
     const creatorPosts = posts.filter(p => {
-      const cId = p.creator?._id || p.creator?.id;
-      return cId && (cId.toString() === targetUserId.toString());
+      const cId = p.creator?._id || p.creator?.id || (typeof p.creator === "string" ? p.creator : null);
+      const tId = targetUserId;
+      return cId && tId && (cId.toString() === tId.toString());
     });
     $('profileGrid').innerHTML = creatorPosts.length ? creatorPosts.map(mkPCard).join('') : `<p style="color:var(--text3);padding:2rem">This creator hasn't uploaded any creations yet.</p>`;
     
@@ -2316,6 +2318,16 @@ async function submitPost() {
     return;
   }
 
+  let fileToUpload = selectedFile;
+  if (selectedFile && selectedFile.type.startsWith("image/") && selectedFile.type !== "image/gif") {
+    toast("⏳ Optimizing image for mobile...");
+    try {
+      fileToUpload = await compressImage(selectedFile);
+    } catch (err) {
+      console.error("Compression failed, uploading original:", err);
+    }
+  }
+
   const formData = new FormData();
   formData.append("title", title);
   formData.append("description", description);
@@ -2323,7 +2335,7 @@ async function submitPost() {
   formData.append("visibility", visibility);
   formData.append("pricing", pricing);
   formData.append("price", price);
-  formData.append("file", selectedFile);
+  formData.append("file", fileToUpload);
 
   try {
     toast("🚀 Uploading creation...");
@@ -2431,6 +2443,65 @@ function toggleChat(){
   const p=document.getElementById('chatPanel');
   p.classList.toggle('open');
   if(p.classList.contains('open'))document.getElementById('chatInput').focus();
+}
+
+function startChatWithCreator(creatorId, username) {
+  const p = document.getElementById('chatPanel');
+  if (!p.classList.contains('open')) {
+    p.classList.add('open');
+  }
+  document.getElementById('chatInput').value = `Hi, I want to talk to @${username} and learn more about their creative AI artwork!`;
+  document.getElementById('chatInput').focus();
+  toast(`💬 Chat session about @${username} started!`);
+}
+
+function compressImage(file) {
+  return new Promise((resolve) => {
+    if (file.type === "image/gif") {
+      return resolve(file); // Don't compress GIFs
+    }
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 800; // Limit image dimensions to 800px to prevent mobile lag
+        
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+              type: "image/jpeg",
+              lastModified: Date.now()
+            });
+            resolve(compressedFile);
+          } else {
+            resolve(file);
+          }
+        }, "image/jpeg", 0.7);
+      };
+      img.onerror = () => resolve(file);
+    };
+    reader.onerror = () => resolve(file);
+  });
 }
 function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
 function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
