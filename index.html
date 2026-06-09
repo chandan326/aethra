@@ -509,8 +509,13 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
     margin-top: 76px !important;
   }
   .chat-panel {
-    width: calc(100vw - 2rem);
-    right: 1rem;
+    width: calc(100vw - 2rem) !important;
+    right: 1rem !important;
+    left: 1rem !important;
+    top: 92px !important;
+    bottom: 6rem !important;
+    height: auto !important;
+    max-height: calc(100vh - 170px) !important;
   }
 }
 
@@ -605,6 +610,11 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
     font-size: 9px !important;
     top: -1px !important;
     right: -1px !important;
+  }
+  .chat-panel {
+    top: 112px !important;
+    bottom: 1.5rem !important;
+    max-height: calc(100vh - 136px) !important;
   }
 
   .stats-row {
@@ -2342,8 +2352,14 @@ let isLoading=false;
 
 function toggleChat(){
   const p=document.getElementById('chatPanel');
+  const fab=document.querySelector('.chat-fab');
   p.classList.toggle('open');
-  if(p.classList.contains('open'))document.getElementById('chatInput').focus();
+  if(p.classList.contains('open')) {
+    document.getElementById('chatInput').focus();
+    if(fab) fab.style.display = 'none';
+  } else {
+    if(fab) fab.style.display = 'flex';
+  }
 }
 function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
 function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
