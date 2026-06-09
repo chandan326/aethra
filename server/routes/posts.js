@@ -8,15 +8,15 @@ const User = require("../models/User");
 const auth = require("../middleware/auth");
 
 const mockPosts = [
-  { _id: "p1", title: "Cosmic Dreamscape", content: "🌌", contentType: "AI", pricing: "paid", price: 99, creator: { username: "artby_meera", displayName: "Meera Art", avatar: "🎨", verified: true, hasPremium: true }, likes: ["u1"], commentsCount: 89 },
-  { _id: "p2", title: "Neon Dragon", content: "🐉", contentType: "AI", pricing: "free", creator: { username: "vfx_ravi", displayName: "VFX Ravi", avatar: "🔮", verified: false }, likes: [], commentsCount: 67 },
-  { _id: "p3", title: "Sakura Rain", content: "🌸", contentType: "AI", pricing: "free", creator: { username: "pixel_priya", displayName: "Pixel Priya", avatar: "🌸", verified: true }, likes: [], commentsCount: 124 },
-  { _id: "p4", title: "Cyber Samurai", content: "🤖", contentType: "AI", pricing: "paid", price: 149, creator: { username: "ai_arjun", displayName: "AI Arjun", avatar: "⚡", verified: true }, likes: [], commentsCount: 203 },
-  { _id: "p5", title: "Galaxy Spin", content: "💫", contentType: "GIF", pricing: "free", creator: { username: "space_gifs", displayName: "Space Gifs", avatar: "💫", verified: false }, likes: [], commentsCount: 234 },
-  { _id: "p6", title: "Fire Dance", content: "🔥", contentType: "GIF", pricing: "free", creator: { username: "pyro_art", displayName: "Pyro Art", avatar: "🔥", verified: false }, likes: [], commentsCount: 98 },
-  { _id: "p7", title: "Cool Cat Pack", content: "😎", contentType: "STICKER", pricing: "free", creator: { username: "catlife", displayName: "Cat Life", avatar: "😺", verified: true }, likes: [], commentsCount: 567 },
-  { _id: "p8", title: "Love Hearts", content: "🥰", contentType: "STICKER", pricing: "free", creator: { username: "lovedesign", displayName: "Love Design", avatar: "🥰", verified: false }, likes: [], commentsCount: 423 },
-  { _id: "p9", title: "Midnight Vibes", content: "🌙", contentType: "STICKER", pricing: "paid", price: 29, creator: { username: "nocturnal", displayName: "Nocturnal", avatar: "🌙", verified: false }, likes: [], commentsCount: 298 }
+  { _id: "p1", title: "Cosmic Dreamscape", content: "🌌", contentType: "AI", pricing: "paid", price: 99, creator: { _id: "u1", id: "u1", username: "artby_meera", displayName: "Meera Art", avatar: "🎨", verified: true, hasPremium: true }, likes: ["u1"], commentsCount: 89 },
+  { _id: "p2", title: "Neon Dragon", content: "🐉", contentType: "AI", pricing: "free", creator: { _id: "u2", id: "u2", username: "vfx_ravi", displayName: "VFX Ravi", avatar: "🔮", verified: false }, likes: [], commentsCount: 67 },
+  { _id: "p3", title: "Sakura Rain", content: "🌸", contentType: "AI", pricing: "free", creator: { _id: "u3", id: "u3", username: "pixel_priya", displayName: "Pixel Priya", avatar: "🌸", verified: true }, likes: [], commentsCount: 124 },
+  { _id: "p4", title: "Cyber Samurai", content: "🤖", contentType: "AI", pricing: "paid", price: 149, creator: { _id: "u4", id: "u4", username: "cyberpunk_dev", displayName: "Neon Dev", avatar: "⚡", verified: true }, likes: [], commentsCount: 203 },
+  { _id: "p5", title: "Galaxy Spin", content: "💫", contentType: "GIF", pricing: "free", creator: { _id: "u5", id: "u5", username: "space_gifs", displayName: "Space Gifs", avatar: "💫", verified: false }, likes: [], commentsCount: 234 },
+  { _id: "p6", title: "Fire Dance", content: "🔥", contentType: "GIF", pricing: "free", creator: { _id: "u6", id: "u6", username: "pyro_art", displayName: "Pyro Art", avatar: "🔥", verified: false }, likes: [], commentsCount: 98 },
+  { _id: "p7", title: "Cool Cat Pack", content: "😎", contentType: "STICKER", pricing: "free", creator: { _id: "u7", id: "u7", username: "catlife", displayName: "Cat Life", avatar: "😺", verified: true }, likes: [], commentsCount: 567 },
+  { _id: "p8", title: "Love Hearts", content: "🥰", contentType: "STICKER", pricing: "free", creator: { _id: "u8", id: "u8", username: "lovedesign", displayName: "Love Design", avatar: "🥰", verified: false }, likes: [], commentsCount: 423 },
+  { _id: "p9", title: "Midnight Vibes", content: "🌙", contentType: "STICKER", pricing: "paid", price: 29, creator: { _id: "u1", id: "u1", username: "artby_meera", displayName: "Meera Art", avatar: "🎨", verified: true, hasPremium: true }, likes: [], commentsCount: 298 }
 ];
 
 // Ensure upload directory exists
@@ -214,6 +214,26 @@ router.get("/", async (req, res) => {
 
 // Toggle Like
 router.post("/:id/like", auth, async (req, res) => {
+  const mongoose = require("mongoose");
+  
+  if (mongoose.connection.readyState !== 1) {
+    const postId = req.params.id;
+    const myId = req.user.id || "mock_user_id";
+    
+    const post = mockPosts.find(p => p._id === postId);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+    
+    if (!post.likes) post.likes = [];
+    const index = post.likes.indexOf(myId);
+    if (index === -1) {
+      post.likes.push(myId);
+    } else {
+      post.likes.splice(index, 1);
+    }
+    
+    return res.json({ likesCount: post.likes.length, isLiked: post.likes.includes(myId) });
+  }
+
   try {
     const post = await Post.findById(req.id || req.params.id);
     if (!post) return res.status(404).json({ message: "Post not found" });

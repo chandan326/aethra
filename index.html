@@ -1894,7 +1894,7 @@ function mkPCard(item, i) {
   const badge = item.visibility === "private" ? `<div class="pcard-lock">🔒</div>` : item.pricing === "paid" ? `<div class="pcard-price">₹${item.price}</div>` : '';
   const creatorName = escapeHtml(item.creator ? (item.creator.displayName || item.creator.username) : "Creator");
   const creatorAvatar = escapeHtml(item.creator ? (item.creator.avatar || item.creator.username.slice(0, 2).toUpperCase()) : "👤");
-  const isLiked = currentUser && item.likes && item.likes.includes(currentUser.id);
+  const isLiked = currentUser && item.likes && item.likes.some(l => l.toString() === (currentUser.id || currentUser._id || '').toString());
   const redTick = item.creator && item.creator.hasPremium ? ` <span class="red-tick">✓</span>` : '';
   
   return `<div class="pcard" onclick="openProductDetail('${item._id}')">
@@ -1963,7 +1963,7 @@ async function populate() {
       <div class="ch-name">${escapeHtml(c.name)}</div><div class="ch-handle">@${escapeHtml(c.handle)}</div>
       <div class="ch-desc">${escapeHtml(c.description || "")}</div>
       <div class="ch-meta"><div class="ch-meta-item">👥 ${c.subscribers?.length || 0} subscribers</div></div>
-      <button class="ch-sub-btn" onclick="handleSubscribe('${c._id}', this)">${currentUser && c.subscribers?.includes(currentUser.id) ? 'Subscribed' : 'Subscribe'}</button></div>`).join(''));
+      <button class="ch-sub-btn" onclick="handleSubscribe('${c._id}', this)">${currentUser && c.subscribers?.some(s => s.toString() === (currentUser.id || currentUser._id || '').toString()) ? 'Subscribed' : 'Subscribe'}</button></div>`).join(''));
 
     await renderProfilePage();
 
@@ -2011,7 +2011,7 @@ async function renderProfilePage() {
     return;
   }
   
-  const isSelf = currentUser && (targetUserId === currentUser.id);
+  const isSelf = currentUser && targetUserId && (targetUserId.toString() === (currentUser.id || currentUser._id || '').toString());
   
   try {
     let profileUser = null;
@@ -2149,7 +2149,7 @@ function goMyProfile() {
 async function showCreatorUpiQr(creatorId) {
   try {
     let profileUser = null;
-    if (currentUser && creatorId === currentUser.id) {
+    if (currentUser && creatorId.toString() === (currentUser.id || currentUser._id || '').toString()) {
       profileUser = currentUser;
     } else {
       const res = await fetch(`/api/auth/user/${creatorId}`);

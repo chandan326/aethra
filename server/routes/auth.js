@@ -9,6 +9,38 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
+const mockUsersDb = {
+  "mock_user_id": {
+    _id: "mock_user_id",
+    id: "mock_user_id",
+    username: "preview_user",
+    displayName: "Preview User",
+    avatar: "PR",
+    bio: "Offline Preview User - changes are not saved.",
+    location: "India 🇮🇳",
+    upiId: "preview@okaxis",
+    followers: [],
+    following: ["u1"],
+    verified: true,
+    earnings: 24000,
+    hasPremium: false,
+    subscriptionPlan: ""
+  },
+  "u1": { id: "u1", _id: "u1", username: "artby_meera", displayName: "Meera Art", avatar: "🎨", bio: "AI Artist & designer.", location: "India 🇮🇳", verified: true, upiId: "meera@okaxis", hasPremium: true, followers: ["mock_user_id"], following: [] },
+  "u2": { id: "u2", _id: "u2", username: "vfx_ravi", displayName: "VFX Ravi", avatar: "🔮", bio: "GIF Creator & animator.", location: "India 🇮🇳", verified: false, upiId: "ravi@okaxis", followers: [], following: [] },
+  "u3": { id: "u3", _id: "u3", username: "pixel_priya", displayName: "Pixel Priya", avatar: "🌸", bio: "Kawaii Creator.", location: "India 🇮🇳", verified: true, upiId: "priya@okaxis", followers: [], following: [] },
+  "u4": { id: "u4", _id: "u4", username: "cyberpunk_dev", displayName: "Neon Dev", avatar: "⚡", bio: "Cyberpunk artist.", location: "India 🇮🇳", verified: true, upiId: "cyberpunk@okaxis", followers: [], following: [] },
+  "u5": { id: "u5", _id: "u5", username: "space_gifs", displayName: "Space Gifs", avatar: "💫", bio: "Astronomy visuals.", location: "India 🇮🇳", verified: false, upiId: "space@okaxis", followers: [], following: [] },
+  "u6": { id: "u6", _id: "u6", username: "pyro_art", displayName: "Pyro Art", avatar: "🔥", bio: "Vibrant fire graphics.", location: "India 🇮🇳", verified: false, upiId: "pyro@okaxis", followers: [], following: [] },
+  "u7": { id: "u7", _id: "u7", username: "catlife", displayName: "Cat Life", avatar: "😺", bio: "Sticker Designer.", location: "India 🇮🇳", verified: true, upiId: "catlife@okaxis", followers: [], following: [] },
+  "u8": { id: "u8", _id: "u8", username: "lovedesign", displayName: "Love Design", avatar: "🥰", bio: "Heart stickers & custom work.", location: "India 🇮🇳", verified: false, upiId: "love@okaxis", followers: [], following: [] },
+  "u9": { id: "u9", _id: "u9", username: "space_vfx", displayName: "SpaceVFX", avatar: "🌌", bio: "GIF Creator & animator.", location: "India 🇮🇳", verified: true, upiId: "space@okaxis", hasPremium: true, followers: [], following: [] },
+  "u10": { id: "u10", _id: "u10", username: "mythcraft_rohit", displayName: "MythCraft", avatar: "🐉", bio: "Fantasy Art.", location: "India 🇮🇳", verified: true, upiId: "rohit@okaxis", followers: [], following: [] },
+  "u11": { id: "u11", _id: "u11", username: "cyberpunk_dev", displayName: "Neon Dev", avatar: "⚡", bio: "Cyberpunk art.", location: "India 🇮🇳", verified: true, upiId: "neon@okaxis", followers: [], following: [] },
+  "u12": { id: "u12", _id: "u12", username: "lens_lens", displayName: "Lens & Shutter", avatar: "📸", bio: "Landscape & street photography.", location: "India 🇮🇳", verified: true, upiId: "lens@okaxis", followers: [], following: [] },
+  "u13": { id: "u13", _id: "u13", username: "synth_3d", displayName: "AI Avanti", avatar: "🤖", bio: "Illustrator and 3D visual artist.", location: "India 🇮🇳", verified: true, upiId: "avanti@okaxis", hasPremium: true, followers: [], following: [] }
+};
+
 const isVercel = process.env.VERCEL === "1" || process.env.NOW_REGION !== undefined;
 const uploadDir = isVercel ? "/tmp/uploads" : path.join(__dirname, "../uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -66,8 +98,25 @@ router.post("/register", async (req, res) => {
   }
 
   if (mongoose.connection.readyState !== 1) {
-    const token = jwt.sign({ id: "mock_user_id", username }, JWT_SECRET, { expiresIn: "7d" });
-    return res.status(201).json({ token, user: { id: "mock_user_id", username, email } });
+    const newId = "mock_user_" + Date.now();
+    mockUsersDb[newId] = {
+      _id: newId,
+      id: newId,
+      username: username,
+      displayName: username,
+      avatar: username.slice(0, 2).toUpperCase(),
+      bio: "Offline Preview User - changes are not saved.",
+      location: "India 🇮🇳",
+      upiId: "preview@okaxis",
+      followers: [],
+      following: [],
+      verified: false,
+      earnings: 0,
+      hasPremium: false,
+      subscriptionPlan: ""
+    };
+    const token = jwt.sign({ id: newId, username }, JWT_SECRET, { expiresIn: "7d" });
+    return res.status(201).json({ token, user: mockUsersDb[newId] });
   }
 
   try {
@@ -102,9 +151,30 @@ router.post("/login", async (req, res) => {
   }
 
   if (mongoose.connection.readyState !== 1) {
-    // Let any password pass for easy offline preview testing
-    const token = jwt.sign({ id: "mock_user_id", username }, JWT_SECRET, { expiresIn: "7d" });
-    return res.json({ token, user: { id: "mock_user_id", username, email: `${username}@example.com`, avatar: username.slice(0, 2).toUpperCase() } });
+    // Check if the user already exists in mockUsersDb
+    let foundUser = Object.values(mockUsersDb).find(u => u.username === username);
+    if (!foundUser) {
+      const newId = "mock_user_" + Date.now();
+      mockUsersDb[newId] = {
+        _id: newId,
+        id: newId,
+        username: username,
+        displayName: username,
+        avatar: username.slice(0, 2).toUpperCase(),
+        bio: "Offline Preview User - changes are not saved.",
+        location: "India 🇮🇳",
+        upiId: "preview@okaxis",
+        followers: [],
+        following: [],
+        verified: false,
+        earnings: 0,
+        hasPremium: false,
+        subscriptionPlan: ""
+      };
+      foundUser = mockUsersDb[newId];
+    }
+    const token = jwt.sign({ id: foundUser.id, username: foundUser.username }, JWT_SECRET, { expiresIn: "7d" });
+    return res.json({ token, user: foundUser });
   }
 
   try {
@@ -124,21 +194,28 @@ router.post("/login", async (req, res) => {
 router.get("/me", auth, async (req, res) => {
   const mongoose = require("mongoose");
   if (mongoose.connection.readyState !== 1) {
-    return res.json({
-      _id: req.user.id || "mock_user_id",
-      username: req.user.username || "preview_user",
-      displayName: req.user.username || "Preview User",
-      avatar: (req.user.username || "preview_user").slice(0, 2).toUpperCase(),
-      bio: "Offline Preview User - changes are not saved.",
-      location: "India 🇮🇳",
-      upiId: "preview@okaxis",
-      followers: [],
-      following: [],
-      verified: true,
-      earnings: 24000,
-      hasPremium: false,
-      subscriptionPlan: ""
-    });
+    const userId = req.user.id || "mock_user_id";
+    let u = mockUsersDb[userId];
+    if (!u) {
+      mockUsersDb[userId] = {
+        _id: userId,
+        id: userId,
+        username: req.user.username || "preview_user",
+        displayName: req.user.username || "Preview User",
+        avatar: (req.user.username || "preview_user").slice(0, 2).toUpperCase(),
+        bio: "Offline Preview User - changes are not saved.",
+        location: "India 🇮🇳",
+        upiId: "preview@okaxis",
+        followers: [],
+        following: [],
+        verified: true,
+        earnings: 24000,
+        hasPremium: false,
+        subscriptionPlan: ""
+      };
+      u = mockUsersDb[userId];
+    }
+    return res.json(u);
   }
 
   try {
@@ -154,22 +231,30 @@ router.get("/me", auth, async (req, res) => {
 
 // Get Public User Profile by ID
 router.get("/user/:id", async (req, res) => {
+  const mongoose = require("mongoose");
   if (mongoose.connection.readyState !== 1) {
-    return res.json({
-      _id: req.params.id,
-      username: "creator_" + req.params.id.slice(-4),
-      displayName: "Creator " + req.params.id.slice(-4),
-      avatar: "CR",
-      bio: "This is a preview creator profile bio.",
-      location: "India 🇮🇳",
-      upiId: "creator@okaxis",
-      followers: [],
-      following: [],
-      verified: true,
-      earnings: 15000,
-      hasPremium: false,
-      subscriptionPlan: ""
-    });
+    const creatorId = req.params.id;
+    let found = mockUsersDb[creatorId];
+    if (!found) {
+      mockUsersDb[creatorId] = {
+        _id: creatorId,
+        id: creatorId,
+        username: "creator_" + creatorId.slice(-4),
+        displayName: "Creator " + creatorId.slice(-4),
+        avatar: "CR",
+        bio: "This is a preview creator profile bio.",
+        location: "India 🇮🇳",
+        upiId: "creator@okaxis",
+        followers: [],
+        following: [],
+        verified: true,
+        earnings: 15000,
+        hasPremium: false,
+        subscriptionPlan: ""
+      };
+      found = mockUsersDb[creatorId];
+    }
+    return res.json(found);
   }
 
   try {
@@ -207,22 +292,39 @@ router.post("/profile", auth, uploadSingleQr, async (req, res) => {
   }
 
   if (mongoose.connection.readyState !== 1) {
-    return res.json({
-      message: "Profile updated successfully (Offline Preview Mode)",
-      user: {
-        id: req.user.id || "mock_user_id",
+    const userId = req.user.id || "mock_user_id";
+    let u = mockUsersDb[userId];
+    if (!u) {
+      mockUsersDb[userId] = {
+        _id: userId,
+        id: userId,
         username: req.user.username || "preview_user",
-        displayName: displayName || "Preview User",
-        bio: bio || "Bio updated.",
-        location: location || "India 🇮🇳",
-        upiId: upiId || "username@upi",
-        qrCodeImage: clearQrCodeImage === "true" ? "" : (qrCodeImage || ""),
+        displayName: req.user.username || "Preview User",
         avatar: (req.user.username || "preview_user").slice(0, 2).toUpperCase(),
+        bio: "Offline Preview User - changes are not saved.",
+        location: "India 🇮🇳",
+        upiId: "preview@okaxis",
+        followers: [],
+        following: [],
         verified: true,
         earnings: 24000,
         hasPremium: false,
         subscriptionPlan: ""
-      }
+      };
+      u = mockUsersDb[userId];
+    }
+    if (displayName !== undefined) u.displayName = displayName;
+    if (bio !== undefined) u.bio = bio;
+    if (location !== undefined) u.location = location;
+    if (upiId !== undefined) u.upiId = upiId;
+    if (clearQrCodeImage === "true") {
+      u.qrCodeImage = "";
+    } else if (qrCodeImage !== undefined) {
+      u.qrCodeImage = qrCodeImage;
+    }
+    return res.json({
+      message: "Profile updated successfully (Offline Preview Mode)",
+      user: u
     });
   }
 
@@ -260,22 +362,33 @@ router.post("/subscribe", auth, async (req, res) => {
   expiresAt.setMonth(expiresAt.getMonth() + (months || 2));
 
   if (mongoose.connection.readyState !== 1) {
-    return res.json({
-      message: "Subscription activated successfully! (Offline Preview Mode)",
-      user: {
-        id: req.user.id || "mock_user_id",
+    const userId = req.user.id || "mock_user_id";
+    let u = mockUsersDb[userId];
+    if (!u) {
+      mockUsersDb[userId] = {
+        _id: userId,
+        id: userId,
         username: req.user.username || "preview_user",
         displayName: req.user.username || "Preview User",
         avatar: (req.user.username || "preview_user").slice(0, 2).toUpperCase(),
-        bio: "Offline Preview User",
+        bio: "Offline Preview User - changes are not saved.",
         location: "India 🇮🇳",
-        upiId: "username@upi",
+        upiId: "preview@okaxis",
+        followers: [],
+        following: [],
         verified: true,
         earnings: 24000,
-        hasPremium: true,
-        subscriptionPlan: planName || "2 Months Boost",
-        subscriptionExpiresAt: expiresAt
-      }
+        hasPremium: false,
+        subscriptionPlan: ""
+      };
+      u = mockUsersDb[userId];
+    }
+    u.hasPremium = true;
+    u.subscriptionPlan = planName || "2 Months Boost";
+    u.subscriptionExpiresAt = expiresAt;
+    return res.json({
+      message: "Subscription activated successfully! (Offline Preview Mode)",
+      user: u
     });
   }
 
@@ -300,7 +413,70 @@ router.post("/subscribe", auth, async (req, res) => {
 router.post("/follow/:id", auth, async (req, res) => {
   const mongoose = require("mongoose");
   if (mongoose.connection.readyState !== 1) {
-    return res.json({ message: "Follow action simulated successfully (Offline Preview Mode)" });
+    const creatorId = req.params.id;
+    const myId = req.user.id || "mock_user_id";
+    
+    if (myId === creatorId) {
+      return res.status(400).json({ message: "You cannot follow yourself" });
+    }
+    
+    let creator = mockUsersDb[creatorId];
+    if (!creator) {
+      mockUsersDb[creatorId] = {
+        _id: creatorId,
+        id: creatorId,
+        username: "creator_" + creatorId.slice(-4),
+        displayName: "Creator " + creatorId.slice(-4),
+        avatar: "CR",
+        bio: "This is a preview creator profile bio.",
+        location: "India 🇮🇳",
+        upiId: "creator@okaxis",
+        followers: [],
+        following: [],
+        verified: true,
+        earnings: 15000,
+        hasPremium: false,
+        subscriptionPlan: ""
+      };
+      creator = mockUsersDb[creatorId];
+    }
+    
+    let me = mockUsersDb[myId];
+    if (!me) {
+      mockUsersDb[myId] = {
+        _id: myId,
+        id: myId,
+        username: req.user.username || "preview_user",
+        displayName: req.user.username || "Preview User",
+        avatar: (req.user.username || "preview_user").slice(0, 2).toUpperCase(),
+        bio: "Offline Preview User - changes are not saved.",
+        location: "India 🇮🇳",
+        upiId: "preview@okaxis",
+        followers: [],
+        following: [],
+        verified: true,
+        earnings: 24000,
+        hasPremium: false,
+        subscriptionPlan: ""
+      };
+      me = mockUsersDb[myId];
+    }
+    
+    const isFollowing = me.following.includes(creator._id);
+    
+    if (isFollowing) {
+      me.following = me.following.filter(id => id !== creator._id);
+      creator.followers = creator.followers.filter(id => id !== me._id);
+    } else {
+      me.following.push(creator._id);
+      creator.followers.push(me._id);
+    }
+    
+    return res.json({ 
+      message: isFollowing ? "Unfollowed successfully! (Offline Preview Mode)" : "Followed successfully! (Offline Preview Mode)",
+      isFollowing: !isFollowing,
+      followersCount: creator.followers.length
+    });
   }
 
   try {
