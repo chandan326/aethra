@@ -683,9 +683,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
 
 /* CATEGORY FEED GRID */
 .home-feed-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-top: 1.5rem; }
-@media(max-width:1200px){.home-feed-grid{grid-template-columns:repeat(3, 1fr)}}
-@media(max-width:768px){.home-feed-grid{grid-template-columns:repeat(2, 1fr)}}
-@media(max-width:480px){.home-feed-grid{grid-template-columns:1fr}}
+@media(max-width:1024px){.home-feed-grid{grid-template-columns:repeat(4, 1fr) !important; gap: 16px !important;}}
+@media(max-width:600px){
+  .home-feed-grid{grid-template-columns:repeat(2, 1fr) !important; gap: 12px !important;}
+  .pcard-body { padding: 10px 10px 8px !important; }
+  .pcard-title { font-size: 11px !important; margin-bottom: 6px !important; }
+  .pcard-uname { font-size: 10px !important; }
+  .pcard-meta { gap: 8px !important; font-size: 10px !important; }
+}
 
 /* SUPPORT PAGE */
 .support-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 2.5rem; margin-top: 1.5rem; }
@@ -1867,6 +1872,7 @@ async function populate() {
     const postsRes = await fetch("/api/posts");
     const posts = postsRes.ok ? await postsRes.json() : [];
 
+    displayedLimit = getDeviceLimitConfig().limit;
     allHomePosts = posts;
     renderHomeFeed();
 
@@ -2112,9 +2118,15 @@ function goPage(id,btn){
   if(btn)btn.classList.add('active');
   window.scrollTo(0,0);
 }
+function getDeviceLimitConfig() {
+  const width = window.innerWidth;
+  if (width <= 600) return { limit: 6, step: 6 };
+  if (width <= 1024) return { limit: 8, step: 8 };
+  return { limit: 10, step: 10 };
+}
 let allHomePosts = [];
 let currentFilter = 'all';
-let displayedLimit = 15;
+let displayedLimit = 10;
 let searchQuery = '';
 
 function handleSearch(val) {
@@ -2122,7 +2134,7 @@ function handleSearch(val) {
   const navSearch = document.getElementById('navbarSearch');
   if (navSearch) navSearch.value = val;
   
-  displayedLimit = 15;
+  displayedLimit = getDeviceLimitConfig().limit;
   renderHomeFeed();
 }
 
@@ -2130,7 +2142,7 @@ function filterHome(cat, el) {
   document.querySelectorAll('#homeFilter .cpill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
   currentFilter = cat;
-  displayedLimit = 15;
+  displayedLimit = getDeviceLimitConfig().limit;
   renderHomeFeed();
 }
 
@@ -2177,7 +2189,7 @@ function renderHomeFeed() {
 }
 
 function showMoreHome() {
-  displayedLimit += 15;
+  displayedLimit += getDeviceLimitConfig().step;
   renderHomeFeed();
 }
 
