@@ -2714,6 +2714,7 @@ async function handleAuthSubmit(e) {
     closeAuth();
     toast(`🎉 Welcome, ${currentUser.username}!`);
     updateAuthUI();
+    await populate();
   } catch (err) {
     toast("⚠️ Connection error. Try again.");
   }
@@ -2725,6 +2726,7 @@ function logout() {
   localStorage.removeItem("token");
   toast("🔒 Logged out successfully");
   updateAuthUI();
+  populate();
 }
 
 async function handleLike(postId, btn) {
