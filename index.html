@@ -2005,6 +2005,20 @@ async function populate() {
       <div class="chip chip-indigo" style="background:${c.color}15;color:${c.color};border-color:${c.color}28;margin-top:4px">${c.hasPremium ? 'VIP Creator' : (c.verified ? 'Verified' : 'Creator')}</div>
     </div>`).join('');
 
+    // Check for deep links like /posts/:id
+    if (!window.deepLinkTriggered) {
+      const pathMatch = window.location.pathname.match(/^\/posts\/([a-zA-Z0-9_-]+)/);
+      if (pathMatch) {
+        const deepPostId = pathMatch[1];
+        if (allHomePosts.some(p => (p._id || p.id) === deepPostId)) {
+          window.deepLinkTriggered = true;
+          setTimeout(() => {
+            openProductDetail(deepPostId);
+          }, 100);
+        }
+      }
+    }
+
   } catch (err) {
     console.error("Failed to populate page:", err);
   }
@@ -2200,6 +2214,7 @@ function getDeviceLimitConfig() {
   return { limit: 10, step: 10 };
 }
 let allHomePosts = [];
+window.deepLinkTriggered = false;
 let currentFilter = 'all';
 let displayedLimit = 10;
 let searchQuery = '';
@@ -2841,6 +2856,12 @@ let currentSelectedProduct = null;
 function openProductDetail(id) {
   const item = allHomePosts.find(p => p._id === id);
   if (!item) return;
+  
+  // Update browser URL dynamically for deep-linking
+  if (!window.location.pathname.startsWith("/posts/" + id)) {
+    window.history.pushState(null, "", "/posts/" + id);
+  }
+  
   currentSelectedProduct = item;
 
   // Set media preview
@@ -2892,6 +2913,11 @@ function openProductDetail(id) {
 function closeProductModal() {
   document.getElementById("productModal").classList.remove("open");
   currentSelectedProduct = null;
+  
+  // Restore browser URL dynamically for deep-linking
+  if (window.location.pathname.startsWith("/posts/")) {
+    window.history.pushState(null, "", "/");
+  }
 }
 
 async function handleProductAction() {

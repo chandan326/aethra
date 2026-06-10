@@ -66,14 +66,112 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 app.use("/uploads", express.static(uploadDir));
-app.use(express.static(path.join(__dirname, "../")));
 
-// SPA Fallback: Serve index.html for any unhandled client-side routes
-app.get(/.*/, (req, res, next) => {
-  // If requesting api, let it pass to 404 handler
-  if (req.path.startsWith("/api")) return next();
-  res.sendFile(path.join(__dirname, "../index.html"));
+// Dynamic SPA Fallback: Serve index.html with dynamically injected Open Graph meta tags
+// Matches any path that doesn't have a file extension (no dot) and is not an API/uploads route
+app.get(/.*/, async (req, res, next) => {
+  if (req.path.startsWith("/api") || req.path.startsWith("/uploads") || req.path.includes(".")) {
+    return next();
+  }
+
+  const indexPath = path.join(__dirname, "../index.html");
+  if (!fs.existsSync(indexPath)) {
+    return res.status(404).send("index.html not found");
+  }
+
+  try {
+    let html = fs.readFileSync(indexPath, "utf8");
+
+    // Default metadata values
+    let title = "Aethra — Create. Inspire. Belong.";
+    let description = "Discover and share premium digital art, gifs, and stickers on Aethra.";
+    const hostUrl = `${req.protocol}://${req.get("host")}`;
+    let imageUrl = `${hostUrl}/uploads/default_og_image.png`;
+    let shareUrl = `${hostUrl}${req.originalUrl || req.url}`;
+
+    // Extract post ID if matching /posts/:id
+    const postMatch = req.path.match(/^\/posts\/([a-zA-Z0-9_-]+)/);
+    if (postMatch) {
+      const postId = postMatch[1];
+      let post = null;
+
+      // Try fetching from MongoDB if connected
+      if (mongoose.connection.readyState === 1) {
+        try {
+          const Post = require("./models/Post");
+          post = await Post.findById(postId).populate("creator", "username displayName avatar hasPremium");
+        } catch (dbErr) {
+          console.warn("MongoDB fetch failed for OG tags, using mock fallback:", dbErr.message);
+        }
+      }
+
+      // Fallback to mock posts
+      if (!post && global.mockPosts) {
+        post = global.mockPosts.find(p => p._id === postId || p.id === postId);
+      }
+
+      if (post) {
+        title = `${post.title} by ${post.creator?.displayName || post.creator?.username || 'Creator'} | Aethra`;
+        description = post.description || `Check out this amazing ${post.contentType || 'creation'} on Aethra!`;
+
+        let contentUrl = post.content;
+        if (contentUrl && (contentUrl.startsWith("http://") || contentUrl.startsWith("https://"))) {
+          imageUrl = contentUrl;
+        } else if (contentUrl && contentUrl.startsWith("/uploads/")) {
+          imageUrl = `${hostUrl}${contentUrl}`;
+        } else if (contentUrl && contentUrl.startsWith("uploads/")) {
+          imageUrl = `${hostUrl}/${contentUrl}`;
+        } else {
+          // If emoji or custom local markup (like SVG data), use the default banner
+          imageUrl = `${hostUrl}/uploads/default_og_image.png`;
+        }
+        shareUrl = `${hostUrl}/posts/${postId}`;
+      }
+    }
+
+    // Simple escaper for HTML attributes
+    const esc = (str) => {
+      if (!str) return "";
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    };
+
+    // Construct meta tags string
+    const ogTags = `
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="${esc(shareUrl)}">
+    <meta property="og:title" content="${esc(title)}">
+    <meta property="og:description" content="${esc(description)}">
+    <meta property="og:image" content="${esc(imageUrl)}">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="${esc(shareUrl)}">
+    <meta name="twitter:title" content="${esc(title)}">
+    <meta name="twitter:description" content="${esc(description)}">
+    <meta name="twitter:image" content="${esc(imageUrl)}">
+    `;
+
+    // Inject meta tags inside head block
+    html = html.replace("<head>", `<head>${ogTags}`);
+
+    // Update title tag
+    html = html.replace(/<title>.*?<\/title>/i, `<title>${esc(title)}</title>`);
+
+    res.send(html);
+  } catch (err) {
+    console.error("SPA Fallback injection error:", err);
+    res.sendFile(indexPath);
+  }
 });
+
+// Serve actual static files (after routing fallback so clean paths match the fallback)
+app.use(express.static(path.join(__dirname, "../")));
 
 // Disable command buffering so database requests fail instantly when offline
 mongoose.set("bufferCommands", false);
