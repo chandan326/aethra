@@ -1668,6 +1668,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
 
       <label class="flabel" data-en="UPI ID (for receiving payments)" data-hi="UPI आईडी (भुगतान पाने के लिए)">UPI ID (for receiving payments)</label>
       <input class="finput" type="text" id="editUpiId" placeholder="e.g. username@okaxis">
+      <div style="font-size: 10px; color: var(--text3); margin-top: -6px; margin-bottom: 10px;" data-en="💡 Your QR code will be automatically generated from your UPI ID." data-hi="💡 आपकी UPI आईडी से आपका क्यूआर कोड स्वचालित रूप से बन जाएगा।">💡 Your QR code will be automatically generated from your UPI ID.</div>
 
       <label class="flabel" data-en="Bio" data-hi="बायो">Bio</label>
       <textarea class="ftextarea" id="editBio" placeholder="Tell us about yourself..." style="height: 100px;"></textarea>
@@ -3130,7 +3131,15 @@ function showUpiQrModal(payeeName, payeeUpi, amount, purposeText = "Payment", pa
   const customQr = document.getElementById("upiCustomQr");
   const customQrImg = document.getElementById("upiCustomQrImg");
 
-  if (payeeQrCode) {
+  const isValidUpi = payeeUpi && payeeUpi.includes("@");
+
+  if (isValidUpi) {
+    const upiUri = `upi://pay?pa=${encodeURIComponent(payeeUpi)}&pn=${encodeURIComponent(payeeName)}&am=${encodeURIComponent(amount)}&tn=${encodeURIComponent(purposeText)}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiUri)}`;
+    customQrImg.src = qrUrl;
+    customQr.style.display = "block";
+    defaultQr.style.display = "none";
+  } else if (payeeQrCode) {
     customQrImg.src = payeeQrCode;
     customQr.style.display = "block";
     defaultQr.style.display = "none";
