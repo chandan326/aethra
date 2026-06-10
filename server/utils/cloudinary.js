@@ -1,7 +1,14 @@
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 
-const isConfigured = !!(
+const hasUrl = !!(
+  process.env.CLOUDINARY_URL &&
+  process.env.CLOUDINARY_URL.startsWith("cloudinary://") &&
+  !process.env.CLOUDINARY_URL.includes("**********") &&
+  !process.env.CLOUDINARY_URL.includes("your_")
+);
+
+const hasKeys = !!(
   process.env.CLOUDINARY_CLOUD_NAME &&
   process.env.CLOUDINARY_API_KEY &&
   process.env.CLOUDINARY_API_SECRET &&
@@ -10,12 +17,16 @@ const isConfigured = !!(
   process.env.CLOUDINARY_API_SECRET !== "your_api_secret"
 );
 
+const isConfigured = hasUrl || hasKeys;
+
 if (isConfigured) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-  });
+  if (hasKeys && !hasUrl) {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET
+    });
+  }
   console.log("☁️ Cloudinary storage configured successfully.");
 } else {
   console.warn("⚠️ Cloudinary credentials missing. Operating in local fallback mode.");
