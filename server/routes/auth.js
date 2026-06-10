@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
+const { uploadToCloudinary } = require("../utils/cloudinary");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
@@ -291,17 +292,24 @@ router.post("/profile", auth, uploadSingleQr, async (req, res) => {
   if (req.file) {
     try {
       const filePath = req.file.path;
-      const fileBuffer = fs.readFileSync(filePath);
-      const mimeType = req.file.mimetype || "image/png";
-      const base64Data = fileBuffer.toString("base64");
-      qrCodeImage = `data:${mimeType};base64,${base64Data}`;
-      
-      // Delete temporary file to save space
-      fs.unlink(filePath, (err) => {
-        if (err) console.error("Error deleting temp file:", err);
-      });
+      // Try Cloudinary upload
+      const cloudResult = await uploadToCloudinary(filePath, "aethra_qrs");
+      if (cloudResult.success) {
+        qrCodeImage = cloudResult.url;
+      } else {
+        // Fallback to local base64 storage
+        const fileBuffer = fs.readFileSync(filePath);
+        const mimeType = req.file.mimetype || "image/png";
+        const base64Data = fileBuffer.toString("base64");
+        qrCodeImage = `data:${mimeType};base64,${base64Data}`;
+        
+        // Delete temporary file to save space
+        fs.unlink(filePath, (err) => {
+          if (err) console.error("Error deleting temp file:", err);
+        });
+      }
     } catch (err) {
-      console.error("Error converting QR file to base64:", err);
+      console.error("Error handling QR file upload:", err);
       qrCodeImage = `/uploads/${req.file.filename}`;
     }
   }

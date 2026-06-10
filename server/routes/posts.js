@@ -6,6 +6,7 @@ const fs = require("fs");
 const Post = require("../models/Post");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
+const { uploadToCloudinary } = require("../utils/cloudinary");
 
 const lockPaidSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230b0f19"/><g transform="translate(30,25)" stroke="%23ef4444" stroke-width="6" fill="none"><rect x="0" y="20" width="40" height="30" rx="5" fill="%231e1e2d"/><path d="M10,20 V10 A10,10 0 0,1 30,10 V20"/></g><text x="50" y="80" fill="%23ef4444" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">PAID ART</text></svg>';
 const lockFollowersSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230b0f19"/><g transform="translate(30,25)" stroke="%2306b6d4" stroke-width="6" fill="none"><rect x="0" y="20" width="40" height="30" rx="5" fill="%2313252f"/><path d="M10,20 V10 A10,10 0 0,1 30,10 V20"/></g><text x="50" y="80" fill="%2306b6d4" font-family="sans-serif" font-size="8" font-weight="bold" text-anchor="middle">FOLLOWERS ONLY</text></svg>';
@@ -88,17 +89,24 @@ router.post("/", auth, uploadSinglePostMedia, async (req, res) => {
   if (req.file) {
     try {
       const filePath = req.file.path;
-      const fileBuffer = fs.readFileSync(filePath);
-      const mimeType = req.file.mimetype || "image/png";
-      const base64Data = fileBuffer.toString("base64");
-      contentValue = `data:${mimeType};base64,${base64Data}`;
-      
-      // Delete temporary file to save space
-      fs.unlink(filePath, (err) => {
-        if (err) console.error("Error deleting temp file:", err);
-      });
+      // Try Cloudinary upload
+      const cloudResult = await uploadToCloudinary(filePath, "aethra_posts");
+      if (cloudResult.success) {
+        contentValue = cloudResult.url;
+      } else {
+        // Fallback to local base64 storage
+        const fileBuffer = fs.readFileSync(filePath);
+        const mimeType = req.file.mimetype || "image/png";
+        const base64Data = fileBuffer.toString("base64");
+        contentValue = `data:${mimeType};base64,${base64Data}`;
+        
+        // Delete temporary file to save space
+        fs.unlink(filePath, (err) => {
+          if (err) console.error("Error deleting temp file:", err);
+        });
+      }
     } catch (err) {
-      console.error("Error converting file to base64:", err);
+      console.error("Error handling file upload:", err);
       contentValue = `/uploads/${req.file.filename}`;
     }
   }
