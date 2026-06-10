@@ -2186,7 +2186,7 @@ function escapeHtml(text) {
 }
 
 function renderContent(content) {
-  if (content && (content.startsWith("/uploads/") || content.startsWith("data:"))) {
+  if (content && (content.startsWith("/uploads/") || content.startsWith("data:") || content.startsWith("http://") || content.startsWith("https://"))) {
     return `<img src="${escapeHtml(content)}" style="width:100%;height:100%;object-fit:cover;" alt="Content">`;
   }
   return escapeHtml(content) || "🎨";

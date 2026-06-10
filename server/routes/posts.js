@@ -12,19 +12,71 @@ const lockPaidSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/
 const lockFollowersSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230b0f19"/><g transform="translate(30,25)" stroke="%2306b6d4" stroke-width="6" fill="none"><rect x="0" y="20" width="40" height="30" rx="5" fill="%2313252f"/><path d="M10,20 V10 A10,10 0 0,1 30,10 V20"/></g><text x="50" y="80" fill="%2306b6d4" font-family="sans-serif" font-size="8" font-weight="bold" text-anchor="middle">FOLLOWERS ONLY</text></svg>';
 const lockPrivateSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230b0f19"/><g transform="translate(30,25)" stroke="%236b7280" stroke-width="6" fill="none"><rect x="0" y="20" width="40" height="30" rx="5" fill="%231f2937"/><path d="M10,20 V10 A10,10 0 0,1 30,10 V20"/></g><text x="50" y="80" fill="%239ca3af" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">PRIVATE</text></svg>';
 
-if (!global.mockPosts) {
-  global.mockPosts = [
-    { _id: "p1", title: "Cosmic Dreamscape", content: lockPaidSvg, securedContent: "🌌", contentType: "AI", pricing: "paid", price: 99, creator: { _id: "u1", id: "u1", username: "artby_meera", displayName: "Meera Art", avatar: "🎨", verified: true, hasPremium: true }, likes: ["u1"], commentsCount: 89 },
-    { _id: "p2", title: "Neon Dragon", content: "🐉", securedContent: "🐉", contentType: "AI", pricing: "free", creator: { _id: "u2", id: "u2", username: "vfx_ravi", displayName: "VFX Ravi", avatar: "🔮", verified: false }, likes: [], commentsCount: 67 },
-    { _id: "p3", title: "Sakura Rain", content: "🌸", securedContent: "🌸", contentType: "AI", pricing: "free", creator: { _id: "u3", id: "u3", username: "pixel_priya", displayName: "Pixel Priya", avatar: "🌸", verified: true }, likes: [], commentsCount: 124 },
-    { _id: "p4", title: "Cyber Samurai", content: lockPaidSvg, securedContent: "🤖", contentType: "AI", pricing: "paid", price: 149, creator: { _id: "u4", id: "u4", username: "cyberpunk_dev", displayName: "Neon Dev", avatar: "⚡", verified: true }, likes: [], commentsCount: 203 },
-    { _id: "p5", title: "Galaxy Spin", content: "💫", securedContent: "💫", contentType: "GIF", pricing: "free", creator: { _id: "u5", id: "u5", username: "space_gifs", displayName: "Space Gifs", avatar: "💫", verified: false }, likes: [], commentsCount: 234 },
-    { _id: "p6", title: "Fire Dance", content: "🔥", securedContent: "🔥", contentType: "GIF", pricing: "free", creator: { _id: "u6", id: "u6", username: "pyro_art", displayName: "Pyro Art", avatar: "🔥", verified: false }, likes: [], commentsCount: 98 },
-    { _id: "p7", title: "Cool Cat Pack", content: "😎", securedContent: "😎", contentType: "STICKER", pricing: "free", creator: { _id: "u7", id: "u7", username: "catlife", displayName: "Cat Life", avatar: "😺", verified: true }, likes: [], commentsCount: 567 },
-    { _id: "p8", title: "Love Hearts", content: "🥰", securedContent: "🥰", contentType: "STICKER", pricing: "free", creator: { _id: "u8", id: "u8", username: "lovedesign", displayName: "Love Design", avatar: "🥰", verified: false }, likes: [], commentsCount: 423 },
-    { _id: "p9", title: "Midnight Vibes", content: lockPaidSvg, securedContent: "🌙", contentType: "STICKER", pricing: "paid", price: 29, creator: { _id: "u1", id: "u1", username: "artby_meera", displayName: "Meera Art", avatar: "🎨", verified: true, hasPremium: true }, likes: [], commentsCount: 298 }
-  ];
+const mockPostsPath = path.join(__dirname, "../mockPosts.json");
+const mockCommentsPath = path.join(__dirname, "../mockComments.json");
+
+function saveMockPosts() {
+  try {
+    fs.writeFileSync(mockPostsPath, JSON.stringify(global.mockPosts, null, 2), "utf8");
+  } catch (err) {
+    console.error("Failed to save mockPosts to cache:", err);
+  }
 }
+
+global.saveMockPosts = saveMockPosts;
+
+function saveMockComments() {
+  try {
+    fs.writeFileSync(mockCommentsPath, JSON.stringify(global.mockComments, null, 2), "utf8");
+  } catch (err) {
+    console.error("Failed to save mockComments to cache:", err);
+  }
+}
+
+global.saveMockComments = saveMockComments;
+
+if (!global.mockPosts) {
+  if (fs.existsSync(mockPostsPath)) {
+    try {
+      global.mockPosts = JSON.parse(fs.readFileSync(mockPostsPath, "utf8"));
+    } catch (err) {
+      console.error("Failed to load mockPosts from cache:", err);
+    }
+  }
+  if (!global.mockPosts) {
+    global.mockPosts = [
+      { _id: "p1", title: "Cosmic Dreamscape", content: lockPaidSvg, securedContent: "🌌", contentType: "AI", pricing: "paid", price: 99, creator: { _id: "u1", id: "u1", username: "artby_meera", displayName: "Meera Art", avatar: "🎨", verified: true, hasPremium: true }, likes: ["u1"], commentsCount: 89 },
+      { _id: "p2", title: "Neon Dragon", content: "🐉", securedContent: "🐉", contentType: "AI", pricing: "free", creator: { _id: "u2", id: "u2", username: "vfx_ravi", displayName: "VFX Ravi", avatar: "🔮", verified: false }, likes: [], commentsCount: 67 },
+      { _id: "p3", title: "Sakura Rain", content: "🌸", securedContent: "🌸", contentType: "AI", pricing: "free", creator: { _id: "u3", id: "u3", username: "pixel_priya", displayName: "Pixel Priya", avatar: "🌸", verified: true }, likes: [], commentsCount: 124 },
+      { _id: "p4", title: "Cyber Samurai", content: lockPaidSvg, securedContent: "🤖", contentType: "AI", pricing: "paid", price: 149, creator: { _id: "u4", id: "u4", username: "cyberpunk_dev", displayName: "Neon Dev", avatar: "⚡", verified: true }, likes: [], commentsCount: 203 },
+      { _id: "p5", title: "Galaxy Spin", content: "💫", securedContent: "💫", contentType: "GIF", pricing: "free", creator: { _id: "u5", id: "u5", username: "space_gifs", displayName: "Space Gifs", avatar: "💫", verified: false }, likes: [], commentsCount: 234 },
+      { _id: "p6", title: "Fire Dance", content: "🔥", securedContent: "🔥", contentType: "GIF", pricing: "free", creator: { _id: "u6", id: "u6", username: "pyro_art", displayName: "Pyro Art", avatar: "🔥", verified: false }, likes: [], commentsCount: 98 },
+      { _id: "p7", title: "Cool Cat Pack", content: "😎", securedContent: "😎", contentType: "STICKER", pricing: "free", creator: { _id: "u7", id: "u7", username: "catlife", displayName: "Cat Life", avatar: "😺", verified: true }, likes: [], commentsCount: 567 },
+      { _id: "p8", title: "Love Hearts", content: "🥰", securedContent: "🥰", contentType: "STICKER", pricing: "free", creator: { _id: "u8", id: "u8", username: "lovedesign", displayName: "Love Design", avatar: "🥰", verified: false }, likes: [], commentsCount: 423 },
+      { _id: "p9", title: "Midnight Vibes", content: lockPaidSvg, securedContent: "🌙", contentType: "STICKER", pricing: "paid", price: 29, creator: { _id: "u1", id: "u1", username: "artby_meera", displayName: "Meera Art", avatar: "🎨", verified: true, hasPremium: true }, likes: [], commentsCount: 298 }
+    ];
+    saveMockPosts();
+  }
+}
+
+if (!global.mockComments) {
+  if (fs.existsSync(mockCommentsPath)) {
+    try {
+      global.mockComments = JSON.parse(fs.readFileSync(mockCommentsPath, "utf8"));
+    } catch (err) {
+      console.error("Failed to load mockComments from cache:", err);
+    }
+  }
+  if (!global.mockComments) {
+    global.mockComments = [
+      { _id: "c1", post: "p1", user: { username: "vfx_ravi", displayName: "Ravi VFX", avatar: "🔮" }, text: "Wow, this looks absolutely beautiful! The lighting is amazing.", createdAt: new Date(Date.now() - 3600000) },
+      { _id: "c2", post: "p1", user: { username: "pixel_priya", displayName: "Priya Pixel", avatar: "🌸", hasPremium: true }, text: "Indeed, Meera's artwork is always top notch! 🔥", createdAt: new Date(Date.now() - 1800000) },
+      { _id: "c3", post: "p2", user: { username: "artby_meera", displayName: "Meera Art", avatar: "🎨", hasPremium: true }, text: "Love the neon dragon! Great color palette.", createdAt: new Date(Date.now() - 7200000) }
+    ];
+    saveMockComments();
+  }
+}
+
 const mockPosts = global.mockPosts;
 
 // Ensure upload directory exists
@@ -140,6 +192,7 @@ router.post("/", auth, uploadSinglePostMedia, async (req, res) => {
       createdAt: new Date()
     };
     mockPosts.unshift(newMock);
+    saveMockPosts();
     return res.status(201).json(newMock);
   }
 
@@ -346,6 +399,7 @@ router.post("/:id/purchase", auth, async (req, res) => {
       }
     }
 
+    if (global.saveMockUsers) global.saveMockUsers();
     return res.json({ message: "Post purchased successfully! (Offline Preview Mode)" });
   }
 
@@ -449,7 +503,7 @@ router.post("/:id/like", auth, async (req, res) => {
     } else {
       post.likes.splice(index, 1);
     }
-    
+    saveMockPosts();
     return res.json({ likesCount: post.likes.length, isLiked: post.likes.includes(myId) });
   }
 
@@ -553,6 +607,8 @@ router.post("/:id/comments", auth, async (req, res) => {
     // Increment commentsCount on mock post
     post.commentsCount = (post.commentsCount || 0) + 1;
 
+    saveMockComments();
+    saveMockPosts();
     return res.status(201).json(newComment);
   }
 

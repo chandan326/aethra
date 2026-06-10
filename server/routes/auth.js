@@ -10,37 +10,65 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-const mockUsersDb = {
-  "mock_user_id": {
-    _id: "mock_user_id",
-    id: "mock_user_id",
-    username: "preview_user",
-    displayName: "Preview User",
-    avatar: "PR",
-    bio: "Offline Preview User - changes are not saved.",
-    location: "India 🇮🇳",
-    upiId: "preview@okaxis",
-    followers: [],
-    following: ["u1"],
-    verified: true,
-    earnings: 24000,
-    hasPremium: false,
-    subscriptionPlan: ""
-  },
-  "u1": { id: "u1", _id: "u1", username: "artby_meera", displayName: "Meera Art", avatar: "🎨", bio: "AI Artist & designer.", location: "India 🇮🇳", verified: true, upiId: "meera@okaxis", hasPremium: true, followers: ["mock_user_id"], following: [] },
-  "u2": { id: "u2", _id: "u2", username: "vfx_ravi", displayName: "VFX Ravi", avatar: "🔮", bio: "GIF Creator & animator.", location: "India 🇮🇳", verified: false, upiId: "ravi@okaxis", followers: [], following: [] },
-  "u3": { id: "u3", _id: "u3", username: "pixel_priya", displayName: "Pixel Priya", avatar: "🌸", bio: "Kawaii Creator.", location: "India 🇮🇳", verified: true, upiId: "priya@okaxis", followers: [], following: [] },
-  "u4": { id: "u4", _id: "u4", username: "cyberpunk_dev", displayName: "Neon Dev", avatar: "⚡", bio: "Cyberpunk artist.", location: "India 🇮🇳", verified: true, upiId: "cyberpunk@okaxis", followers: [], following: [] },
-  "u5": { id: "u5", _id: "u5", username: "space_gifs", displayName: "Space Gifs", avatar: "💫", bio: "Astronomy visuals.", location: "India 🇮🇳", verified: false, upiId: "space@okaxis", followers: [], following: [] },
-  "u6": { id: "u6", _id: "u6", username: "pyro_art", displayName: "Pyro Art", avatar: "🔥", bio: "Vibrant fire graphics.", location: "India 🇮🇳", verified: false, upiId: "pyro@okaxis", followers: [], following: [] },
-  "u7": { id: "u7", _id: "u7", username: "catlife", displayName: "Cat Life", avatar: "😺", bio: "Sticker Designer.", location: "India 🇮🇳", verified: true, upiId: "catlife@okaxis", followers: [], following: [] },
-  "u8": { id: "u8", _id: "u8", username: "lovedesign", displayName: "Love Design", avatar: "🥰", bio: "Heart stickers & custom work.", location: "India 🇮🇳", verified: false, upiId: "love@okaxis", followers: [], following: [] },
-  "u9": { id: "u9", _id: "u9", username: "space_vfx", displayName: "SpaceVFX", avatar: "🌌", bio: "GIF Creator & animator.", location: "India 🇮🇳", verified: true, upiId: "space@okaxis", hasPremium: true, followers: [], following: [] },
-  "u10": { id: "u10", _id: "u10", username: "mythcraft_rohit", displayName: "MythCraft", avatar: "🐉", bio: "Fantasy Art.", location: "India 🇮🇳", verified: true, upiId: "rohit@okaxis", followers: [], following: [] },
-  "u11": { id: "u11", _id: "u11", username: "cyberpunk_dev", displayName: "Neon Dev", avatar: "⚡", bio: "Cyberpunk art.", location: "India 🇮🇳", verified: true, upiId: "neon@okaxis", followers: [], following: [] },
-  "u12": { id: "u12", _id: "u12", username: "lens_lens", displayName: "Lens & Shutter", avatar: "📸", bio: "Landscape & street photography.", location: "India 🇮🇳", verified: true, upiId: "lens@okaxis", followers: [], following: [] },
-  "u13": { id: "u13", _id: "u13", username: "synth_3d", displayName: "AI Avanti", avatar: "🤖", bio: "Illustrator and 3D visual artist.", location: "India 🇮🇳", verified: true, upiId: "avanti@okaxis", hasPremium: true, followers: [], following: [] }
-};
+const mockUsersDbPath = path.join(__dirname, "../mockUsersDb.json");
+
+function saveMockUsers() {
+  try {
+    fs.writeFileSync(mockUsersDbPath, JSON.stringify(global.mockUsersDb, null, 2), "utf8");
+  } catch (err) {
+    console.error("Failed to save mockUsersDb to cache:", err);
+  }
+}
+
+global.saveMockUsers = saveMockUsers;
+
+let mockUsersDb = {};
+if (fs.existsSync(mockUsersDbPath)) {
+  try {
+    mockUsersDb = JSON.parse(fs.readFileSync(mockUsersDbPath, "utf8"));
+  } catch (err) {
+    console.error("Failed to load mockUsersDb from cache:", err);
+  }
+}
+
+if (Object.keys(mockUsersDb).length === 0) {
+  mockUsersDb = {
+    "mock_user_id": {
+      _id: "mock_user_id",
+      id: "mock_user_id",
+      username: "preview_user",
+      displayName: "Preview User",
+      avatar: "PR",
+      bio: "Offline Preview User - changes are not saved.",
+      location: "India 🇮🇳",
+      upiId: "preview@okaxis",
+      followers: [],
+      following: ["u1"],
+      verified: true,
+      earnings: 24000,
+      hasPremium: false,
+      subscriptionPlan: ""
+    },
+    "u1": { id: "u1", _id: "u1", username: "artby_meera", displayName: "Meera Art", avatar: "🎨", bio: "AI Artist & designer.", location: "India 🇮🇳", verified: true, upiId: "meera@okaxis", hasPremium: true, followers: ["mock_user_id"], following: [] },
+    "u2": { id: "u2", _id: "u2", username: "vfx_ravi", displayName: "VFX Ravi", avatar: "🔮", bio: "GIF Creator & animator.", location: "India 🇮🇳", verified: false, upiId: "ravi@okaxis", followers: [], following: [] },
+    "u3": { id: "u3", _id: "u3", username: "pixel_priya", displayName: "Pixel Priya", avatar: "🌸", bio: "Kawaii Creator.", location: "India 🇮🇳", verified: true, upiId: "priya@okaxis", followers: [], following: [] },
+    "u4": { id: "u4", _id: "u4", username: "cyberpunk_dev", displayName: "Neon Dev", avatar: "⚡", bio: "Cyberpunk artist.", location: "India 🇮🇳", verified: true, upiId: "cyberpunk@okaxis", followers: [], following: [] },
+    "u5": { id: "u5", _id: "u5", username: "space_gifs", displayName: "Space Gifs", avatar: "💫", bio: "Astronomy visuals.", location: "India 🇮🇳", verified: false, upiId: "space@okaxis", followers: [], following: [] },
+    "u6": { id: "u6", _id: "u6", username: "pyro_art", displayName: "Pyro Art", avatar: "🔥", bio: "Vibrant fire graphics.", location: "India 🇮🇳", verified: false, upiId: "pyro@okaxis", followers: [], following: [] },
+    "u7": { id: "u7", _id: "u7", username: "catlife", displayName: "Cat Life", avatar: "😺", bio: "Sticker Designer.", location: "India 🇮🇳", verified: true, upiId: "catlife@okaxis", followers: [], following: [] },
+    "u8": { id: "u8", _id: "u8", username: "lovedesign", displayName: "Love Design", avatar: "🥰", bio: "Heart stickers & custom work.", location: "India 🇮🇳", verified: false, upiId: "love@okaxis", followers: [], following: [] },
+    "u9": { id: "u9", _id: "u9", username: "space_vfx", displayName: "SpaceVFX", avatar: "🌌", bio: "GIF Creator & animator.", location: "India 🇮🇳", verified: true, upiId: "space@okaxis", hasPremium: true, followers: [], following: [] },
+    "u10": { id: "u10", _id: "u10", username: "mythcraft_rohit", displayName: "MythCraft", avatar: "🐉", bio: "Fantasy Art.", location: "India 🇮🇳", verified: true, upiId: "rohit@okaxis", followers: [], following: [] },
+    "u11": { id: "u11", _id: "u11", username: "cyberpunk_dev", displayName: "Neon Dev", avatar: "⚡", bio: "Cyberpunk art.", location: "India 🇮🇳", verified: true, upiId: "neon@okaxis", followers: [], following: [] },
+    "u12": { id: "u12", _id: "u12", username: "lens_lens", displayName: "Lens & Shutter", avatar: "📸", bio: "Landscape & street photography.", location: "India 🇮🇳", verified: true, upiId: "lens@okaxis", followers: [], following: [] },
+    "u13": { id: "u13", _id: "u13", username: "synth_3d", displayName: "AI Avanti", avatar: "🤖", bio: "Illustrator and 3D visual artist.", location: "India 🇮🇳", verified: true, upiId: "avanti@okaxis", hasPremium: true, followers: [], following: [] }
+  };
+  try {
+    fs.writeFileSync(mockUsersDbPath, JSON.stringify(mockUsersDb, null, 2), "utf8");
+  } catch (err) {
+    console.error("Failed to initialize mockUsersDb cache:", err);
+  }
+}
 
 global.mockUsersDb = mockUsersDb;
 for (const userId in mockUsersDb) {
@@ -125,6 +153,7 @@ router.post("/register", async (req, res) => {
       subscriptionPlan: ""
     };
     const token = jwt.sign({ id: newId, username }, JWT_SECRET, { expiresIn: "7d" });
+    saveMockUsers();
     return res.status(201).json({ token, user: mockUsersDb[newId] });
   }
 
@@ -185,8 +214,10 @@ router.post("/login", async (req, res) => {
         subscriptionPlan: ""
       };
       foundUser = mockUsersDb[newId];
+      saveMockUsers();
     }
     const token = jwt.sign({ id: foundUser.id, username: foundUser.username }, JWT_SECRET, { expiresIn: "7d" });
+    saveMockUsers();
     return res.json({ token, user: foundUser });
   }
 
@@ -230,6 +261,7 @@ router.get("/me", auth, async (req, res) => {
         subscriptionPlan: ""
       };
       u = mockUsersDb[userId];
+      saveMockUsers();
     }
     return res.json(u);
   }
@@ -345,6 +377,7 @@ router.post("/profile", auth, uploadSingleQr, async (req, res) => {
     } else if (qrCodeImage !== undefined) {
       u.qrCodeImage = qrCodeImage;
     }
+    saveMockUsers();
     return res.json({
       message: "Profile updated successfully (Offline Preview Mode)",
       user: u
@@ -409,6 +442,7 @@ router.post("/subscribe", auth, async (req, res) => {
     u.hasPremium = true;
     u.subscriptionPlan = planName || "2 Months Boost";
     u.subscriptionExpiresAt = expiresAt;
+    saveMockUsers();
     return res.json({
       message: "Subscription activated successfully! (Offline Preview Mode)",
       user: u
@@ -495,6 +529,7 @@ router.post("/follow/:id", auth, async (req, res) => {
       creator.followers.push(me._id);
     }
     
+    saveMockUsers();
     return res.json({ 
       message: isFollowing ? "Unfollowed successfully! (Offline Preview Mode)" : "Followed successfully! (Offline Preview Mode)",
       isFollowing: !isFollowing,
