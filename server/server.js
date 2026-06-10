@@ -1,4 +1,8 @@
 require("dotenv").config();
+const dns = require("dns");
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder("ipv4first");
+}
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -98,7 +102,7 @@ app.use(async (req, res, next) => {
 async function startServer(uri) {
   try {
     if (mongoose.connection.readyState !== 1) {
-      await mongoose.connect(uri, { serverSelectionTimeoutMS: 2000 });
+      await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000 });
       console.log("✅ Connected to MongoDB");
       await seedDatabase();
     }
