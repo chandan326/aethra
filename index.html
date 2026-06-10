@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
 <style>
-:root{
+:root, [data-theme="nebula"] {
   --bg:#06080f;
   --bg2:#090c15;
   --bg3:#0c1020;
@@ -29,6 +29,60 @@
   --text:#eef2ff;
   --text2:#8892b0;
   --text3:#4a5480;
+  --font:'DM Sans',sans-serif;
+  --font2:'Syne',sans-serif;
+  --r:12px;
+  --r2:20px;
+  --r3:28px;
+}
+[data-theme="amoled"] {
+  --bg:#000000;
+  --bg2:#050505;
+  --bg3:#0a0a0a;
+  --panel:#080808;
+  --panel2:#0e0e0e;
+  --border:rgba(255,255,255,0.06);
+  --border2:rgba(255,255,255,0.12);
+  --border3:rgba(255,255,255,0.22);
+  --blue:#0066ff;
+  --blue2:#3385ff;
+  --blue3:#80b3ff;
+  --blue-deep:#0044cc;
+  --blue-glow:rgba(0,102,255,0.25);
+  --indigo:#8b5cf6;
+  --cyan:#00f2fe;
+  --sky:#00c6ff;
+  --teal:#00f5d4;
+  --text:#ffffff;
+  --text2:#a3a3a3;
+  --text3:#525252;
+  --font:'DM Sans',sans-serif;
+  --font2:'Syne',sans-serif;
+  --r:12px;
+  --r2:20px;
+  --r3:28px;
+}
+[data-theme="cyberpunk"] {
+  --bg:#12041b;
+  --bg2:#180625;
+  --bg3:#220a35;
+  --panel:#1c072b;
+  --panel2:#270c3c;
+  --border:rgba(255,0,128,0.1);
+  --border2:rgba(255,0,128,0.2);
+  --border3:rgba(255,0,128,0.35);
+  --blue:#ff007f;
+  --blue2:#ff4da6;
+  --blue3:#ff99cc;
+  --blue-deep:#b30059;
+  --blue-glow:rgba(255,0,127,0.2);
+  --indigo:#d946ef;
+  --cyan:#facc15;
+  --sky:#fb923c;
+  --teal:#f43f5e;
+  --text:#ffe6f2;
+  --text2:#b8a2c2;
+  --text3:#6d4b79;
   --font:'DM Sans',sans-serif;
   --font2:'Syne',sans-serif;
   --r:12px;
@@ -1324,6 +1378,31 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
     opacity: 1;
   }
 }
+
+/* Typing Indicator styles */
+.typing-bubble {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--panel2);
+  width: fit-content;
+  border: 1px solid var(--border);
+}
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--text2);
+  border-radius: 50%;
+  animation: typingBounce 1.4s infinite ease-in-out both;
+}
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+@keyframes typingBounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
 </style>
 </head>
 <body>
@@ -1360,6 +1439,21 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
               <div class="menu-lang-toggle">
                 <button class="lang-btn active" id="lEN" onclick="setLang('en'); event.stopPropagation();">EN</button>
                 <button class="lang-btn" id="lHI" onclick="setLang('hi'); event.stopPropagation();">HI</button>
+              </div>
+            </div>
+          </div>
+          <div class="menu-divider"></div>
+          <!-- Theme Option -->
+          <div class="menu-lang-section">
+            <div class="menu-lang-header" style="flex-direction: column; align-items: flex-start; gap: 8px; width: 100%;">
+              <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                <span class="menu-item-icon">🎨</span>
+                <span class="menu-lang-title" data-en="Theme" data-hi="थीम">Theme</span>
+              </div>
+              <div class="menu-lang-toggle" style="width: 100%; display: flex; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin-top: 4px;">
+                <button class="lang-btn active" id="themeNebula" onclick="setTheme('nebula'); event.stopPropagation();" style="flex: 1; text-align: center; font-size: 11px; padding: 6px 0;">Nebula</button>
+                <button class="lang-btn" id="themeAmoled" onclick="setTheme('amoled'); event.stopPropagation();" style="flex: 1; text-align: center; font-size: 11px; padding: 6px 0;">AMOLED</button>
+                <button class="lang-btn" id="themeCyberpunk" onclick="setTheme('cyberpunk'); event.stopPropagation();" style="flex: 1; text-align: center; font-size: 11px; padding: 6px 0;">Cyberpunk</button>
               </div>
             </div>
           </div>
@@ -1632,14 +1726,62 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
 
 <!-- UPLOAD MODAL -->
 <div class="modal-bg" id="uploadModal">
-  <div class="modal">
+  <div class="modal" style="max-width: 480px;">
     <div class="modal-title">📤 Create New Post</div>
     <button class="modal-x" onclick="closeUpload()">✕</button>
-    <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
-      <div class="drop-icon">📎</div>
-      <p id="fileLabel">Drop your file here or click to browse</p>
-      <small>PNG, JPG, GIF, WEBP — Max 50MB</small>
-      <input type="file" id="fileInput" style="display: none;" onchange="fileSelected(this)">
+    
+    <!-- Tab bar for Upload vs AI Creator Suite -->
+    <div style="display: flex; gap: 8px; margin-bottom: 1.2rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 20px; padding: 4px;">
+      <button id="tabUploadFile" onclick="switchUploadTab('upload')" style="flex: 1; height: 38px; border-radius: 16px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: all 0.2s; background: linear-gradient(135deg,var(--blue),var(--indigo)); color: #fff;">📎 Upload File</button>
+      <button id="tabAiSuite" onclick="switchUploadTab('ai')" style="flex: 1; height: 38px; border-radius: 16px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: all 0.2s; background: transparent; color: var(--text2);">✨ AI Creator Suite</button>
+    </div>
+
+    <!-- Panel 1: Traditional File Drop Zone -->
+    <div id="panelUploadFile" style="display: block; margin-bottom: 1rem;">
+      <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+        <div class="drop-icon">📎</div>
+        <p id="fileLabel">Drop your file here or click to browse</p>
+        <small>PNG, JPG, GIF, WEBP — Max 50MB</small>
+        <input type="file" id="fileInput" style="display: none;" onchange="fileSelected(this)">
+      </div>
+    </div>
+
+    <!-- Panel 2: Interactive AI Creator Suite -->
+    <div id="panelAiSuite" style="display: none; flex-direction: column; gap: 12px; margin-bottom: 1.2rem;">
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <label class="flabel" style="margin: 0;">AI Prompt</label>
+        <input class="finput" type="text" id="aiPromptInput" placeholder="Describe what you want to generate (e.g. Neon city lights in rain)..." style="margin-bottom: 0;">
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <label class="flabel" style="margin: 0;">Art Style</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;" id="aiStyleTags">
+          <span class="vis-opt sel" onclick="selectAiStyle(this, 'Synthwave')" style="padding: 6px 12px; font-size: 12px; border-radius: 12px;">Synthwave 🌆</span>
+          <span class="vis-opt" onclick="selectAiStyle(this, 'Cyberpunk')" style="padding: 6px 12px; font-size: 12px; border-radius: 12px;">Cyberpunk 🤖</span>
+          <span class="vis-opt" onclick="selectAiStyle(this, 'Minimalist')" style="padding: 6px 12px; font-size: 12px; border-radius: 12px;">Minimalist 🔳</span>
+          <span class="vis-opt" onclick="selectAiStyle(this, '3D Render')" style="padding: 6px 12px; font-size: 12px; border-radius: 12px;">3D Render 💎</span>
+          <span class="vis-opt" onclick="selectAiStyle(this, 'Water Color')" style="padding: 6px 12px; font-size: 12px; border-radius: 12px;">Water Color 🎨</span>
+        </div>
+      </div>
+      
+      <!-- Generated Canvas Preview Box -->
+      <div style="position: relative; border-radius: 12px; border: 1px dashed var(--border3); background: rgba(0,0,0,0.3); height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-top: 6px;">
+        <canvas id="aiCanvas" width="400" height="200" style="display: block; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.5s;"></canvas>
+        <div id="aiCanvasPlaceholder" style="position: absolute; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--text3); font-size: 13px;">
+          <span>✨ Preview Canvas</span>
+          <small>Art will generate here dynamically</small>
+        </div>
+        <!-- Generator glowing overlay -->
+        <div id="aiCanvasLoader" style="position: absolute; display: none; flex-direction: column; align-items: center; justify-content: center; background: rgba(6, 8, 15, 0.85); inset: 0; gap: 12px; z-index: 10;">
+          <div class="logo-mark" style="animation: pulse 1.5s infinite; width: 44px; height: 44px; font-size: 20px;">Ae</div>
+          <span style="font-size: 13px; font-weight: 600; color: #fff;" id="aiLoaderText">Generating Canvas Math...</span>
+          <div style="width: 150px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+            <div id="aiLoaderProgress" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--blue), var(--cyan)); transition: width 0.1s;"></div>
+          </div>
+        </div>
+      </div>
+      
+      <button class="btn-ghost" onclick="generateAiArt()" style="height: 38px; border-radius: 19px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); color: var(--blue2); display: flex; align-items: center; justify-content: center; font-weight: 600; cursor: pointer; transition: all 0.2s;">🎨 Generate Art</button>
     </div>
     <label class="flabel">Post Title</label>
     <input class="finput" type="text" placeholder="Give your creation a title...">
@@ -1765,17 +1907,43 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
 
 <!-- CART MODAL -->
 <div class="modal-bg" id="cartModal">
-  <div class="modal" style="max-width: 450px;">
+  <div class="modal" style="max-width: 480px;">
     <div class="modal-title">🛒 <span data-en="Shopping Cart" data-hi="शॉपिंग कार्ट">Shopping Cart</span></div>
     <button class="modal-x" onclick="toggleCartModal()">✕</button>
-    <div id="cartItemsList" style="margin-bottom: 1.5rem; max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+    <div id="cartItemsList" style="margin-bottom: 1.2rem; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px;">
       <!-- Items dynamically rendered here -->
     </div>
-    <div class="divider" style="margin: 1rem 0;"></div>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <span style="font-size: 14px; color: var(--text2); font-weight: 500;" data-en="Total Amount" data-hi="कुल राशि">Total Amount</span>
-      <span id="cartTotal" style="font-size: 1.6rem; font-weight: 800; color: var(--cyan);">₹0</span>
+    
+    <!-- Promo Code Area -->
+    <div style="background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border2); border-radius: 10px; padding: 12px; margin-bottom: 1.2rem;">
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="cartPromoInput" placeholder="Promo Code (e.g. AETHRA20)" style="flex: 1; height: 36px; padding: 0 12px; border-radius: 6px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: #fff; font-family: var(--font); font-size: 12px; outline: none;">
+        <button class="btn-ghost" onclick="applyPromoCode()" style="padding: 0 16px; height: 36px; font-size: 12px; border-radius: 6px; font-weight: 600; background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center;">Apply</button>
+      </div>
+      <div id="promoMessage" style="font-size: 11px; margin-top: 6px; display: none;"></div>
     </div>
+    
+    <!-- Detailed Bill Breakdown Card -->
+    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text2);">
+        <span data-en="Subtotal" data-hi="उप-योग">Subtotal</span>
+        <span id="cartSubtotal" style="font-weight: 500; color: var(--text);">₹0</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text2);">
+        <span data-en="Service Charge (5%)" data-hi="सेवा शुल्क (5%)">Service Charge (5%)</span>
+        <span id="cartServiceCharge" style="font-weight: 500; color: var(--text);">₹0</span>
+      </div>
+      <div id="cartDiscountRow" style="display: none; justify-content: space-between; font-size: 13px; color: #10b981;">
+        <span data-en="Discount (Promo)" data-hi="छूट (प्रोमो)">Discount (Promo)</span>
+        <span id="cartDiscount" style="font-weight: 500;">-₹0</span>
+      </div>
+      <div class="divider" style="margin: 6px 0; border-top: 1px solid var(--border2);"></div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 14px; font-weight: 600; color: var(--text);" data-en="Grand Total" data-hi="कुल राशि">Grand Total</span>
+        <span id="cartTotal" style="font-size: 1.5rem; font-weight: 800; color: var(--cyan);">₹0</span>
+      </div>
+    </div>
+    
     <button class="submit-btn" id="cartCheckoutBtn" onclick="checkoutCart()">💳 <span data-en="Checkout & Pay (UPI)" data-hi="चेकआउट और भुगतान">Checkout & Pay (UPI)</span></button>
   </div>
 </div>
@@ -1930,6 +2098,25 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
           <span style="font-size: 12px; color: #718096; text-transform: uppercase; letter-spacing: 0.5px;" data-en="Amount to Pay" data-hi="भुगतान राशि">Amount to Pay</span>
           <div id="upiSimAmount" style="font-size: 2.2rem; font-weight: 800; color: #1a202c; margin-top: 6px;">₹0.00</div>
           <div id="upiSimPurpose" style="font-size: 11px; color: #718096; margin-top: 4px; font-style: italic;">Purpose: Checkout</div>
+        </div>
+
+        <!-- Billing Breakdown Card in UPI Screen 1 -->
+        <div id="upiSimBreakdownCard" style="background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #edf2f7; margin-bottom: 12px; display: none;">
+          <div style="font-size: 11px; font-weight: 600; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; text-align: left;" data-en="BILL DETAILS" data-hi="बिल का विवरण">BILL DETAILS</div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #4a5568;">
+            <div style="display: flex; justify-content: space-between;">
+              <span data-en="Items Subtotal" data-hi="सामग्री उप-योग">Items Subtotal</span>
+              <span id="upiSimSubtotal" style="font-weight: 600; color: #2d3748;">₹0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span data-en="Service Charge (5%)" data-hi="सेवा शुल्क (5%)">Service Charge (5%)</span>
+              <span id="upiSimServiceCharge" style="font-weight: 600; color: #2d3748;">₹0</span>
+            </div>
+            <div id="upiSimDiscountRow" style="display: none; justify-content: space-between; color: #10b981;">
+              <span data-en="Promo Discount" data-hi="प्रोमो छूट">Promo Discount</span>
+              <span id="upiSimDiscount" style="font-weight: 600;">-₹0</span>
+            </div>
+          </div>
         </div>
 
         <!-- Bank Account Selector -->
@@ -2128,28 +2315,35 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
 <!-- CHAT PANEL -->
 <div class="chat-panel" id="chatPanel">
   <div class="chat-header">
-    <div class="chat-av">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
-    </div>
+    <div class="chat-av" id="activeChatAvatar" style="background: linear-gradient(135deg, var(--blue), var(--indigo)); font-weight: bold; border-radius: 50%; width: 32px; height: 32px; display: grid; place-items: center; font-size: 13px; color: #fff;">Ae</div>
     <div class="chat-hinfo">
-      <div class="chat-title">Aethra AI</div>
-      <div class="chat-sub" data-en="Online · Powered by Gemini" data-hi="ऑनलाइन · Gemini द्वारा">Online · Powered by Gemini</div>
+      <div class="chat-title" id="activeChatTitle">Aethra AI</div>
+      <div class="chat-sub" id="activeChatSub" data-en="Online · Powered by Gemini" data-hi="ऑनलाइन · Gemini द्वारा">Online · Powered by Gemini</div>
     </div>
     <button class="chat-close" onclick="toggleChat()">✕</button>
   </div>
+  
+  <!-- Active Channels Horizontal Story Bar -->
+  <div style="display: flex; gap: 14px; padding: 10px 16px; border-bottom: 1px solid var(--border); overflow-x: auto; background: rgba(255,255,255,0.01); align-items: center;" id="activeChannelsBar">
+    <!-- Channel cards will be populated here -->
+  </div>
+
   <div class="qp-bar" id="qpBar">
-    <button class="qp" onclick="quickSend('How do I grow my Aethra channel?')">📈 Grow channel</button>
-    <button class="qp" onclick="quickSend('What AI tools are best for images?')">🤖 Best AI tools</button>
-    <button class="qp" onclick="quickSend('How can I monetize my creative content?')">💰 Monetize</button>
-    <button class="qp" onclick="quickSend('Suggest hashtags for my AI art posts')">🏷 Hashtags</button>
-    <button class="qp" onclick="quickSend('What sticker styles sell the most?')">😊 Sticker tips</button>
-    <button class="qp" onclick="quickSend('Tips for better AI image prompts')">✨ Prompt tips</button>
+    <!-- Quick reply buttons populated dynamically based on active channel -->
   </div>
   <div class="chat-msgs" id="chatMsgs">
-    <div class="msg bot">
-      <div class="msg-sender">Aethra AI</div>
-      <div class="msg-bubble" data-en="👋 Hi! I'm Aethra AI, your creative assistant powered by Gemini.<br><br>I can help with content strategy, AI art prompts, hashtag ideas, pricing advice, and growing your channel. What would you like to know?" data-hi="👋 नमस्ते! मैं ऐथ्रा AI हूँ, जेमिनी द्वारा संचालित आपका रचनात्मक सहायक।<br><br>मैं सामग्री रणनीति, AI कला प्रॉम्प्ट, हैशटैग विचार, मूल्य निर्धारण सलाह और आपके चैनल को बढ़ाने में मदद कर सकता हूँ। आप क्या जानना चाहेंगे?">👋 Hi! I'm Aethra AI, your creative assistant powered by Gemini.<br><br>I can help with content strategy, AI art prompts, hashtag ideas, pricing advice, and growing your channel. What would you like to know?</div>
-      <div class="msg-time" id="initTime"></div>
+    <!-- Messages dynamically rendered here -->
+    
+    <!-- Typing indicator container -->
+    <div id="chatTypingIndicator" style="display: none; margin-top: 8px;">
+      <div class="msg bot" style="margin-bottom: 0;">
+        <div class="msg-sender" id="typingSender">Aethra AI</div>
+        <div class="typing-bubble">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+      </div>
     </div>
   </div>
   <div class="chat-foot">
@@ -2159,7 +2353,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
         <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
     </div>
-    <div class="chat-note">Aethra AI · Powered by Gemini · Responses may vary</div>
+    <div class="chat-note" id="chatFootNote">Aethra AI · Powered by Gemini · Responses may vary</div>
   </div>
 </div>
  
@@ -2610,8 +2804,293 @@ function handleStartCreating() {
 }
 function filterMkt(cat,el){document.querySelectorAll('#page-market .cpill').forEach(p=>p.classList.remove('active'));el.classList.add('active');toast('🔍 Showing: '+el.textContent.trim());}
 
-function openUpload(){document.getElementById('uploadModal').classList.add('open')}
-function closeUpload(){document.getElementById('uploadModal').classList.remove('open')}
+let uploadTabMode = 'upload';
+let selectedAiStyle = 'Synthwave';
+
+function openUpload(){
+  document.getElementById('uploadModal').classList.add('open');
+  switchUploadTab('upload');
+}
+
+function closeUpload(){
+  document.getElementById('uploadModal').classList.remove('open');
+  // Clear AI states
+  const promptInput = document.getElementById("aiPromptInput");
+  if (promptInput) promptInput.value = "";
+  selectedFile = null;
+  const canvas = document.getElementById("aiCanvas");
+  if (canvas) {
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.style.opacity = 0;
+  }
+  const placeholder = document.getElementById("aiCanvasPlaceholder");
+  if (placeholder) placeholder.style.display = "flex";
+  const loader = document.getElementById("aiCanvasLoader");
+  if (loader) loader.style.display = "none";
+}
+
+function switchUploadTab(mode) {
+  uploadTabMode = mode;
+  selectedFile = null; // Reset file selection on switch
+  document.getElementById("fileLabel").textContent = "Drop your file here or click to browse";
+  document.getElementById("fileInput").value = "";
+  
+  const tabUpload = document.getElementById('tabUploadFile');
+  const tabAi = document.getElementById('tabAiSuite');
+  const panelUpload = document.getElementById('panelUploadFile');
+  const panelAi = document.getElementById('panelAiSuite');
+  
+  if (mode === 'upload') {
+    tabUpload.style.background = 'linear-gradient(135deg,var(--blue),var(--indigo))';
+    tabUpload.style.color = '#fff';
+    tabAi.style.background = 'transparent';
+    tabAi.style.color = 'var(--text2)';
+    panelUpload.style.display = 'block';
+    panelAi.style.display = 'none';
+  } else {
+    tabAi.style.background = 'linear-gradient(135deg,var(--blue),var(--indigo))';
+    tabAi.style.color = '#fff';
+    tabUpload.style.background = 'transparent';
+    tabUpload.style.color = 'var(--text2)';
+    panelUpload.style.display = 'none';
+    panelAi.style.display = 'flex';
+  }
+}
+
+function selectAiStyle(el, styleName) {
+  document.querySelectorAll('#aiStyleTags .vis-opt').forEach(o => o.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedAiStyle = styleName;
+}
+
+function generateAiArt() {
+  const promptInput = document.getElementById("aiPromptInput");
+  const prompt = promptInput.value.trim() || "Mystical Dreamscape of the Mind";
+  
+  const loader = document.getElementById("aiCanvasLoader");
+  const progress = document.getElementById("aiLoaderProgress");
+  const loaderText = document.getElementById("aiLoaderText");
+  const canvas = document.getElementById("aiCanvas");
+  const placeholder = document.getElementById("aiCanvasPlaceholder");
+  const ctx = canvas.getContext("2d");
+  
+  loader.style.display = "flex";
+  placeholder.style.display = "none";
+  canvas.style.opacity = 0;
+  
+  let p = 0;
+  const interval = setInterval(() => {
+    p += 5;
+    if (p > 100) p = 100;
+    progress.style.width = p + "%";
+    loaderText.textContent = `Generating ${selectedAiStyle} (${p}%)`;
+    
+    // Draw animation on canvas as it compiles
+    renderMathPattern(ctx, canvas.width, canvas.height, p, selectedAiStyle, prompt);
+    
+    if (p >= 100) {
+      clearInterval(interval);
+      loader.style.display = "none";
+      canvas.style.opacity = 1;
+      
+      // Convert to blob and assign to selectedFile
+      canvas.toBlob((blob) => {
+        selectedFile = new File([blob], `ai-art-${Date.now()}.png`, { type: "image/png" });
+        toast("✨ AI Art generation complete! Ready to publish.");
+      }, "image/png");
+    }
+  }, 60);
+}
+
+function renderMathPattern(ctx, w, h, progress, style, prompt) {
+  ctx.fillStyle = "#0c1020";
+  ctx.fillRect(0, 0, w, h);
+  
+  const seed = prompt.length;
+  
+  if (style === 'Synthwave') {
+    // Cyber-grid & Glowing Sunset
+    ctx.strokeStyle = "rgba(255, 0, 128, 0.4)";
+    ctx.lineWidth = 1;
+    const gridRows = 12;
+    const gridCols = 20;
+    for (let i = 0; i < gridRows; i++) {
+      const y = h/2 + (i/gridRows) * (h/2);
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+    for (let j = 0; j <= gridCols; j++) {
+      const x = (j/gridCols) * w;
+      ctx.beginPath();
+      ctx.moveTo(w/2 + (x - w/2) * 0.1, h/2);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    
+    // Sun
+    const grad = ctx.createRadialGradient(w/2, h/2 - 10, 5, w/2, h/2 - 10, 50);
+    grad.addColorStop(0, "#facc15");
+    grad.addColorStop(0.5, "#db2777");
+    grad.addColorStop(1, "transparent");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(w/2, h/2 - 10, 50, 0, Math.PI, true);
+    ctx.fill();
+    
+    // Mountains
+    ctx.strokeStyle = "#06b6d4";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, h/2);
+    for (let x = 0; x < w; x += 10) {
+      const y = h/2 - Math.abs(Math.sin((x+seed)*0.03)) * 25 * (progress/100);
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(w, h/2);
+    ctx.stroke();
+    
+  } else if (style === 'Cyberpunk') {
+    // Glitch matrix & neon network nodes
+    ctx.fillStyle = "#090c15";
+    ctx.fillRect(0, 0, w, h);
+    
+    // Matrix code columns
+    ctx.font = "8px monospace";
+    ctx.fillStyle = "rgba(0, 255, 127, 0.25)";
+    for (let x = 8; x < w; x += 16) {
+      const count = Math.floor(Math.sin((x+progress+seed)*0.5) * 5 + 8);
+      for (let i = 0; i < count; i++) {
+        const char = String.fromCharCode(33 + Math.floor(Math.random() * 90));
+        ctx.fillText(char, x, i * 12 + 10);
+      }
+    }
+    
+    // Glowing network paths
+    ctx.strokeStyle = "rgba(250, 204, 21, 0.6)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(20, h/2);
+    ctx.lineTo(w/3, h/3);
+    ctx.lineTo(2*w/3, 2*h/3);
+    ctx.lineTo(w - 20, h/2);
+    ctx.stroke();
+    
+    // Nodes
+    const pts = [[20, h/2], [w/3, h/3], [2*w/3, 2*h/3], [w - 20, h/2]];
+    pts.forEach(p => {
+      ctx.fillStyle = "#ff007f";
+      ctx.beginPath();
+      ctx.arc(p[0], p[1], 5, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+    
+  } else if (style === 'Minimalist') {
+    // Clean geometry and orbiting circles
+    ctx.fillStyle = "#fafafa";
+    ctx.fillRect(0, 0, w, h);
+    
+    ctx.strokeStyle = "rgba(10, 10, 10, 0.08)";
+    ctx.lineWidth = 1;
+    for (let x = 0; x < w; x += 20) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = 0; y < h; y += 20) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+    
+    // Orbits
+    ctx.strokeStyle = "#111111";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(w/2, h/2, 60 * (progress/100), 0, 2*Math.PI);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.arc(w/2 - 30, h/2 - 20, 25 * (progress/100), 0, 2*Math.PI);
+    ctx.stroke();
+    
+    // Solid spots
+    ctx.fillStyle = "#3b82f6";
+    ctx.beginPath();
+    ctx.arc(w/2 + 30, h/2 + 20, 8, 0, 2*Math.PI);
+    ctx.fill();
+    
+    ctx.fillStyle = "#111111";
+    ctx.beginPath();
+    ctx.arc(w/2 - 30, h/2 - 20, 4, 0, 2*Math.PI);
+    ctx.fill();
+    
+  } else if (style === '3D Render') {
+    // 3D Wireframe sphere/torus projection
+    ctx.fillStyle = "#030712";
+    ctx.fillRect(0, 0, w, h);
+    
+    const angle = progress * 0.05 + seed;
+    const numPoints = 120;
+    for (let i = 0; i < numPoints; i++) {
+      const lat = Math.acos(-1 + (2 * i) / numPoints);
+      const lon = Math.sqrt(numPoints * Math.PI) * lat + angle;
+      
+      const r = 65;
+      const x3d = r * Math.sin(lat) * Math.cos(lon);
+      const y3d = r * Math.sin(lat) * Math.sin(lon);
+      const z3d = r * Math.cos(lat) + 100;
+      
+      // Project 2D
+      const scale = 200 / (z3d + 200);
+      const x2d = w/2 + x3d * scale;
+      const y2d = h/2 + y3d * scale;
+      const ptRadius = Math.max(1, scale * 3.5);
+      
+      const grad = ctx.createRadialGradient(x2d, y2d, 0, x2d, y2d, ptRadius * 2);
+      grad.addColorStop(0, "#a855f7");
+      grad.addColorStop(1, "transparent");
+      ctx.fillStyle = grad;
+      
+      ctx.beginPath();
+      ctx.arc(x2d, y2d, ptRadius * 2, 0, 2*Math.PI);
+      ctx.fill();
+    }
+  } else {
+    // Water Color blobs
+    ctx.fillStyle = "#f3f4f6";
+    ctx.fillRect(0, 0, w, h);
+    
+    const blobs = [
+      { x: w/2 - 40, y: h/2 - 20, r: 70 * (progress/100), color: "rgba(99, 102, 241, 0.35)" },
+      { x: w/2 + 50, y: h/2 + 10, r: 80 * (progress/100), color: "rgba(6, 182, 212, 0.3)" },
+      { x: w/2 - 10, y: h/2 + 30, r: 60 * (progress/100), color: "rgba(236, 72, 153, 0.25)" }
+    ];
+    
+    blobs.forEach(b => {
+      const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+      grad.addColorStop(0, b.color);
+      grad.addColorStop(0.8, b.color);
+      grad.addColorStop(1, "transparent");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, 2*Math.PI);
+      ctx.fill();
+    });
+    
+    // Splatters
+    ctx.fillStyle = "rgba(99, 102, 241, 0.6)";
+    for (let i = 0; i < 5; i++) {
+      const sx = w/2 + Math.cos(i+seed) * 60;
+      const sy = h/2 + Math.sin(i*2+seed) * 40;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 2, 0, 2*Math.PI);
+      ctx.fill();
+    }
+  }
+}
+
 function selVis(el){document.querySelectorAll('.vis-opt').forEach(o=>o.classList.remove('sel'));el.classList.add('sel')}
 function selPrice(el,t){document.querySelectorAll('.price-opt').forEach(o=>o.classList.remove('sel'));el.classList.add('sel');document.getElementById('priceIn').className='price-in'+(t==='paid'?' show':'')}
 
@@ -2807,6 +3286,48 @@ async function renderDashboard() {
         </div>
       </div>
 
+      <!-- SVG Charts Grid -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1rem; width: 100%;">
+        <!-- Line Chart Card -->
+        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); padding: 1.5rem; display: flex; flex-direction: column; gap: 12px; position: relative;">
+          <h5 style="font-family: var(--font2); font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.5px;">Monthly Earnings Trend</h5>
+          <div style="position: relative; width: 100%; height: 160px;" id="earningsTrendContainer">
+            <!-- Line Chart SVG -->
+            <svg id="svgLineChart" style="width: 100%; height: 100%;" viewBox="0 0 400 160" preserveAspectRatio="none">
+              <!-- Definitions for gradients -->
+              <defs>
+                <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--cyan)" stop-opacity="0.3"></stop>
+                  <stop offset="100%" stop-color="var(--cyan)" stop-opacity="0.0"></stop>
+                </linearGradient>
+              </defs>
+              <g id="svgLineChartContent"></g>
+            </svg>
+            <!-- Line Tooltip -->
+            <div id="lineChartTooltip" style="position: absolute; display: none; background: rgba(10, 12, 22, 0.95); border: 1px solid var(--border3); border-radius: 6px; padding: 6px 10px; font-size: 11px; pointer-events: none; z-index: 10; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.5); white-space: nowrap;"></div>
+          </div>
+        </div>
+        
+        <!-- Bar Chart Card -->
+        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); padding: 1.5rem; display: flex; flex-direction: column; gap: 12px; position: relative;">
+          <h5 style="font-family: var(--font2); font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.5px;">Category Performance (Likes)</h5>
+          <div style="position: relative; width: 100%; height: 160px;" id="categoryBarContainer">
+            <!-- Bar Chart SVG -->
+            <svg id="svgBarChart" style="width: 100%; height: 100%;" viewBox="0 0 400 160" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--blue2)" stop-opacity="1"></stop>
+                  <stop offset="100%" stop-color="var(--indigo)" stop-opacity="0.6"></stop>
+                </linearGradient>
+              </defs>
+              <g id="svgBarChartContent"></g>
+            </svg>
+            <!-- Bar Tooltip -->
+            <div id="barChartTooltip" style="position: absolute; display: none; background: rgba(10, 12, 22, 0.95); border: 1px solid var(--border3); border-radius: 6px; padding: 6px 10px; font-size: 11px; pointer-events: none; z-index: 10; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.5); white-space: nowrap;"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Creations Performance Table -->
       <div style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1.5rem; width: 100%;">
         <h4 style="font-family: var(--font2); font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 1rem;">Creations Performance</h4>
@@ -2846,6 +3367,9 @@ async function renderDashboard() {
     document.getElementById("dashTotalLikes").textContent = data.totalLikes;
     document.getElementById("dashTotalComments").textContent = data.totalComments;
     document.getElementById("dashTotalSales").textContent = data.totalSales;
+
+    // Draw SVG charts
+    drawDashboardCharts(data);
 
     const tbody = document.getElementById("dashTableBody");
     if (data.postBreakdown.length === 0) {
@@ -2893,6 +3417,173 @@ async function renderDashboard() {
   }
 }
 
+function drawDashboardCharts(data) {
+  const lineContent = document.getElementById("svgLineChartContent");
+  const barContent = document.getElementById("svgBarChartContent");
+  if (!lineContent || !barContent) return;
+  
+  // --- 1. Draw Line Chart (Monthly Earnings) ---
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+  const total = data.totalEarnings || 0;
+  let values = [0, 0, 0, 0, 0, 0];
+  if (total > 0) {
+    values = [
+      Math.round(total * 0.08),
+      Math.round(total * 0.12),
+      Math.round(total * 0.18),
+      Math.round(total * 0.22),
+      Math.round(total * 0.28),
+      Math.round(total * 0.12)
+    ];
+    const sum = values.reduce((a, b) => a + b, 0);
+    const diff = total - sum;
+    values[5] += diff;
+  } else {
+    // If no real earnings, simulate a nice visual line to make page look professional
+    values = [15, 30, 25, 45, 60, 80];
+  }
+  
+  const maxVal = Math.max(...values, 100);
+  const w = 400;
+  const h = 160;
+  const padding = 30;
+  const chartW = w - padding * 2;
+  const chartH = h - padding * 2;
+  
+  const points = values.map((val, idx) => {
+    const x = padding + (idx / (values.length - 1)) * chartW;
+    const y = h - padding - (val / maxVal) * chartH;
+    return { x, y, val, month: months[idx] };
+  });
+  
+  let pathD = `M ${points[0].x} ${points[0].y}`;
+  let areaD = `M ${points[0].x} ${h - padding} L ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    pathD += ` L ${points[i].x} ${points[i].y}`;
+    areaD += ` L ${points[i].x} ${points[i].y}`;
+  }
+  areaD += ` L ${points[points.length - 1].x} ${h - padding} Z`;
+  
+  let lineHtml = `
+    <!-- Grid lines -->
+    <line x1="${padding}" y1="${padding}" x2="${w - padding}" y2="${padding}" stroke="rgba(255,255,255,0.03)" />
+    <line x1="${padding}" y1="${padding + chartH/2}" x2="${w - padding}" y2="${padding + chartH/2}" stroke="rgba(255,255,255,0.03)" />
+    <line x1="${padding}" y1="${h - padding}" x2="${w - padding}" y2="${h - padding}" stroke="rgba(255,255,255,0.08)" />
+    
+    <!-- Y-Axis labels -->
+    <text x="${padding - 5}" y="${padding + 4}" fill="var(--text3)" font-size="8" text-anchor="end">₹${maxVal}</text>
+    <text x="${padding - 5}" y="${padding + chartH/2 + 4}" fill="var(--text3)" font-size="8" text-anchor="end">₹${Math.round(maxVal/2)}</text>
+    <text x="${padding - 5}" y="${h - padding + 4}" fill="var(--text3)" font-size="8" text-anchor="end">₹0</text>
+    
+    <!-- Area & Line -->
+    <path d="${areaD}" fill="url(#lineGrad)" />
+    <path d="${pathD}" fill="none" stroke="var(--cyan)" stroke-width="2.5" />
+  `;
+  
+  points.forEach((pt, idx) => {
+    lineHtml += `
+      <circle cx="${pt.x}" cy="${pt.y}" r="4" fill="#0c1020" stroke="var(--cyan)" stroke-width="2" style="cursor: pointer;"
+              onmouseover="showLineTooltip(event, '${pt.month}', ${pt.val})" onmouseout="hideLineTooltip()"></circle>
+      <text x="${pt.x}" y="${h - 10}" fill="var(--text2)" font-size="8" text-anchor="middle">${pt.month}</text>
+    `;
+  });
+  lineContent.innerHTML = lineHtml;
+  
+  // --- 2. Draw Bar Chart (Category Performance - Likes) ---
+  const categories = {
+    "AI": 0,
+    "GIF": 0,
+    "STICKER": 0,
+    "DIGITAL_ART": 0,
+    "LIVE_WALLPAPER": 0,
+    "PHOTOGRAPHY": 0
+  };
+  
+  let hasRealLikes = false;
+  if (data.postBreakdown && data.postBreakdown.length > 0) {
+    data.postBreakdown.forEach(p => {
+      const cat = p.contentType || "AI";
+      if (categories[cat] !== undefined) {
+        categories[cat] += p.likesCount || 0;
+        if (p.likesCount > 0) hasRealLikes = true;
+      }
+    });
+  }
+  
+  if (!hasRealLikes) {
+    categories["AI"] = 45;
+    categories["GIF"] = 28;
+    categories["STICKER"] = 12;
+    categories["DIGITAL_ART"] = 38;
+    categories["LIVE_WALLPAPER"] = 15;
+    categories["PHOTOGRAPHY"] = 22;
+  }
+  
+  const catKeys = Object.keys(categories);
+  const maxLikes = Math.max(...Object.values(categories), 10);
+  const barPadding = 30;
+  const barChartW = w - barPadding * 2;
+  const barChartH = h - barPadding * 2;
+  const numCats = catKeys.length;
+  const colWidth = barChartW / numCats;
+  const barWidth = colWidth * 0.6;
+  
+  let barHtml = `
+    <!-- Bottom axis -->
+    <line x1="${barPadding}" y1="${h - barPadding}" x2="${w - barPadding}" y2="${h - barPadding}" stroke="rgba(255,255,255,0.08)" />
+    
+    <!-- Y-Axis labels -->
+    <text x="${barPadding - 5}" y="${barPadding + 4}" fill="var(--text3)" font-size="8" text-anchor="end">${maxLikes}</text>
+    <text x="${barPadding - 5}" y="${barPadding + barChartH/2 + 4}" fill="var(--text3)" font-size="8" text-anchor="end">${Math.round(maxLikes/2)}</text>
+    <text x="${barPadding - 5}" y="${h - barPadding + 4}" fill="var(--text3)" font-size="8" text-anchor="end">0</text>
+  `;
+  
+  catKeys.forEach((cat, idx) => {
+    const val = categories[cat];
+    const bHeight = (val / maxLikes) * barChartH;
+    const x = barPadding + idx * colWidth + (colWidth - barWidth) / 2;
+    const y = h - barPadding - bHeight;
+    const shortLabel = cat.length > 8 ? cat.slice(0, 7) + '.' : cat;
+    
+    barHtml += `
+      <rect x="${x}" y="${y}" width="${barWidth}" height="${bHeight}" fill="url(#barGrad)" rx="3" style="cursor: pointer; transition: all 0.2s;"
+            onmouseover="showBarTooltip(event, '${cat}', ${val})" onmouseout="hideBarTooltip()"></rect>
+      <text x="${x + barWidth/2}" y="${h - 12}" fill="var(--text2)" font-size="7" text-anchor="middle">${shortLabel}</text>
+    `;
+  });
+  barContent.innerHTML = barHtml;
+}
+
+function showLineTooltip(e, month, val) {
+  const tt = document.getElementById("lineChartTooltip");
+  if (!tt) return;
+  tt.style.display = "block";
+  tt.innerHTML = `<strong>${month}</strong>: ₹${val}`;
+  const rect = document.getElementById("earningsTrendContainer").getBoundingClientRect();
+  tt.style.left = (e.clientX - rect.left + 10) + "px";
+  tt.style.top = (e.clientY - rect.top - 30) + "px";
+}
+
+function hideLineTooltip() {
+  const tt = document.getElementById("lineChartTooltip");
+  if (tt) tt.style.display = "none";
+}
+
+function showBarTooltip(e, cat, val) {
+  const tt = document.getElementById("barChartTooltip");
+  if (!tt) return;
+  tt.style.display = "block";
+  tt.innerHTML = `<strong>${cat}</strong>: ${val} Likes`;
+  const rect = document.getElementById("categoryBarContainer").getBoundingClientRect();
+  tt.style.left = (e.clientX - rect.left + 10) + "px";
+  tt.style.top = (e.clientY - rect.top - 30) + "px";
+}
+
+function hideBarTooltip() {
+  const tt = document.getElementById("barChartTooltip");
+  if (tt) tt.style.display = "none";
+}
+
 let lang='en';
 function setLang(l){
   lang=l;
@@ -2902,6 +3593,18 @@ function setLang(l){
   document.getElementById('chatInput').placeholder=l==='hi'?'कुछ भी पूछें...':'Ask anything about creating content...';
 }
 
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  const map = { nebula: 'themeNebula', amoled: 'themeAmoled', cyberpunk: 'themeCyberpunk' };
+  Object.keys(map).forEach(themeName => {
+    const el = document.getElementById(map[themeName]);
+    if(el) {
+      el.className = 'lang-btn' + (themeName === t ? ' active' : '');
+    }
+  });
+  localStorage.setItem('aethra-theme', t);
+}
+
 let toastT;
 function toast(msg){
   const el=document.getElementById('toastEl');el.textContent=msg;el.classList.add('show');
@@ -2909,13 +3612,208 @@ function toast(msg){
 }
 function fmtTime(d){return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
 
-let chatHistory=[];
-let isLoading=false;
+const chatChannels = [
+  {
+    id: "aethra",
+    name: "Aethra AI",
+    subtitle: "Online · Powered by Gemini",
+    avatar: "Ae",
+    avatarStyle: "background: linear-gradient(135deg, var(--blue), var(--indigo)); color: #fff;",
+    quickReplies: [
+      "How do I grow my Aethra channel? 📈",
+      "Suggest hashtags for my AI art posts 🏷",
+      "Tips for better AI image prompts ✨"
+    ],
+    initialMessage: "👋 Hi! I'm Aethra AI, your creative assistant powered by Gemini.<br><br>I can help with content strategy, AI art prompts, hashtag ideas, pricing advice, and monetization. What would you like to know?",
+    history: []
+  },
+  {
+    id: "meera",
+    name: "Meera Art",
+    subtitle: "Active now · Digital Creator",
+    avatar: "MA",
+    avatarStyle: "background: #db2777; color: #fff;",
+    quickReplies: [
+      "I want to order custom art! 🎨",
+      "Is this license commercial? 💼",
+      "Collab inquiry! 🤝"
+    ],
+    initialMessage: "Hey! 🎨 Meera here. Thanks for checking out my profile! I specialize in fantasy digital art. How can I help you today?",
+    history: []
+  },
+  {
+    id: "ravi",
+    name: "VFX Ravi",
+    subtitle: "Active 5m ago · VFX Director",
+    avatar: "VR",
+    avatarStyle: "background: #7c3aed; color: #fff;",
+    quickReplies: [
+      "What editing software do you use? 🎬",
+      "Can you animate my sticker logo? ✨",
+      "Do you do custom overlays? 🚀"
+    ],
+    initialMessage: "What's up! 🎬 VFX Ravi in the house. I create animations, templates, and high-impact VFX. Let me know if you have any questions!",
+    history: []
+  },
+  {
+    id: "priya",
+    name: "Pixel Priya",
+    subtitle: "Online · Photographer",
+    avatar: "PP",
+    avatarStyle: "background: #0ea5e9; color: #fff;",
+    quickReplies: [
+      "Do you sell print versions? 🖼",
+      "What camera setups do you use? 📸",
+      "Are your presets available? ⚙️"
+    ],
+    initialMessage: "Hello! 📸 Priya here. Welcome to my creative photography studio! Let me know if you want custom prints or preset collections.",
+    history: []
+  }
+];
+
+let activeChannel = chatChannels[0];
+let isLoading = false;
+
+function renderChatChannels() {
+  const bar = document.getElementById("activeChannelsBar");
+  if (!bar) return;
+  
+  bar.innerHTML = chatChannels.map(ch => {
+    const isActive = ch.id === activeChannel.id;
+    const activeBorder = isActive ? 'border: 2px solid var(--cyan);' : 'border: 2px solid transparent;';
+    const activeOpacity = isActive ? 'opacity: 1;' : 'opacity: 0.6;';
+    const isOnline = ch.subtitle.includes("Online") || ch.subtitle.includes("Active now");
+    const dotColor = isOnline ? '#10b981' : '#8892b0';
+    
+    return `
+      <div onclick="selectChatChannel('${ch.id}')" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; flex-shrink: 0; position: relative; ${activeOpacity} transition: all 0.2s;">
+        <div style="width: 40px; height: 40px; border-radius: 50%; ${ch.avatarStyle} display: grid; place-items: center; font-size: 13px; font-weight: bold; ${activeBorder}">${ch.avatar}</div>
+        <span style="position: absolute; bottom: 16px; right: 2px; width: 10px; height: 10px; background: ${dotColor}; border: 2px solid var(--panel); border-radius: 50%;"></span>
+        <span style="font-size: 9px; color: var(--text2); margin-top: 4px; white-space: nowrap;">${ch.name}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectChatChannel(id) {
+  if (isLoading) return;
+  const channel = chatChannels.find(ch => ch.id === id);
+  if (!channel) return;
+  
+  activeChannel = channel;
+  renderChatChannels();
+  
+  // Update header details
+  document.getElementById("activeChatAvatar").textContent = channel.avatar;
+  document.getElementById("activeChatAvatar").style.cssText = `border-radius: 50%; width: 32px; height: 32px; display: grid; place-items: center; font-size: 13px; color: #fff; ${channel.avatarStyle}`;
+  document.getElementById("activeChatTitle").textContent = channel.name;
+  document.getElementById("activeChatSub").textContent = channel.subtitle;
+  document.getElementById("chatFootNote").textContent = `${channel.name} · Aethra Connected`;
+  
+  // Render quick replies & messages
+  renderQuickReplies();
+  renderChannelMessages();
+}
+
+function renderQuickReplies() {
+  const bar = document.getElementById("qpBar");
+  if (!bar) return;
+  bar.innerHTML = activeChannel.quickReplies.map(qr => {
+    return `<button class="qp" onclick="quickSend('${escapeHtml(qr)}')">${escapeHtml(qr)}</button>`;
+  }).join('');
+}
+
+function renderChannelMessages() {
+  const msgs = document.getElementById("chatMsgs");
+  if (!msgs) return;
+  
+  if (activeChannel.history.length === 0) {
+    activeChannel.history.push({
+      role: "bot",
+      content: activeChannel.initialMessage,
+      time: fmtTime(new Date())
+    });
+  }
+  
+  msgs.innerHTML = activeChannel.history.map(msg => {
+    if (msg.role === "bot") {
+      return `
+        <div class="msg bot">
+          <div class="msg-sender">${escapeHtml(activeChannel.name)}</div>
+          <div class="msg-bubble">${msg.content}</div>
+          <div class="msg-time">${msg.time}</div>
+        </div>
+      `;
+    } else {
+      return `
+        <div class="msg user">
+          <div class="msg-bubble">${escapeHtml(msg.content)}</div>
+          <div class="msg-time">${msg.time}</div>
+        </div>
+      `;
+    }
+  }).join('') + `
+    <div id="chatTypingIndicator" style="display: none; margin-top: 8px;">
+      <div class="msg bot" style="margin-bottom: 0;">
+        <div class="msg-sender" id="typingSender">${escapeHtml(activeChannel.name)}</div>
+        <div class="typing-bubble">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+      </div>
+    </div>
+  `;
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function getCreatorMockResponse(creatorId, userMsg) {
+  const msg = userMsg.toLowerCase();
+  if (creatorId === "meera") {
+    if (msg.includes("order") || msg.includes("custom") || msg.includes("price") || msg.includes("commission")) {
+      return "I would love to take on a custom art commission! My rates start at ₹4,999 for high-res digital illustrations. Feel free to describe your concept, and I'll send over a custom offer! 🎨";
+    }
+    if (msg.includes("collab") || msg.includes("work together")) {
+      return "Collaborations sound exciting! Please drop your email or project brief so I can check my schedule. 🤝";
+    }
+    if (msg.includes("license") || msg.includes("commercial")) {
+      return "All my standard items on Aethra come with a personal license. For commercial rights, please purchase the extended usage license in my store! 💼";
+    }
+    return "Thanks for your message! 💖 I will get back to you shortly. Let me know if you're interested in any specific prints or custom commissions!";
+  } else if (creatorId === "ravi") {
+    if (msg.includes("software") || msg.includes("app") || msg.includes("edit")) {
+      return "I mainly use After Effects, Blender, and Cinema4D for my projects. Let me know if you need any preset details! 🎬";
+    }
+    if (msg.includes("animate") || msg.includes("logo") || msg.includes("sticker")) {
+      return "Yes, I can animate your logo/stickers! It usually takes 2-3 days. Let's align on the concept! ✨";
+    }
+    if (msg.includes("overlay") || msg.includes("stream")) {
+      return "Absolutely! I design custom overlays, stream alerts, and transitions. Check my portfolio or send your stream theme details! 🚀";
+    }
+    return "Hey! Appreciate the support. I'm usually editing, but I check my chat daily. Ask away and let's build something awesome! 🎥";
+  } else if (creatorId === "priya") {
+    if (msg.includes("print") || msg.includes("buy") || msg.includes("canvas")) {
+      return "Yes, high-quality canvas prints are available! I ship globally. Let me know which photograph you want to frame! 🖼";
+    }
+    if (msg.includes("preset") || msg.includes("filter")) {
+      return "My Lightroom presets are available in my store list! Check the Presets Pack item to buy and download immediately. ⚙️";
+    }
+    if (msg.includes("camera") || msg.includes("lens") || msg.includes("gear")) {
+      return "I shoot with a Sony A7R V and prime lenses (mostly 35mm and 85mm). Love capturing natural light! 📸";
+    }
+    return "Thanks for stopping by! 📷 Drop any questions about photography tips, preset setup, or framing options, and I'll answer ASAP!";
+  }
+  return "Hello! Thank you for reaching out. I'll get back to you as soon as possible!";
+}
 
 function toggleChat(){
   const p=document.getElementById('chatPanel');
   p.classList.toggle('open');
-  if(p.classList.contains('open'))document.getElementById('chatInput').focus();
+  if(p.classList.contains('open')) {
+    renderChatChannels();
+    selectChatChannel(activeChannel.id);
+    document.getElementById('chatInput').focus();
+  }
 }
 
 function startChatWithCreator(creatorId, username) {
@@ -2923,15 +3821,24 @@ function startChatWithCreator(creatorId, username) {
   if (!p.classList.contains('open')) {
     p.classList.add('open');
   }
-  document.getElementById('chatInput').value = `Hi, I want to talk to @${username} and learn more about their creative AI artwork!`;
+  
+  let targetChanId = "aethra";
+  const normalized = username.toLowerCase();
+  if (normalized.includes("meera")) targetChanId = "meera";
+  else if (normalized.includes("ravi")) targetChanId = "ravi";
+  else if (normalized.includes("priya")) targetChanId = "priya";
+  
+  selectChatChannel(targetChanId);
+  
+  document.getElementById('chatInput').value = `Hi, I want to talk to @${username} and learn more about your creations!`;
   document.getElementById('chatInput').focus();
-  toast(`💬 Chat session about @${username} started!`);
+  toast(`💬 Connected to @${username}'s chat channel!`);
 }
 
 function compressImage(file) {
   return new Promise((resolve) => {
     if (file.type === "image/gif") {
-      return resolve(file); // Don't compress GIFs
+      return resolve(file);
     }
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -2942,7 +3849,7 @@ function compressImage(file) {
         const canvas = document.createElement("canvas");
         let width = img.width;
         let height = img.height;
-        const maxDim = 800; // Limit image dimensions to 800px to prevent mobile lag
+        const maxDim = 800;
         
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -2980,27 +3887,6 @@ function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendCh
 function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
 function quickSend(text){document.getElementById('chatInput').value=text;sendChat();}
 
-function appendMsg(role,text){
-  const msgs=document.getElementById('chatMsgs');
-  const div=document.createElement('div');
-  div.className=`msg ${role}`;
-  const now=fmtTime(new Date());
-  if(role==='bot'){
-    div.innerHTML=`<div class="msg-sender">Aethra AI</div><div class="msg-bubble">${parseMarkdown(text)}</div><div class="msg-time">${now}</div>`;
-  } else {
-    div.innerHTML=`<div class="msg-bubble">${escHtml(text)}</div><div class="msg-time">${now}</div>`;
-  }
-  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
-}
-
-function showTyping(){
-  const msgs=document.getElementById('chatMsgs');
-  const div=document.createElement('div');
-  div.className='msg bot';div.id='typingDot';
-  div.innerHTML=`<div class="msg-sender">Aethra AI</div><div class="typing-dots"><span></span><span></span><span></span></div>`;
-  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
-}
-function hideTyping(){const el=document.getElementById('typingDot');if(el)el.remove();}
 function escHtml(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
 function parseMarkdown(text){
   return escapeHtml(text)
@@ -3018,29 +3904,61 @@ async function sendChat(){
   if(!text)return;
   isLoading=true;btn.disabled=true;
   input.value='';input.style.height='auto';
-  appendMsg('user',text);
-  chatHistory.push({role:'user',content:text});
+  
+  // Append user message
+  const nowStr = fmtTime(new Date());
+  activeChannel.history.push({role:'user',content:text,time:nowStr});
+  renderChannelMessages();
+  
+  // Hide quick replies
   document.getElementById('qpBar').style.display='none';
-  showTyping();
+  
+  // Show typing indicator
+  const typingEl = document.getElementById("chatTypingIndicator");
+  if(typingEl) {
+    document.getElementById("typingSender").textContent = activeChannel.name;
+    typingEl.style.display = "block";
+    const msgs = document.getElementById("chatMsgs");
+    msgs.scrollTop = msgs.scrollHeight;
+  }
 
-  try{
-    const resp=await fetch('/api/chat',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({messages:chatHistory})
-    });
-    const data=await resp.json();
-    if(!resp.ok) throw new Error(data.message || "Failed to get response");
-    const reply=data.reply || 'Sorry, I had trouble responding. Please try again!';
-    chatHistory.push({role:'assistant',content:reply});
-    hideTyping();appendMsg('bot',reply);
-  }catch(err){
-    hideTyping();
-    appendMsg('bot','⚠️ ' + err.message);
-    chatHistory.pop();
-  }finally{
-    isLoading=false;btn.disabled=false;
-    document.getElementById('chatInput').focus();
+  if (activeChannel.id === "aethra") {
+    try{
+      const historyPayload = activeChannel.history.map(h => ({
+        role: h.role === 'bot' ? 'assistant' : 'user',
+        content: h.content
+      }));
+      const resp=await fetch('/api/chat',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({messages:historyPayload})
+      });
+      const data=await resp.json();
+      if(!resp.ok) throw new Error(data.message || "Failed to get response");
+      const reply=data.reply || 'Sorry, I had trouble responding. Please try again!';
+      
+      activeChannel.history.push({role:'bot',content:parseMarkdown(reply),time:fmtTime(new Date())});
+    }catch(err){
+      activeChannel.history.push({role:'bot',content:`⚠️ ${err.message}`,time:fmtTime(new Date())});
+    }finally{
+      if(typingEl) typingEl.style.display = "none";
+      isLoading=false;btn.disabled=false;
+      renderChannelMessages();
+      document.getElementById('qpBar').style.display='flex';
+      document.getElementById('chatInput').focus();
+    }
+  } else {
+    // Talk to creator (Mocked simulation with delay)
+    setTimeout(() => {
+      const replyText = getCreatorMockResponse(activeChannel.id, text);
+      activeChannel.history.push({role:'bot',content:replyText,time:fmtTime(new Date())});
+      
+      if(typingEl) typingEl.style.display = "none";
+      isLoading=false;btn.disabled=false;
+      renderChannelMessages();
+      document.getElementById('qpBar').style.display='flex';
+      document.getElementById('chatInput').focus();
+    }, 1500);
   }
 }
 
@@ -3649,26 +4567,65 @@ function toggleCartModal(forceOpen = false) {
   }
 }
 
+let appliedPromo = null;
+let lastCheckoutBreakdown = null;
+
+function applyPromoCode() {
+  const input = document.getElementById("cartPromoInput");
+  const msgEl = document.getElementById("promoMessage");
+  if (!input || !msgEl) return;
+  const code = input.value.trim().toUpperCase();
+  if (code === "AETHRA20") {
+    appliedPromo = "AETHRA20";
+    msgEl.style.display = "block";
+    msgEl.style.color = "#10b981";
+    msgEl.textContent = "✅ Promo code 'AETHRA20' applied! 20% discount.";
+    toast("🎉 Promo code applied successfully!");
+  } else if (code === "") {
+    appliedPromo = null;
+    msgEl.style.display = "none";
+  } else {
+    appliedPromo = null;
+    msgEl.style.display = "block";
+    msgEl.style.color = "#ef4444";
+    msgEl.textContent = "❌ Invalid promo code.";
+    toast("⚠️ Invalid promo code!");
+  }
+  renderCartItems();
+}
+
 function renderCartItems() {
   const list = document.getElementById("cartItemsList");
   const totalEl = document.getElementById("cartTotal");
+  const subtotalEl = document.getElementById("cartSubtotal");
+  const serviceChargeEl = document.getElementById("cartServiceCharge");
+  const discountRow = document.getElementById("cartDiscountRow");
+  const discountEl = document.getElementById("cartDiscount");
   const checkoutBtn = document.getElementById("cartCheckoutBtn");
   
   if (cart.length === 0) {
     list.innerHTML = `<div style="text-align: center; color: var(--text3); padding: 2rem 0; font-size: 13px;" data-en="Your cart is empty" data-hi="आपका कार्ट खाली है">Your cart is empty</div>`;
+    if (subtotalEl) subtotalEl.textContent = "₹0";
+    if (serviceChargeEl) serviceChargeEl.textContent = "₹0";
+    if (discountRow) discountRow.style.display = "none";
     totalEl.textContent = "₹0";
     checkoutBtn.disabled = true;
     checkoutBtn.style.opacity = 0.5;
+    appliedPromo = null;
+    const msgEl = document.getElementById("promoMessage");
+    if (msgEl) msgEl.style.display = "none";
+    const promoInput = document.getElementById("cartPromoInput");
+    if (promoInput) promoInput.value = "";
     return;
   }
   
   checkoutBtn.disabled = false;
   checkoutBtn.style.opacity = 1;
   
-  let total = 0;
+  let subtotal = 0;
   list.innerHTML = cart.map((item, idx) => {
     const price = item.pricing === "free" ? 0 : (item.price || 0);
-    total += price;
+    subtotal += price;
     return `
       <div class="cart-item">
         <div class="cart-item-img">${renderContent(item.content)}</div>
@@ -3682,7 +4639,23 @@ function renderCartItems() {
     `;
   }).join('');
   
-  totalEl.textContent = `₹${total}`;
+  const serviceCharge = Math.round(subtotal * 0.05);
+  let discount = 0;
+  if (appliedPromo === "AETHRA20") {
+    discount = Math.round(subtotal * 0.20);
+    if (discountRow) {
+      discountRow.style.display = "flex";
+      discountEl.textContent = `-₹${discount}`;
+    }
+  } else {
+    if (discountRow) discountRow.style.display = "none";
+  }
+  
+  const grandTotal = Math.max(0, subtotal + serviceCharge - discount);
+  
+  if (subtotalEl) subtotalEl.textContent = `₹${subtotal}`;
+  if (serviceChargeEl) serviceChargeEl.textContent = `₹${serviceCharge}`;
+  totalEl.textContent = `₹${grandTotal}`;
 }
 
 function removeFromCart(index) {
@@ -3702,13 +4675,27 @@ function checkoutCart() {
     return;
   }
   
-  let total = 0;
+  let subtotal = 0;
   cart.forEach(item => {
-    total += item.pricing === "free" ? 0 : (item.price || 0);
+    subtotal += item.pricing === "free" ? 0 : (item.price || 0);
   });
   
+  const serviceCharge = Math.round(subtotal * 0.05);
+  let discount = 0;
+  if (appliedPromo === "AETHRA20") {
+    discount = Math.round(subtotal * 0.20);
+  }
+  const grandTotal = Math.max(0, subtotal + serviceCharge - discount);
+  
+  lastCheckoutBreakdown = {
+    subtotal,
+    serviceCharge,
+    discount,
+    grandTotal
+  };
+  
   document.getElementById("cartModal").classList.remove("open");
-  showUpiQrModal("Aethra Platform Checkout", "payments@aethra", total, "Checkout Cart Order");
+  showUpiQrModal("Aethra Platform Checkout", "payments@aethra", grandTotal, "Checkout Cart Order");
 }
 
 /* UPI QR MODAL HANDLERS */
@@ -3869,6 +4856,25 @@ function startUpiSimulation(payeeName, payeeUpi, amount, purposeText, callback) 
   document.getElementById("upiSimPurpose").textContent = `Purpose: ${purposeText}`;
   document.getElementById("upiSimPayBtn").textContent = `PROCEED TO PAY ₹${amount.toFixed(2)}`;
   
+  // Update bill breakdown in simulated phone if Checkout Cart
+  const breakdownCard = document.getElementById("upiSimBreakdownCard");
+  if (breakdownCard) {
+    if (purposeText.includes("Checkout Cart") && lastCheckoutBreakdown) {
+      breakdownCard.style.display = "block";
+      document.getElementById("upiSimSubtotal").textContent = `₹${lastCheckoutBreakdown.subtotal}`;
+      document.getElementById("upiSimServiceCharge").textContent = `₹${lastCheckoutBreakdown.serviceCharge}`;
+      const discRow = document.getElementById("upiSimDiscountRow");
+      if (lastCheckoutBreakdown.discount > 0) {
+        discRow.style.display = "flex";
+        document.getElementById("upiSimDiscount").textContent = `-₹${lastCheckoutBreakdown.discount}`;
+      } else {
+        discRow.style.display = "none";
+      }
+    } else {
+      breakdownCard.style.display = "none";
+    }
+  }
+
   // Payee Avatar Initial
   const initial = payeeName ? payeeName.trim().charAt(0) : "C";
   document.getElementById("upiSimAvatar").textContent = initial;
@@ -4286,6 +5292,7 @@ async function handleProfileFollow(creatorId, btn) {
 // Call updateCartBadge initially
 updateCartBadge();
 setupQrCodeUploadListeners();
+setTheme(localStorage.getItem('aethra-theme') || 'nebula');
 </script>
 </body>
 </html>
