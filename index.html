@@ -447,8 +447,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
 .drop-zone p{font-size:13px;color:var(--text2)}
 .drop-zone small{font-size:11px;color:var(--text3)}
 .vis-grid,.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
-.vis-opt,.price-opt{background:rgba(255,255,255,0.03);border:2px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;transition:all 0.2s;font-size:12px;font-weight:500;color:var(--text2);line-height:1.5}
-.vis-opt.sel{border-color:var(--blue);background:rgba(59,130,246,0.1);color:var(--text)}
+.vis-opt,.price-opt,.style-opt{background:rgba(255,255,255,0.03);border:2px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;transition:all 0.2s;font-size:12px;font-weight:500;color:var(--text2);line-height:1.5}
+.vis-opt.sel,.style-opt.sel{border-color:var(--blue);background:rgba(59,130,246,0.1);color:var(--text)}
 .price-opt.sel{border-color:var(--cyan);background:rgba(6,182,212,0.1);color:var(--text)}
 .price-in{display:none;margin-bottom:1rem}
 .price-in.show{display:block}
@@ -1756,11 +1756,11 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
       <div style="display: flex; flex-direction: column; gap: 6px;">
         <label class="flabel" style="margin: 0;">Art Style</label>
         <div style="display: flex; flex-wrap: wrap; gap: 8px;" id="aiStyleTags">
-          <span class="vis-opt sel" onclick="selectAiStyle(this, 'Synthwave')" style="padding: 6px 12px; font-size: 12px; border-radius: 12px;">Synthwave 🌆</span>
-          <span class="vis-opt" onclick="selectAiStyle(this, 'Cyberpunk')" style="padding: 6px 12px; font-size: 12px; border-radius: 12px;">Cyberpunk 🤖</span>
-          <span class="vis-opt" onclick="selectAiStyle(this, 'Minimalist')" style="padding: 6px 12px; font-size: 12px; border-radius: 12px;">Minimalist 🔳</span>
-          <span class="vis-opt" onclick="selectAiStyle(this, '3D Render')" style="padding: 6px 12px; font-size: 12px; border-radius: 12px;">3D Render 💎</span>
-          <span class="vis-opt" onclick="selectAiStyle(this, 'Water Color')" style="padding: 6px 12px; font-size: 12px; border-radius: 12px;">Water Color 🎨</span>
+          <span class="style-opt sel" onclick="selectAiStyle(this, 'Synthwave')" style="padding: 6px 12px; font-size: 12px; border-radius: 12px;">Synthwave 🌆</span>
+          <span class="style-opt" onclick="selectAiStyle(this, 'Cyberpunk')" style="padding: 6px 12px; font-size: 12px; border-radius: 12px;">Cyberpunk 🤖</span>
+          <span class="style-opt" onclick="selectAiStyle(this, 'Minimalist')" style="padding: 6px 12px; font-size: 12px; border-radius: 12px;">Minimalist 🔳</span>
+          <span class="style-opt" onclick="selectAiStyle(this, '3D Render')" style="padding: 6px 12px; font-size: 12px; border-radius: 12px;">3D Render 💎</span>
+          <span class="style-opt" onclick="selectAiStyle(this, 'Water Color')" style="padding: 6px 12px; font-size: 12px; border-radius: 12px;">Water Color 🎨</span>
         </div>
       </div>
       
@@ -2859,7 +2859,7 @@ function switchUploadTab(mode) {
 }
 
 function selectAiStyle(el, styleName) {
-  document.querySelectorAll('#aiStyleTags .vis-opt').forEach(o => o.classList.remove('sel'));
+  document.querySelectorAll('#aiStyleTags .style-opt').forEach(o => o.classList.remove('sel'));
   el.classList.add('sel');
   selectedAiStyle = styleName;
 }
@@ -3119,10 +3119,10 @@ async function submitPost() {
   else if (selVal.includes("Photography")) contentType = "PHOTOGRAPHY";
 
   const description = document.getElementById("postDescriptionInput").value.trim();
-  const visOpt = document.querySelector(".vis-opt.sel");
+  const visOpt = document.querySelector("#uploadModal .vis-grid .vis-opt.sel");
   const visibility = visOpt ? visOpt.textContent.toLowerCase().replace(/[^a-z]/g, "") : "public";
 
-  const priceOpt = document.querySelector(".price-opt.sel");
+  const priceOpt = document.querySelector("#uploadModal .price-grid .price-opt.sel");
   let pricing = "free";
   if (priceOpt) {
     if (priceOpt.innerText.includes("Paid")) pricing = "paid";
