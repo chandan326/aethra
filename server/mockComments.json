@@ -1,0 +1,37 @@
+[
+  {
+    "_id": "c1",
+    "post": "p1",
+    "user": {
+      "username": "vfx_ravi",
+      "displayName": "Ravi VFX",
+      "avatar": "🔮"
+    },
+    "text": "Wow, this looks absolutely beautiful! The lighting is amazing.",
+    "createdAt": "2026-06-10T12:11:20.198Z"
+  },
+  {
+    "_id": "c2",
+    "post": "p1",
+    "user": {
+      "username": "pixel_priya",
+      "displayName": "Priya Pixel",
+      "avatar": "🌸",
+      "hasPremium": true
+    },
+    "text": "Indeed, Meera's artwork is always top notch! 🔥",
+    "createdAt": "2026-06-10T12:41:20.198Z"
+  },
+  {
+    "_id": "c3",
+    "post": "p2",
+    "user": {
+      "username": "artby_meera",
+      "displayName": "Meera Art",
+      "avatar": "🎨",
+      "hasPremium": true
+    },
+    "text": "Love the neon dragon! Great color palette.",
+    "createdAt": "2026-06-10T11:11:20.198Z"
+  }
+]

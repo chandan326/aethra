@@ -260,8 +260,10 @@ router.get("/", async (req, res) => {
       }
     } else {
       filtered = filtered.filter(p => {
-        if (p.visibility === "public") return true;
-        if (p.visibility === "followers") {
+        // Treat undefined/null visibility as "public" for backward compatibility
+        const vis = p.visibility || "public";
+        if (vis === "public") return true;
+        if (vis === "followers") {
           const cId = p.creator?._id || p.creator?.id || p.creator;
           return cId && (cId.toString() === userId?.toString() || followingList.includes(cId.toString()));
         }
@@ -315,11 +317,19 @@ router.get("/", async (req, res) => {
         filter = {
           $or: [
             { visibility: "public" },
+            { visibility: { $exists: false } },
+            { visibility: null },
             { visibility: "followers", creator: { $in: followingList } }
           ]
         };
       } else {
-        filter = { visibility: "public" };
+        filter = {
+          $or: [
+            { visibility: "public" },
+            { visibility: { $exists: false } },
+            { visibility: null }
+          ]
+        };
       }
     }
 
