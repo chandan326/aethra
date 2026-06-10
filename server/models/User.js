@@ -11,6 +11,7 @@ const UserSchema = new mongoose.Schema({
   upiId: { type: String, default: "" },
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  purchasedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
   verified: { type: Boolean, default: false },
   earnings: { type: Number, default: 0 },
   hasPremium: { type: Boolean, default: false },

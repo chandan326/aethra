@@ -283,6 +283,9 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
 .pcard-type{position:absolute;top:10px;left:10px;background:rgba(6,8,15,0.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:0.6px;z-index:1}
 .pcard-lock{position:absolute;top:10px;right:10px;width:26px;height:26px;background:rgba(99,102,241,0.65);backdrop-filter:blur(8px);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;z-index:1}
 .pcard-price{position:absolute;top:10px;right:10px;background:rgba(59,130,246,0.85);backdrop-filter:blur(8px);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:#fff;z-index:1}
+.pcard-overlay{position:absolute;inset:0;background:rgba(11,15,25,0.45);display:flex;align-items:center;justify-content:center;z-index:2}
+.pcard-overlay-btn{background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff;border:none;padding:6px 14px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(20,184,166,0.45);transition:all 0.2s;display:inline-flex;align-items:center;gap:4px}
+.pcard-overlay-btn:hover{transform:scale(1.05);box-shadow:0 6px 16px rgba(20,184,166,0.65)}
 .pcard-body{padding:14px 14px 12px}
 .pcard-user{display:flex;align-items:center;gap:8px;margin-bottom:7px}
 .av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
@@ -1891,14 +1894,29 @@ function renderContent(content) {
 }
 
 function mkPCard(item, i) {
-  const badge = item.visibility === "private" ? `<div class="pcard-lock">🔒</div>` : item.pricing === "paid" ? `<div class="pcard-price">₹${item.price}</div>` : '';
+  const cId = item.creator?._id || item.creator?.id || item.creator || "";
+  const isSelf = currentUser && (cId.toString() === (currentUser.id || currentUser._id || '').toString());
+  const isFollowing = currentUser && item.creator && item.creator.followers && item.creator.followers.some(f => f.toString() === (currentUser.id || currentUser._id || '').toString());
+  const isFollowersLocked = item.visibility === "followers" && !isSelf && !isFollowing;
+
+  const badge = item.visibility === "private" ? `<div class="pcard-lock">🔒</div>` : isFollowersLocked ? `<div class="pcard-lock" style="background:rgba(6,182,212,0.85);width:auto;padding:2px 8px;font-size:10px;font-weight:700">👥 Followers</div>` : item.pricing === "paid" ? `<div class="pcard-price">₹${item.price}</div>` : '';
   const creatorName = escapeHtml(item.creator ? (item.creator.displayName || item.creator.username) : "Creator");
   const creatorAvatar = escapeHtml(item.creator ? (item.creator.avatar || item.creator.username.slice(0, 2).toUpperCase()) : "👤");
   const isLiked = currentUser && item.likes && item.likes.some(l => l.toString() === (currentUser.id || currentUser._id || '').toString());
   const redTick = item.creator && item.creator.hasPremium ? ` <span class="red-tick">✓</span>` : '';
   
+  let mediaHtml = renderContent(item.content);
+  if (isFollowersLocked) {
+    mediaHtml += `
+    <div class="pcard-overlay">
+      <button class="pcard-overlay-btn" onclick="event.stopPropagation(); handleProfileFollow('${cId}', this)">
+        👥 <span data-en="Follow to Unlock" data-hi="फ़ॉलो करें">Follow to Unlock</span>
+      </button>
+    </div>`;
+  }
+
   return `<div class="pcard" onclick="openProductDetail('${item._id}')">
-  <div class="pcard-media" style="background:linear-gradient(135deg,${gc(i)}1a,${gc(i+2)}0d)">${renderContent(item.content)}</div>
+  <div class="pcard-media" style="background:linear-gradient(135deg,${gc(i)}1a,${gc(i+2)}0d)">${mediaHtml}</div>
   <div class="pcard-type">${escapeHtml(item.contentType)}</div>${badge}
   <div class="pcard-body">
     <div class="pcard-user" onclick="event.stopPropagation(); showUserProfile('${item.creator?._id || item.creator?.id || ''}')"><div class="av" style="background:${gc(i)}20;color:${gc(i)}">${creatorAvatar}</div><span class="pcard-uname">@${escapeHtml(item.creator?.username || 'user')}${redTick}</span></div>
@@ -2852,9 +2870,19 @@ function openProductDetail(id) {
   const priceText = isFree ? "Free" : `₹${item.price}`;
   document.getElementById("prodModalPrice").textContent = priceText;
 
+  const cId = item.creator?._id || item.creator?.id || item.creator || "";
+  const isSelf = currentUser && (cId.toString() === (currentUser.id || currentUser._id || '').toString());
+  const isPurchased = item.isPurchased || (currentUser && currentUser.purchasedPosts && currentUser.purchasedPosts.some(pId => pId.toString() === item._id.toString()));
+  const isFollowing = currentUser && item.creator && item.creator.followers && item.creator.followers.some(f => f.toString() === (currentUser.id || currentUser._id || '').toString());
+  const isUnlocked = isSelf || isPurchased || (isFree && (item.visibility !== "followers" || isFollowing));
+
   const mainBtn = document.getElementById("prodModalBtnMain");
-  if (isFree) {
-    mainBtn.innerHTML = `⬇️ <span data-en="Download Free" data-hi="मुफ्त डाउनलोड">Download Free</span>`;
+  if (isUnlocked) {
+    mainBtn.innerHTML = `⬇️ <span data-en="Download File" data-hi="फ़ाइल डाउनलोड करें">Download File</span>`;
+    mainBtn.style.background = "linear-gradient(135deg, #10b981, #059669)";
+    mainBtn.style.boxShadow = "0 8px 24px rgba(16,185,129,0.3)";
+  } else if (item.visibility === "followers" && !isFollowing) {
+    mainBtn.innerHTML = `👥 <span data-en="Follow to Unlock" data-hi="अनलॉक करने के लिए फ़ॉलो करें">Follow to Unlock</span>`;
     mainBtn.style.background = "linear-gradient(135deg, var(--teal), var(--cyan))";
     mainBtn.style.boxShadow = "0 8px 24px rgba(20,184,166,0.3)";
   } else {
@@ -2871,19 +2899,36 @@ function closeProductModal() {
   currentSelectedProduct = null;
 }
 
-function handleProductAction() {
+async function handleProductAction() {
   if (!currentSelectedProduct) return;
+  
+  const cId = currentSelectedProduct.creator?._id || currentSelectedProduct.creator?.id || currentSelectedProduct.creator || "";
+  const isSelf = currentUser && (cId.toString() === (currentUser.id || currentUser._id || '').toString());
+  const isPurchased = currentSelectedProduct.isPurchased || (currentUser && currentUser.purchasedPosts && currentUser.purchasedPosts.some(pId => pId.toString() === currentSelectedProduct._id.toString()));
+  const isFollowing = currentUser && currentSelectedProduct.creator && currentSelectedProduct.creator.followers && currentSelectedProduct.creator.followers.some(f => f.toString() === (currentUser.id || currentUser._id || '').toString());
   const isFree = currentSelectedProduct.pricing === "free";
-  if (isFree) {
-    downloadProductFile(currentSelectedProduct);
+  
+  const hasAccess = isSelf || isPurchased || (isFree && (currentSelectedProduct.visibility !== "followers" || isFollowing));
+
+  if (hasAccess) {
+    await downloadProductFile(currentSelectedProduct);
     closeProductModal();
   } else {
+    const mainBtn = document.getElementById("prodModalBtnMain");
+    if (currentSelectedProduct.visibility === "followers" && !isFollowing) {
+      toast("👥 Following creator to unlock content...");
+      await handleProfileFollow(cId, mainBtn);
+      openProductDetail(currentSelectedProduct._id);
+      return;
+    }
+    
     if (!token) {
       toast("🔑 Please log in to purchase premium creations!");
       openAuth();
       return;
     }
-    // Direct payment via UPI QR scan
+    
+    // Direct payment UPI QR scan
     const creator = currentSelectedProduct.creator;
     const payeeName = creator ? (creator.displayName || creator.username) : "Aethra Platform";
     const payeeUpi = creator ? (creator.upiId || "aethra@okaxis") : "aethra@okaxis";
@@ -2923,18 +2968,49 @@ function handleProductShare() {
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 let pendingPaidDownloadItem = null;
 
-function downloadProductFile(item) {
-  if (item && item.content) {
-    if (item.content.startsWith("/uploads/") || item.content.startsWith("data:")) {
+async function downloadProductFile(item) {
+  if (!item) return;
+  
+  const isFree = item.pricing === "free";
+  const cId = item.creator?._id || item.creator?.id || item.creator || "";
+  const isSelf = currentUser && (cId.toString() === (currentUser.id || currentUser._id || '').toString());
+  const isPurchased = item.isPurchased || (currentUser && currentUser.purchasedPosts && currentUser.purchasedPosts.some(pId => pId.toString() === item._id.toString()));
+  const isFollowing = currentUser && item.creator && item.creator.followers && item.creator.followers.some(f => f.toString() === (currentUser.id || currentUser._id || '').toString());
+  
+  const hasDirectAccess = isSelf || (isFree && (item.visibility !== "followers" || isFollowing));
+  let downloadUrl = item.content;
+  
+  if (!hasDirectAccess && token) {
+    try {
+      toast("⚡ Fetching secure download link...");
+      const res = await fetch(`/api/posts/${item._id}/unlocked`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        downloadUrl = data.securedContent;
+      } else {
+        const err = await res.json();
+        toast("⚠️ " + (err.message || "Download failed. Please purchase first."));
+        return;
+      }
+    } catch (err) {
+      toast("⚠️ Connection error fetching download.");
+      return;
+    }
+  }
+
+  if (downloadUrl) {
+    if (downloadUrl.startsWith("/uploads/") || downloadUrl.startsWith("data:")) {
       const a = document.createElement("a");
-      a.href = item.content;
+      a.href = downloadUrl;
       
       let ext = "png";
-      if (item.content.startsWith("data:")) {
-        const match = item.content.match(/data:[a-zA-Z0-9]+\/([a-zA-Z0-9+]+);/);
+      if (downloadUrl.startsWith("data:")) {
+        const match = downloadUrl.match(/data:[a-zA-Z0-9]+\/([a-zA-Z0-9+]+);/);
         if (match) ext = match[1];
       } else {
-        ext = item.content.split('.').pop() || "png";
+        ext = downloadUrl.split('.').pop() || "png";
       }
       const filename = `${item.title.replace(/[^a-zA-Z0-9]/g, "_")}.${ext}`;
       
@@ -2944,7 +3020,7 @@ function downloadProductFile(item) {
       document.body.removeChild(a);
       toast(`📥 Downloading "${item.title}"...`);
     } else {
-      toast(`📥 Saved text creation: "${item.content}"`);
+      toast(`📥 Saved text creation: "${downloadUrl}"`);
     }
   }
 }
@@ -3019,6 +3095,12 @@ function removeFromCart(index) {
 
 function checkoutCart() {
   if (cart.length === 0) return;
+  if (!token) {
+    toast("🔑 Please log in first to checkout!");
+    document.getElementById("cartModal").classList.remove("open");
+    openAuth();
+    return;
+  }
   
   let total = 0;
   cart.forEach(item => {
@@ -3060,18 +3142,62 @@ function showUpiQrModal(payeeName, payeeUpi, amount, purposeText = "Payment", pa
 
   document.getElementById("upiQrModal").classList.add("open");
   
-  upiPaymentCallback = function() {
+  upiPaymentCallback = async function() {
     toast(`✅ Payment of ₹${amount} successful!`);
     if (purposeText.includes("Checkout Cart")) {
-      cart.forEach(item => {
-        downloadProductFile(item);
-      });
+      for (const item of cart) {
+        if (item.pricing === "paid") {
+          try {
+            const res = await fetch(`/api/posts/${item._id}/purchase`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+              }
+            });
+            if (res.ok) {
+              if (!currentUser.purchasedPosts) currentUser.purchasedPosts = [];
+              const pStr = item._id.toString();
+              if (!currentUser.purchasedPosts.some(p => p.toString() === pStr)) {
+                currentUser.purchasedPosts.push(pStr);
+              }
+            }
+          } catch (err) {
+            console.error("Cart item purchase failed:", err);
+          }
+        }
+        await downloadProductFile(item);
+      }
       cart = [];
       localStorage.setItem("cart", JSON.stringify(cart));
       updateCartBadge();
+      await populate();
     } else if (purposeText.startsWith("Buy \"") && pendingPaidDownloadItem) {
-      downloadProductFile(pendingPaidDownloadItem);
+      const item = pendingPaidDownloadItem;
+      try {
+        const res = await fetch(`/api/posts/${item._id}/purchase`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          if (!currentUser.purchasedPosts) currentUser.purchasedPosts = [];
+          const pStr = item._id.toString();
+          if (!currentUser.purchasedPosts.some(p => p.toString() === pStr)) {
+            currentUser.purchasedPosts.push(pStr);
+          }
+          toast("🎉 Item purchased successfully!");
+          await downloadProductFile(item);
+        } else {
+          toast("⚠️ Failed to record purchase on server.");
+        }
+      } catch (err) {
+        toast("⚠️ Error recording purchase.");
+      }
       pendingPaidDownloadItem = null;
+      await populate();
     }
   };
 }
@@ -3310,7 +3436,16 @@ async function handleProfileFollow(creatorId, btn) {
     if (res.ok) {
       const data = await res.json();
       toast(data.message);
-      await renderProfilePage();
+      
+      if (!currentUser.following) currentUser.following = [];
+      const index = currentUser.following.indexOf(creatorId);
+      if (data.message.toLowerCase().includes("unfollow") || data.message.toLowerCase().includes("unfollowed")) {
+        if (index > -1) currentUser.following.splice(index, 1);
+      } else {
+        if (index === -1) currentUser.following.push(creatorId);
+      }
+      
+      await populate();
     } else {
       const err = await res.json();
       toast("⚠️ " + (err.message || "Failed to follow"));

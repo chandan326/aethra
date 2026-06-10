@@ -41,6 +41,13 @@ const mockUsersDb = {
   "u13": { id: "u13", _id: "u13", username: "synth_3d", displayName: "AI Avanti", avatar: "🤖", bio: "Illustrator and 3D visual artist.", location: "India 🇮🇳", verified: true, upiId: "avanti@okaxis", hasPremium: true, followers: [], following: [] }
 };
 
+global.mockUsersDb = mockUsersDb;
+for (const userId in mockUsersDb) {
+  if (!mockUsersDb[userId].purchasedPosts) {
+    mockUsersDb[userId].purchasedPosts = [];
+  }
+}
+
 const isVercel = process.env.VERCEL === "1" || process.env.NOW_REGION !== undefined;
 const uploadDir = isVercel ? "/tmp/uploads" : path.join(__dirname, "../uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -110,6 +117,7 @@ router.post("/register", async (req, res) => {
       upiId: "preview@okaxis",
       followers: [],
       following: [],
+      purchasedPosts: [],
       verified: false,
       earnings: 0,
       hasPremium: false,
@@ -134,7 +142,10 @@ router.post("/register", async (req, res) => {
     await user.save();
 
     const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: "7d" });
-    res.status(201).json({ token, user: { id: user._id, username: user.username, email: user.email } });
+    const userObj = user.toObject();
+    delete userObj.password;
+    userObj.id = user._id;
+    res.status(201).json({ token, user: userObj });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -166,6 +177,7 @@ router.post("/login", async (req, res) => {
         upiId: "preview@okaxis",
         followers: [],
         following: [],
+        purchasedPosts: [],
         verified: false,
         earnings: 0,
         hasPremium: false,
@@ -184,7 +196,10 @@ router.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: "7d" });
-    res.json({ token, user: { id: user._id, username: user.username, email: user.email, avatar: user.avatar } });
+    const userObj = user.toObject();
+    delete userObj.password;
+    userObj.id = user._id;
+    res.json({ token, user: userObj });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
