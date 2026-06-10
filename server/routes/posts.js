@@ -115,10 +115,7 @@ router.post("/", auth, uploadSinglePostMedia, async (req, res) => {
   const isFollowersOnly = visibility === "followers";
   const isPrivate = visibility === "private";
 
-  const displayContent = isPaid ? lockPaidSvg : 
-                         isFollowersOnly ? lockFollowersSvg : 
-                         isPrivate ? lockPrivateSvg : 
-                         contentValue;
+  const displayContent = isPrivate ? lockPrivateSvg : contentValue;
 
   if (mongoose.connection.readyState !== 1) {
     const newMock = {
@@ -235,29 +232,11 @@ router.get("/", async (req, res) => {
       const isFollower = userId && creatorUser && creatorUser.followers && creatorUser.followers.includes(userId);
       const isPurchased = userId && purchasedSet.has(p._id.toString());
       
-      if (isCreator) {
-        postObj.content = p.securedContent || p.content;
-      } else {
-        if (p.visibility === "private") {
-          postObj.content = lockPrivateSvg;
-        } else if (p.visibility === "followers") {
-          if (isFollower) {
-            postObj.content = p.securedContent || p.content;
-          } else {
-            postObj.content = lockFollowersSvg;
-          }
-        } else if (p.pricing === "paid") {
-          if (isPurchased) {
-            postObj.content = p.securedContent || p.content;
-            postObj.isPurchased = true;
-          } else {
-            postObj.content = lockPaidSvg;
-            postObj.isPurchased = false;
-          }
-        } else {
-          postObj.content = p.securedContent || p.content;
-        }
+      postObj.content = p.securedContent || p.content;
+      if (p.visibility === "private" && !isCreator) {
+        postObj.content = lockPrivateSvg;
       }
+      postObj.isPurchased = isPurchased;
       return postObj;
     });
 
@@ -310,29 +289,11 @@ router.get("/", async (req, res) => {
       const isFollower = userId && p.creator && p.creator.followers && p.creator.followers.some(f => f.toString() === userId.toString());
       const isPurchased = userId && purchasedSet.has(p._id.toString());
       
-      if (isCreator) {
-        postObj.content = p.securedContent || p.content;
-      } else {
-        if (p.visibility === "private") {
-          postObj.content = lockPrivateSvg;
-        } else if (p.visibility === "followers") {
-          if (isFollower) {
-            postObj.content = p.securedContent || p.content;
-          } else {
-            postObj.content = lockFollowersSvg;
-          }
-        } else if (p.pricing === "paid") {
-          if (isPurchased) {
-            postObj.content = p.securedContent || p.content;
-            postObj.isPurchased = true;
-          } else {
-            postObj.content = lockPaidSvg;
-            postObj.isPurchased = false;
-          }
-        } else {
-          postObj.content = p.securedContent || p.content;
-        }
+      postObj.content = p.securedContent || p.content;
+      if (p.visibility === "private" && !isCreator) {
+        postObj.content = lockPrivateSvg;
       }
+      postObj.isPurchased = isPurchased;
       return postObj;
     });
       

@@ -1907,14 +1907,6 @@ function mkPCard(item, i) {
   const redTick = item.creator && item.creator.hasPremium ? ` <span class="red-tick">✓</span>` : '';
   
   let mediaHtml = renderContent(item.content);
-  if (isFollowersLocked) {
-    mediaHtml += `
-    <div class="pcard-overlay">
-      <button class="pcard-overlay-btn" onclick="event.stopPropagation(); handleProfileFollow('${cId}', this)">
-        👥 <span data-en="Follow to Unlock" data-hi="फ़ॉलो करें">Follow to Unlock</span>
-      </button>
-    </div>`;
-  }
 
   return `<div class="pcard" onclick="openProductDetail('${item._id}')">
   <div class="pcard-media" style="background:linear-gradient(135deg,${gc(i)}1a,${gc(i+2)}0d)">${mediaHtml}</div>
