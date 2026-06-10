@@ -1784,9 +1784,9 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
       <button class="btn-ghost" onclick="generateAiArt()" style="height: 38px; border-radius: 19px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); color: var(--blue2); display: flex; align-items: center; justify-content: center; font-weight: 600; cursor: pointer; transition: all 0.2s;">🎨 Generate Art</button>
     </div>
     <label class="flabel">Post Title</label>
-    <input class="finput" type="text" placeholder="Give your creation a title...">
+    <input class="finput" type="text" id="postTitleInput" placeholder="Give your creation a title...">
     <label class="flabel">Content Type</label>
-    <select class="fselect">
+    <select class="fselect" id="postContentTypeSelect">
       <option>🖼 AI Generated Image</option>
       <option>🎞 GIF Animation</option>
       <option>😊 Sticker Pack</option>
@@ -1795,7 +1795,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
       <option>📸 Photography</option>
     </select>
     <label class="flabel">Description</label>
-    <textarea class="ftextarea" placeholder="Describe your creation..."></textarea>
+    <textarea class="ftextarea" id="postDescriptionInput" placeholder="Describe your creation..."></textarea>
     <label class="flabel">Visibility</label>
     <div class="vis-grid">
       <div class="vis-opt sel" onclick="selVis(this)">🌍<br>Public</div>
@@ -3108,8 +3108,8 @@ async function submitPost() {
     return;
   }
 
-  const title = document.querySelector("#uploadModal .finput").value.trim();
-  const select = document.querySelector("#uploadModal .fselect");
+  const title = document.getElementById("postTitleInput").value.trim();
+  const select = document.getElementById("postContentTypeSelect");
   let contentType = "AI";
   const selVal = select.value;
   if (selVal.includes("GIF")) contentType = "GIF";
@@ -3118,7 +3118,7 @@ async function submitPost() {
   else if (selVal.includes("Wallpaper")) contentType = "LIVE_WALLPAPER";
   else if (selVal.includes("Photography")) contentType = "PHOTOGRAPHY";
 
-  const description = document.querySelector("#uploadModal .ftextarea").value.trim();
+  const description = document.getElementById("postDescriptionInput").value.trim();
   const visOpt = document.querySelector(".vis-opt.sel");
   const visibility = visOpt ? visOpt.textContent.toLowerCase().replace(/[^a-z]/g, "") : "public";
 
@@ -3169,8 +3169,8 @@ async function submitPost() {
     if (res.ok) {
       toast("🎉 Post published successfully on Aethra!");
       closeUpload();
-      document.querySelector("#uploadModal .finput").value = "";
-      document.querySelector("#uploadModal .ftextarea").value = "";
+      document.getElementById("postTitleInput").value = "";
+      document.getElementById("postDescriptionInput").value = "";
       if (priceInput) priceInput.value = "";
       document.getElementById("fileLabel").textContent = "Drop your file here or click to browse";
       selectedFile = null;
