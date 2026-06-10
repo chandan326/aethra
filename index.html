@@ -1603,6 +1603,15 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
           </div>
           <h2 id="prodModalTitle" style="font-family: var(--font2); font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem; line-height: 1.2;"></h2>
           <p id="prodModalDesc" style="font-size: 13px; color: var(--text2); line-height: 1.6; font-weight: 300; word-break: break-word;"></p>
+          <hr style="border:none; border-top:1px solid var(--border); margin:1.5rem 0 1rem 0">
+          <div style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 1rem; font-family: var(--font2); display: flex; justify-content: space-between; align-items: center;">
+            <span>💬 <span data-en="Comments" data-hi="टिप्पणियाँ">Comments</span> (<span id="prodModalCommentsCount">0</span>)</span>
+          </div>
+          <div id="prodModalCommentsList" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 1.2rem;"></div>
+          <div id="prodModalCommentInputZone" style="display: flex; gap: 8px; align-items: flex-end; margin-top: 1rem;">
+            <textarea id="prodModalCommentText" placeholder="Write a comment..." style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 8px 12px; font-size: 13px; font-family: var(--font); resize: none; height: 36px; min-height: 36px; max-height: 80px;" oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';"></textarea>
+            <button class="btn-cta" onclick="submitComment()" style="height: 36px; padding: 0 16px; border-radius: 8px; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 4px; box-shadow: none;">Post</button>
+          </div>
         </div>
         
         <div style="flex-shrink: 0; border-top: 1px solid var(--border); padding-top: 1.2rem;">
@@ -2908,6 +2917,7 @@ function openProductDetail(id) {
   }
 
   document.getElementById("productModal").classList.add("open");
+  loadComments(item._id);
 }
 
 function closeProductModal() {
@@ -2917,6 +2927,110 @@ function closeProductModal() {
   // Restore browser URL dynamically for deep-linking
   if (window.location.pathname.startsWith("/posts/")) {
     window.history.pushState(null, "", "/");
+  }
+}
+
+function formatCommentDate(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString([], { month: "short", day: "numeric" }) + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+async function loadComments(postId) {
+  const list = document.getElementById("prodModalCommentsList");
+  const count = document.getElementById("prodModalCommentsCount");
+  
+  if (!list) return;
+  list.innerHTML = `<div style="color:var(--text3); font-size:12px; padding:10px 0;">⏳ Loading comments...</div>`;
+  
+  try {
+    const res = await fetch(`/api/posts/${postId}/comments`);
+    const comments = res.ok ? await res.json() : [];
+    
+    count.textContent = comments.length;
+    
+    if (currentSelectedProduct && currentSelectedProduct._id === postId) {
+      currentSelectedProduct.commentsCount = comments.length;
+    }
+    
+    if (comments.length === 0) {
+      list.innerHTML = `<div style="color:var(--text2); font-size:12px; font-style:italic; padding:10px 0;">✨ Be the first to share your thoughts!</div>`;
+      return;
+    }
+    
+    list.innerHTML = comments.map(c => {
+      const u = c.user || { username: "user", displayName: "User", avatar: "👤" };
+      const usernameEsc = escapeHtml(u.username);
+      const displayEsc = escapeHtml(u.displayName || u.username);
+      const avatarEsc = escapeHtml(u.avatar || "👤");
+      const redTick = u.hasPremium ? ` <span class="red-tick">✓</span>` : '';
+      const textEsc = escapeHtml(c.text);
+      const timeStr = formatCommentDate(c.createdAt);
+      
+      return `
+      <div class="comment-bubble" style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px;">
+        <div class="av" style="width: 28px; height: 28px; font-size: 11px; font-weight: 700; background: rgba(59,130,246,0.15); color: var(--blue2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 50%;">${avatarEsc}</div>
+        <div style="flex: 1; min-width: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+            <span style="font-weight: 700; color: var(--text); font-size: 12px; display: flex; align-items: center; gap: 4px;">@${usernameEsc}${redTick}</span>
+            <span style="font-size: 9px; color: var(--text3);">${timeStr}</span>
+          </div>
+          <div style="color: var(--text2); line-height: 1.4; word-break: break-word; font-weight: 300;">${textEsc}</div>
+        </div>
+      </div>`;
+    }).join("");
+  } catch (err) {
+    console.error("Failed to load comments:", err);
+    list.innerHTML = `<div style="color:#ef4444; font-size:12px; padding:10px 0;">⚠️ Error loading comments.</div>`;
+  }
+}
+
+async function submitComment() {
+  if (!currentUser) {
+    toast("🔑 Please log in to post a comment!");
+    openAuth();
+    return;
+  }
+  
+  if (!currentSelectedProduct) return;
+  
+  const textEl = document.getElementById("prodModalCommentText");
+  const btn = document.querySelector("#prodModalCommentInputZone button");
+  const text = textEl.value.trim();
+  
+  if (!text) return;
+  
+  btn.disabled = true;
+  try {
+    const res = await fetch(`/api/posts/${currentSelectedProduct._id}/comments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ text })
+    });
+    
+    if (res.ok) {
+      textEl.value = "";
+      textEl.style.height = "36px"; // Reset height
+      
+      // Reload comments to show the new one
+      await loadComments(currentSelectedProduct._id);
+      
+      // Increment comment count in local allHomePosts
+      const post = allHomePosts.find(p => p._id === currentSelectedProduct._id);
+      if (post) {
+        post.commentsCount = (post.commentsCount || 0) + 1;
+        renderHomeFeed();
+      }
+    } else {
+      const err = await res.json();
+      toast("⚠️ " + (err.message || "Failed to post comment"));
+    }
+  } catch (err) {
+    toast("⚠️ Connection error posting comment.");
+  } finally {
+    btn.disabled = false;
   }
 }
 

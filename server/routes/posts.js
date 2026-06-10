@@ -471,4 +471,118 @@ router.post("/:id/like", auth, async (req, res) => {
   }
 });
 
+// Get comments for a post
+router.get("/:id/comments", async (req, res) => {
+  const mongoose = require("mongoose");
+  const Comment = require("../models/Comment");
+  const postId = req.params.id;
+
+  // Initialize mockComments fallback array if uninitialized
+  if (!global.mockComments) {
+    global.mockComments = [
+      { _id: "c1", post: "p1", user: { username: "vfx_ravi", displayName: "Ravi VFX", avatar: "🔮" }, text: "Wow, this looks absolutely beautiful! The lighting is amazing.", createdAt: new Date(Date.now() - 3600000) },
+      { _id: "c2", post: "p1", user: { username: "pixel_priya", displayName: "Priya Pixel", avatar: "🌸", hasPremium: true }, text: "Indeed, Meera's artwork is always top notch! 🔥", createdAt: new Date(Date.now() - 1800000) },
+      { _id: "c3", post: "p2", user: { username: "artby_meera", displayName: "Meera Art", avatar: "🎨", hasPremium: true }, text: "Love the neon dragon! Great color palette.", createdAt: new Date(Date.now() - 7200000) }
+    ];
+  }
+
+  // Fallback to mockComments if MongoDB is offline
+  if (mongoose.connection.readyState !== 1) {
+    const postComments = global.mockComments.filter(c => c.post === postId);
+    return res.json(postComments);
+  }
+
+  try {
+    const comments = await Comment.find({ post: postId })
+      .populate("user", "username displayName avatar hasPremium")
+      .sort({ createdAt: 1 }); // Oldest first
+    res.json(comments);
+  } catch (err) {
+    console.error("Error fetching comments:", err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Post a comment
+router.post("/:id/comments", auth, async (req, res) => {
+  const mongoose = require("mongoose");
+  const Comment = require("../models/Comment");
+  const Post = require("../models/Post");
+  const User = require("../models/User");
+  
+  const postId = req.params.id;
+  const { text } = req.body;
+
+  if (!text || typeof text !== "string" || !text.trim()) {
+    return res.status(400).json({ message: "Comment text cannot be empty" });
+  }
+
+  // Fallback to mockComments if MongoDB is offline
+  if (mongoose.connection.readyState !== 1) {
+    const myId = req.user.id || "mock_user_id";
+    
+    // Find post in mockPosts to increment its comment count
+    const post = mockPosts.find(p => p._id === postId);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    // Retrieve commenter details from global.mockUsersDb or defaults
+    let commenter = { username: "user", displayName: "User", avatar: "👤" };
+    if (global.mockUsersDb && global.mockUsersDb[myId]) {
+      commenter = global.mockUsersDb[myId];
+    }
+
+    const newComment = {
+      _id: "c_mock_" + Date.now(),
+      post: postId,
+      user: {
+        _id: myId,
+        username: commenter.username,
+        displayName: commenter.displayName || commenter.username,
+        avatar: commenter.avatar || "👤",
+        hasPremium: commenter.hasPremium || false
+      },
+      text: text.trim(),
+      createdAt: new Date()
+    };
+
+    if (!global.mockComments) {
+      global.mockComments = [];
+    }
+    global.mockComments.push(newComment);
+    
+    // Increment commentsCount on mock post
+    post.commentsCount = (post.commentsCount || 0) + 1;
+
+    return res.status(201).json(newComment);
+  }
+
+  try {
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    const newComment = new Comment({
+      post: postId,
+      user: req.user.id,
+      text: text.trim()
+    });
+
+    await newComment.save();
+
+    // Increment commentsCount on post
+    post.commentsCount = (post.commentsCount || 0) + 1;
+    await post.save();
+
+    // Populate user details on the returned comment
+    const populatedComment = await Comment.findById(newComment._id).populate(
+      "user",
+      "username displayName avatar hasPremium"
+    );
+
+    res.status(201).json(populatedComment);
+  } catch (err) {
+    console.error("Error creating comment:", err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
