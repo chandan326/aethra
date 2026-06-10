@@ -3574,24 +3574,51 @@ async function downloadProductFile(item) {
   }
 
   if (downloadUrl) {
-    if (downloadUrl.startsWith("/uploads/") || downloadUrl.startsWith("data:")) {
-      const a = document.createElement("a");
-      a.href = downloadUrl;
+    const isCloudinary = downloadUrl.startsWith("http://") || downloadUrl.startsWith("https://");
+    const isLocal = downloadUrl.startsWith("/uploads/") || downloadUrl.startsWith("data:");
+    
+    if (isCloudinary || isLocal) {
+      toast(`📥 Downloading "${item.title}"...`);
       
       let ext = "png";
       if (downloadUrl.startsWith("data:")) {
         const match = downloadUrl.match(/data:[a-zA-Z0-9]+\/([a-zA-Z0-9+]+);/);
         if (match) ext = match[1];
       } else {
-        ext = downloadUrl.split('.').pop() || "png";
+        ext = downloadUrl.split('.').pop().split(/\#|\?/)[0] || "png";
       }
       const filename = `${item.title.replace(/[^a-zA-Z0-9]/g, "_")}.${ext}`;
-      
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      toast(`📥 Downloading "${item.title}"...`);
+
+      if (isCloudinary) {
+        try {
+          const response = await fetch(downloadUrl);
+          const blob = await response.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = blobUrl;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(blobUrl);
+        } catch (err) {
+          // CORS fallback
+          const a = document.createElement("a");
+          a.href = downloadUrl;
+          a.target = "_blank";
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+      } else {
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
     } else {
       toast(`📥 Saved text creation: "${downloadUrl}"`);
     }
