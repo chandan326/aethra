@@ -539,4 +539,123 @@ router.post("/follow/:id", auth, async (req, res) => {
   }
 });
 
+// Get Creator Dashboard Analytics
+router.get("/dashboard", auth, async (req, res) => {
+  const mongoose = require("mongoose");
+  const Post = require("../models/Post");
+  const User = require("../models/User");
+  
+  const creatorId = req.user.id;
+
+  // Fallback if MongoDB is offline
+  if (mongoose.connection.readyState !== 1) {
+    const myId = creatorId || "mock_user_id";
+    const me = (global.mockUsersDb && global.mockUsersDb[myId]) ? global.mockUsersDb[myId] : {
+      username: "user", displayName: "User", earnings: 24000
+    };
+
+    // Find all creator posts in mockPosts
+    const creatorPosts = (global.mockPosts || []).filter(p => {
+      const cId = p.creator?._id || p.creator?.id || p.creator;
+      return cId && cId.toString() === myId.toString();
+    });
+
+    let totalLikes = 0;
+    let totalComments = 0;
+    let totalSales = 0;
+    const postBreakdown = [];
+
+    // Calculate metrics across all posts in mockPosts and mockUsersDb
+    creatorPosts.forEach(post => {
+      const likesCount = post.likes ? post.likes.length : 0;
+      const commentsCount = post.commentsCount || 0;
+      
+      // Calculate sales by scanning other mock users who purchased it
+      let sales = 0;
+      if (global.mockUsersDb) {
+        Object.values(global.mockUsersDb).forEach(u => {
+          if (u._id !== myId && u.id !== myId && u.purchasedPosts && u.purchasedPosts.includes(post._id)) {
+            sales++;
+          }
+        });
+      }
+
+      totalLikes += likesCount;
+      totalComments += commentsCount;
+      totalSales += sales;
+
+      postBreakdown.push({
+        _id: post._id,
+        title: post.title,
+        price: post.price || 0,
+        pricing: post.pricing || "free",
+        visibility: post.visibility || "public",
+        likesCount,
+        commentsCount,
+        sales,
+        earnings: sales * (post.price || 0)
+      });
+    });
+
+    return res.json({
+      totalEarnings: me.earnings || 0,
+      totalLikes,
+      totalComments,
+      totalSales,
+      postBreakdown
+    });
+  }
+
+  try {
+    const me = await User.findById(creatorId);
+    if (!me) return res.status(404).json({ message: "Creator not found" });
+
+    // Fetch all posts by this creator
+    const creatorPosts = await Post.find({ creator: creatorId });
+
+    let totalLikes = 0;
+    let totalComments = 0;
+    let totalSales = 0;
+    const postBreakdown = [];
+
+    for (const post of creatorPosts) {
+      const likesCount = post.likes ? post.likes.length : 0;
+      const commentsCount = post.commentsCount || 0;
+
+      // Count how many users purchased this post
+      const sales = await User.countDocuments({
+        _id: { $ne: creatorId }, // exclude self
+        purchasedPosts: post._id
+      });
+
+      totalLikes += likesCount;
+      totalComments += commentsCount;
+      totalSales += sales;
+
+      postBreakdown.push({
+        _id: post._id,
+        title: post.title,
+        price: post.price || 0,
+        pricing: post.pricing || "free",
+        visibility: post.visibility || "public",
+        likesCount,
+        commentsCount,
+        sales,
+        earnings: sales * (post.price || 0)
+      });
+    }
+
+    res.json({
+      totalEarnings: me.earnings || 0,
+      totalLikes,
+      totalComments,
+      totalSales,
+      postBreakdown
+    });
+  } catch (err) {
+    console.error("Dashboard error:", err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

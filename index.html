@@ -2098,6 +2098,25 @@ async function renderProfilePage() {
     }
     upiContainer.innerHTML = upiHtml;
 
+    // Update tabs dynamically depending on self vs other
+    const tabsContainer = document.querySelector(".ptabs");
+    if (tabsContainer) {
+      if (isSelf) {
+        tabsContainer.innerHTML = `
+          <div class="ptab active" onclick="switchPTab(this,'posts')">Posts</div>
+          <div class="ptab" onclick="switchPTab(this,'private')">Private 🔒</div>
+          <div class="ptab" onclick="switchPTab(this,'paid')">Paid 💰</div>
+          <div class="ptab" onclick="switchPTab(this,'dashboard')">Dashboard 📊</div>
+        `;
+      } else {
+        tabsContainer.innerHTML = `
+          <div class="ptab active" onclick="switchPTab(this,'posts')">Posts</div>
+          <div class="ptab" onclick="switchPTab(this,'paid')">Paid 💰</div>
+          <div class="ptab" onclick="switchPTab(this,'shop')">Shop</div>
+        `;
+      }
+    }
+
     // Render Action Buttons
     const actionsContainer = document.getElementById("profileActionsContainer");
     if (actionsContainer) {
@@ -2443,16 +2462,146 @@ window.addEventListener('click', e => {
 function switchPTab(el,tab){
   document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
   const g=document.getElementById('profileGrid');
+  const targetUserId = activeProfileUserId || (currentUser ? (currentUser.id || currentUser._id) : null);
+  if (!targetUserId) return;
+
   fetch("/api/posts").then(r => r.json()).then(posts => {
-    const myPosts = posts.filter(p => {
+    const creatorPosts = posts.filter(p => {
       const cId = p.creator?._id || p.creator?.id || p.creator;
-      return cId && currentUser && (cId.toString() === (currentUser.id || currentUser._id || '').toString());
+      return cId && (cId.toString() === targetUserId.toString());
     });
-    if(tab==='posts') g.innerHTML=myPosts.length ? myPosts.map(mkPCard).join('') : `<p style="color:var(--text3);padding:2rem">You haven't created any posts yet.</p>`;
-    else if(tab==='private') g.innerHTML=myPosts.filter(i=>i.visibility==='private').length?myPosts.filter(i=>i.visibility==='private').map(mkPCard).join(''):`<p style="color:var(--text3);padding:2rem">🔒 Your private posts will appear here.</p>`;
-    else if(tab==='paid') g.innerHTML=myPosts.filter(i=>i.pricing==='paid').length?myPosts.filter(i=>i.pricing==='paid').map(mkPCard).join(''):`<p style="color:var(--text3);padding:2rem">💰 Your paid posts will appear here.</p>`;
-    else g.innerHTML=`<p style="color:var(--text3);padding:2rem">🛒 Your shop listings will appear here.</p>`;
+    
+    if(tab==='posts') {
+      g.innerHTML=creatorPosts.length ? creatorPosts.map(mkPCard).join('') : `<p style="color:var(--text3);padding:2rem">This creator hasn't uploaded any creations yet.</p>`;
+    } else if(tab==='private') {
+      g.innerHTML=creatorPosts.filter(i=>i.visibility==='private').length ? creatorPosts.filter(i=>i.visibility==='private').map(mkPCard).join('') : `<p style="color:var(--text3);padding:2rem">🔒 Private posts will appear here.</p>`;
+    } else if(tab==='paid') {
+      g.innerHTML=creatorPosts.filter(i=>i.pricing==='paid').length ? creatorPosts.filter(i=>i.pricing==='paid').map(mkPCard).join('') : `<p style="color:var(--text3);padding:2rem">💰 Paid posts will appear here.</p>`;
+    } else if(tab==='dashboard') {
+      renderDashboard();
+    } else {
+      g.innerHTML=`<p style="color:var(--text3);padding:2rem">🛒 Shop listings will appear here.</p>`;
+    }
   });
+}
+
+function formatDashboardDate(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+async function renderDashboard() {
+  const g = document.getElementById('profileGrid');
+  if (!g) return;
+
+  g.innerHTML = `
+    <div style="grid-column: 1 / -1; padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; background: var(--bg2); border-radius: var(--r2); border: 1px solid var(--border); width: 100%; box-sizing: border-box;">
+      <h3 style="font-family: var(--font2); font-size: 1.4rem; font-weight: 800; color: #fff;" data-en="Creator Analytics Dashboard" data-hi="क्रिएटर एनालिटिक्स डैशबोर्ड">Creator Analytics Dashboard</h3>
+      
+      <!-- Stats Cards -->
+      <div class="dash-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 0.5rem; width: 100%;">
+        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); padding: 1.2rem; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-size: 11px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Lifetime Earnings</span>
+          <span id="dashTotalEarnings" style="font-size: 1.8rem; font-weight: 800; color: var(--cyan);">₹0</span>
+        </div>
+        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); padding: 1.2rem; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-size: 11px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Lifetime Likes</span>
+          <span id="dashTotalLikes" style="font-size: 1.8rem; font-weight: 800; color: var(--blue2);">0</span>
+        </div>
+        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); padding: 1.2rem; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-size: 11px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Lifetime Comments</span>
+          <span id="dashTotalComments" style="font-size: 1.8rem; font-weight: 800; color: var(--indigo);">0</span>
+        </div>
+        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); padding: 1.2rem; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-size: 11px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Sales</span>
+          <span id="dashTotalSales" style="font-size: 1.8rem; font-weight: 800; color: #10b981;">0</span>
+        </div>
+      </div>
+
+      <!-- Creations Performance Table -->
+      <div style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1.5rem; width: 100%;">
+        <h4 style="font-family: var(--font2); font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 1rem;">Creations Performance</h4>
+        <div style="overflow-x: auto; background: var(--panel); border-radius: var(--r); border: 1px solid var(--border); width: 100%;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; min-width: 600px;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border2); color: var(--text3); font-weight: 600; font-family: var(--font2);">
+                <th style="padding: 12px 16px;">Creation Title</th>
+                <th style="padding: 12px 16px;">Pricing</th>
+                <th style="padding: 12px 16px;">Price</th>
+                <th style="padding: 12px 16px; text-align: center;">Likes</th>
+                <th style="padding: 12px 16px; text-align: center;">Comments</th>
+                <th style="padding: 12px 16px; text-align: center;">Sales</th>
+                <th style="padding: 12px 16px; text-align: right;">Total Revenue</th>
+              </tr>
+            </thead>
+            <tbody id="dashTableBody">
+              <tr>
+                <td colspan="7" style="padding: 24px; text-align: center; color: var(--text3);">⏳ Loading analytics...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+
+  try {
+    const res = await fetch("/api/auth/dashboard", {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error("Failed to load dashboard data");
+    
+    const data = await res.json();
+    
+    document.getElementById("dashTotalEarnings").textContent = `₹${data.totalEarnings}`;
+    document.getElementById("dashTotalLikes").textContent = data.totalLikes;
+    document.getElementById("dashTotalComments").textContent = data.totalComments;
+    document.getElementById("dashTotalSales").textContent = data.totalSales;
+
+    const tbody = document.getElementById("dashTableBody");
+    if (data.postBreakdown.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="padding: 24px; text-align: center; color: var(--text2); font-style: italic;">
+            No uploads found. Create some posts to view metrics!
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = data.postBreakdown.map(p => {
+      const isFree = p.pricing === "free";
+      const pricingBadge = isFree 
+        ? `<span style="background: rgba(20, 184, 166, 0.1); color: var(--teal); border: 1px solid rgba(20, 184, 166, 0.2); padding: 2px 6px; border-radius: 4px; font-size: 11px;">Free</span>`
+        : `<span style="background: rgba(59, 130, 246, 0.1); color: var(--blue2); border: 1px solid rgba(59, 130, 246, 0.2); padding: 2px 6px; border-radius: 4px; font-size: 11px;">Paid</span>`;
+      
+      const priceText = isFree ? "—" : `₹${p.price}`;
+      const revText = isFree ? "—" : `₹${p.earnings}`;
+
+      return `
+        <tr style="border-bottom: 1px solid var(--border); color: var(--text2); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+          <td style="padding: 12px 16px; font-weight: 500; color: #fff;">${escapeHtml(p.title)}</td>
+          <td style="padding: 12px 16px;">${pricingBadge}</td>
+          <td style="padding: 12px 16px;">${priceText}</td>
+          <td style="padding: 12px 16px; text-align: center;">❤️ ${p.likesCount}</td>
+          <td style="padding: 12px 16px; text-align: center;">💬 ${p.commentsCount}</td>
+          <td style="padding: 12px 16px; text-align: center; font-weight: 500; color: ${p.sales > 0 ? '#10b981' : 'var(--text3)'};">${p.sales}</td>
+          <td style="padding: 12px 16px; text-align: right; font-weight: 700; color: ${p.earnings > 0 ? 'var(--cyan)' : 'var(--text2)'};">${revText}</td>
+        </tr>
+      `;
+    }).join("");
+
+  } catch (err) {
+    console.error("Dashboard render failed:", err);
+    document.getElementById("dashTableBody").innerHTML = `
+      <tr>
+        <td colspan="7" style="padding: 24px; text-align: center; color: #ef4444;">
+          ⚠️ Error loading analytics data.
+        </td>
+      </tr>
+    `;
+  }
 }
 
 let lang='en';
