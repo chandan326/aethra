@@ -2428,39 +2428,52 @@ async function populate() {
 
   try {
     const headers = token ? { "Authorization": `Bearer ${token}` } : {};
-    const postsRes = await fetch("/api/posts", { headers });
-    const posts = postsRes.ok ? await postsRes.json() : [];
+    
+    // ✅ Fetch posts with error guard
+    let posts = [];
+    try {
+      const postsRes = await fetch("/api/posts", { headers });
+      if (postsRes.ok) posts = await postsRes.json();
+      else console.warn("Posts API returned:", postsRes.status);
+    } catch (fetchErr) {
+      console.warn("Posts fetch failed:", fetchErr.message);
+    }
 
     displayedLimit = getDeviceLimitConfig().limit;
-    allHomePosts = posts;
+    allHomePosts = Array.isArray(posts) ? posts : [];
     renderHomeFeed();
 
-    const aiPosts = posts.filter(p => p.contentType === "AI");
-    const gifPosts = posts.filter(p => p.contentType === "GIF");
-    const stickerPosts = posts.filter(p => p.contentType === "STICKER");
+    const aiPosts      = allHomePosts.filter(p => p.contentType === "AI");
+    const gifPosts     = allHomePosts.filter(p => p.contentType === "GIF");
+    const stickerPosts = allHomePosts.filter(p => p.contentType === "STICKER");
 
-    const setHtml = (id, html) => {
-      const el = $(id);
-      if (el) el.innerHTML = html;
-    };
+    const setHtml = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
 
     setHtml('imgGrid', aiPosts.map(mkPCard).join(''));
-    setHtml('gifGrid', gifPosts.map((g, i) => `<div class="exp-item" style="background:linear-gradient(135deg,${gc(i)}1a,${gc(i+2)}0d)" data-title="${escapeHtml(g.title)}" onclick="toast('🎞 Playing ' + this.dataset.title)">${renderContent(g.content)}</div>`).join(''));
-    setHtml('stickerGrid', stickerPosts.map((s, i) => `<div class="exp-item" style="background:linear-gradient(135deg,${gc(i+3)}1a,${gc(i)}0d)" data-title="${escapeHtml(s.title)}" onclick="toast('😊 ' + this.dataset.title)">${renderContent(s.content)}</div>`).join(''));
+    setHtml('gifGrid', gifPosts.map((g, i) => `<div class="exp-item" style="background:linear-gradient(135deg,${gc(i)}1a,${gc(i+2)}0d)" onclick="openProductDetail('${g._id}')">${renderContent(g.content)}<div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px;font-size:11px;font-weight:600;background:rgba(0,0,0,0.6);color:#fff">${escapeHtml(g.title)}</div></div>`).join(''));
+    setHtml('stickerGrid', stickerPosts.map((s, i) => `<div class="exp-item" style="background:linear-gradient(135deg,${gc(i+3)}1a,${gc(i)}0d);position:relative" onclick="openProductDetail('${s._id}')">${renderContent(s.content)}<div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px;font-size:11px;font-weight:600;background:rgba(0,0,0,0.6);color:#fff">${escapeHtml(s.title)}</div></div>`).join(''));
 
-    setHtml('mktGrid', posts.map((m, i) => {
+    setHtml('mktGrid', allHomePosts.map((m, i) => {
       const isFree = m.pricing === "free";
       const creatorDisplayName = m.creator?.displayName || m.creator?.username || 'Creator';
       return `
       <div class="mkt-card" onclick="openProductDetail('${m._id}')"><div class="mkt-img" style="background:linear-gradient(135deg,${gc(i)}1a,${gc(i+2)}0d)">${renderContent(m.content)}
         <span class="mkt-ptag" style="${isFree ? 'background:rgba(20,184,166,0.85);color:#fff' : 'background:rgba(59,130,246,0.85);color:#fff'}">${isFree ? 'Free' : '₹' + m.price}</span>
-      </div><div class="mkt-body"><div class="mkt-title">${escapeHtml(m.title)}</div><div class="mkt-sub">${escapeHtml(m.contentType)} Art · ${escapeHtml(creatorDisplayName)}</div>
+      </div><div class="mkt-body"><div class="mkt-title">${escapeHtml(m.title)}</div><div class="mkt-sub">${escapeHtml(m.contentType)} · ${escapeHtml(creatorDisplayName)}</div>
         <button class="btn-buy ${isFree ? 'btn-free-dl' : ''}" onclick="event.stopPropagation();handlePurchase('${m._id}', ${isFree})">${isFree ? 'Download Free' : 'Buy Now'}</button>
       </div></div>`;
     }).join(''));
 
-    const channelsRes = await fetch("/api/channels");
-    const channels = channelsRes.ok ? await channelsRes.json() : [];
+    // ✅ Fetch channels with error guard
+    let channels = [];
+    try {
+      const channelsRes = await fetch("/api/channels");
+      if (channelsRes.ok) channels = await channelsRes.json();
+    } catch (fetchErr) {
+      console.warn("Channels fetch failed:", fetchErr.message);
+    }
+    channels = Array.isArray(channels) ? channels : [];
+
     setHtml('channelsList', channels.map((c, i) => `
     <div class="channel-card"><span class="ch-icon">${escapeHtml(c.icon || "📺")}</span>
       <div class="ch-name">${escapeHtml(c.name)}</div><div class="ch-handle">@${escapeHtml(c.handle)}</div>
@@ -2481,7 +2494,6 @@ async function populate() {
       color: gc(i)
     }));
     
-    // Sort creators: premium/VIP first, then by subscriber count
     creators.sort((a, b) => {
       if (a.hasPremium && !b.hasPremium) return -1;
       if (!a.hasPremium && b.hasPremium) return 1;
@@ -2489,7 +2501,6 @@ async function populate() {
     });
 
     const top7 = creators.slice(0, 7);
-
     $('topCreators').innerHTML = top7.map(c => `
     <div class="creator-card ${c.hasPremium ? 'premium' : ''}" onclick="showUserProfile('${c.id}')">
       <div class="creator-av" style="background:${c.color}18;color:${c.color}">${escapeHtml(c.icon || "👤")}</div>
@@ -2497,22 +2508,20 @@ async function populate() {
       <div class="chip chip-indigo" style="background:${c.color}15;color:${c.color};border-color:${c.color}28;margin-top:4px">${c.hasPremium ? 'VIP Creator' : (c.verified ? 'Verified' : 'Creator')}</div>
     </div>`).join('');
 
-    // Check for deep links like /posts/:id
+    // Deep-link support
     if (!window.deepLinkTriggered) {
       const pathMatch = window.location.pathname.match(/^\/posts\/([a-zA-Z0-9_-]+)/);
       if (pathMatch) {
         const deepPostId = pathMatch[1];
         if (allHomePosts.some(p => (p._id || p.id) === deepPostId)) {
           window.deepLinkTriggered = true;
-          setTimeout(() => {
-            openProductDetail(deepPostId);
-          }, 100);
+          setTimeout(() => openProductDetail(deepPostId), 100);
         }
       }
     }
 
   } catch (err) {
-    console.error("Failed to populate page:", err);
+    console.error("Populate error:", err);
   }
 }
 
@@ -3120,13 +3129,22 @@ async function submitPost() {
 
   const description = document.getElementById("postDescriptionInput").value.trim();
   const visOpt = document.querySelector("#uploadModal .vis-grid .vis-opt.sel");
-  const visibility = visOpt ? visOpt.textContent.toLowerCase().replace(/[^a-z]/g, "") : "public";
+  // Fix: strip emojis/non-alpha chars and normalize to valid values
+  let visibility = "public";
+  if (visOpt) {
+    const vt = visOpt.textContent.toLowerCase().replace(/[^a-z]/g, "");
+    if (vt.includes("private")) visibility = "private";
+    else if (vt.includes("followers")) visibility = "followers";
+    else visibility = "public";
+  }
 
   const priceOpt = document.querySelector("#uploadModal .price-grid .price-opt.sel");
   let pricing = "free";
   if (priceOpt) {
-    if (priceOpt.innerText.includes("Paid")) pricing = "paid";
-    else if (priceOpt.innerText.includes("Subscribers")) pricing = "subscribers";
+    const pt = priceOpt.textContent.toLowerCase();
+    if (pt.includes("paid") || pt.includes("💰")) pricing = "paid";
+    else if (pt.includes("sub") || pt.includes("👑")) pricing = "subscribers";
+    else pricing = "free";
   }
   const priceInput = document.querySelector("#priceIn input");
   const price = priceInput ? priceInput.value || 0 : 0;
@@ -4071,17 +4089,31 @@ async function handleAuthSubmit(e) {
   const password = document.getElementById("authPassword").value;
   const email = document.getElementById("authEmail").value.trim();
 
+  if (!username) { toast("⚠️ Username is required!"); return; }
+  if (!password) { toast("⚠️ Password is required!"); return; }
+
+  const submitBtn = document.getElementById("authSubmitBtn");
+  const originalText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "⏳ Please wait...";
+
   const url = authMode === "login" ? "/api/auth/login" : "/api/auth/register";
   const body = authMode === "login" 
     ? { username, password } 
     : { username, email, password };
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
+    
     const data = await res.json();
     if (!res.ok) {
       toast("⚠️ " + (data.message || "Authentication failed"));
@@ -4092,11 +4124,19 @@ async function handleAuthSubmit(e) {
     localStorage.setItem("token", token);
     currentUser = data.user;
     closeAuth();
-    toast(`🎉 Welcome, ${currentUser.username}!`);
+    toast(`🎉 Welcome back, ${currentUser.username}!`);
     updateAuthUI();
     await populate();
   } catch (err) {
-    toast("⚠️ Connection error. Try again.");
+    if (err.name === "AbortError") {
+      toast("⚠️ Request timed out. Please check your connection and try again.");
+    } else {
+      toast("⚠️ Server unreachable. Please try again in a moment.");
+    }
+    console.error("Auth error:", err);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
   }
 }
 
