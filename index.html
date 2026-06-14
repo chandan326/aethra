@@ -302,258 +302,152 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
 @keyframes gradient-flow{0%{background-position:0% center}100%{background-position:200% center}}
 
 /* HERO SLIDESHOW */
+/* HERO SLIDESHOW */
 .hero-slideshow-container {
   width: 100%;
   position: relative;
-  z-index: 2;
-  margin: 0 auto;
-}
-.hero-slideshow-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 3.5rem;
-  width: 100%;
-  text-align: left;
-  min-height: 440px;
-}
-.hero-slide-info {
-  flex: 1.2;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1), transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-  will-change: opacity, transform;
-}
-.hero-slide-info h1 {
-  font-family: var(--font2);
-  font-size: clamp(2.2rem, 4.5vw, 4.2rem);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -1.5px;
-  margin-bottom: 1rem;
-  color: var(--text);
-}
-.hero-slide-info h1 em {
-  font-style: normal;
-  background: linear-gradient(120deg, var(--blue2), var(--cyan), var(--indigo), var(--teal), var(--blue2));
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: gradient-flow 4s linear infinite;
-}
-.hero-slide-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(59, 130, 246, 0.08);
-  border: 1px solid rgba(59, 130, 246, 0.18);
-  padding: 6px 14px;
-  border-radius: 100px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  margin-bottom: 1.2rem;
-  width: max-content;
-}
-.hero-slide-badge .pulse-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--blue2);
-  display: inline-block;
-}
-.hero-slide-sub {
-  font-size: 1rem;
-  color: var(--text2);
-  line-height: 1.6;
-  margin-bottom: 1.5rem;
-  font-weight: 350;
-  max-width: 580px;
-}
-.hero-slide-stats {
-  margin-bottom: 1.8rem;
-}
-.slide-stat-pill {
-  display: inline-flex;
-  align-items: center;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text2);
-}
-.hero-slide-actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.hero-slide-graphic {
-  flex: 0.9;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-}
-.hero-preview-frame-wrapper {
-  position: relative;
-  width: 330px;
-  height: 380px;
-  max-width: 100%;
-}
-.hero-preview-glow {
-  position: absolute;
-  inset: -15px;
-  background: radial-gradient(circle, var(--blue) 0%, transparent 70%);
-  filter: blur(25px);
-  opacity: 0.4;
-  z-index: 0;
-  border-radius: var(--r2);
-  transition: background 0.8s ease, opacity 0.8s ease;
-}
-.hero-preview-frame {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  background: var(--panel);
-  border: 1px solid var(--border2);
-  border-radius: var(--r2);
-  padding: 10px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  z-index: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transform: perspective(1000px) rotateY(-8deg) rotateX(4deg);
-  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.5s ease, opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-  will-change: transform, opacity;
+  border-radius: var(--r2);
+  height: 440px;
 }
-.hero-preview-frame:hover {
-  transform: perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(-8px);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.12);
-}
-.hero-preview-fallback {
-  font-size: 4rem;
-  z-index: 1;
-  opacity: 0.8;
-}
-.hero-preview-img {
+.hero-slides-wrapper {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  border-radius: calc(var(--r2) - 8px);
-  opacity: 0;
-  transition: opacity 0.4s ease, transform 0.8s ease;
-  z-index: 2;
-  transform: scale(1.05);
 }
-.hero-preview-img.loaded {
+.hero-slide-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.5s ease-in-out, transform 8s ease-in-out;
   opacity: 1;
   transform: scale(1);
 }
-.hero-slide-nav {
+.hero-slide-bg-img.zoomed {
+  transform: scale(1.08);
+}
+.hero-slide-bg-img.fade-out {
+  opacity: 0;
+}
+.hero-slide-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.7) 100%);
+  pointer-events: none;
+}
+.hero-top-nav-dots {
+  position: absolute;
+  top: 20px;
+  right: 25px;
   display: flex;
-  justify-content: space-between;
   gap: 8px;
-  width: 100%;
-  margin-top: 2.5rem;
-  border-top: 1px solid var(--border);
-  padding-top: 1.2rem;
-  flex-wrap: wrap;
+  z-index: 10;
 }
-.hero-nav-tab {
-  flex: 1;
-  min-width: 120px;
-  background: transparent;
-  border: none;
-  padding: 8px 10px;
+.hero-nav-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.2);
   cursor: pointer;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  transition: all 0.2s;
-  position: relative;
+  transition: all 0.3s ease;
 }
-.hero-nav-tab-label {
-  font-family: var(--font2);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text3);
+.hero-nav-dot:hover {
+  background: rgba(255, 255, 255, 0.8);
+  transform: scale(1.2);
+}
+.hero-nav-dot.active {
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  transform: scale(1.2);
+}
+.hero-bottom-strip {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 95px;
+  background: #6366f1;
   display: flex;
   align-items: center;
-  gap: 6px;
-  transition: color 0.2s;
+  justify-content: space-between;
+  padding: 0 2rem;
+  z-index: 10;
+  transition: background 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
-.hero-nav-tab.active .hero-nav-tab-label {
-  color: var(--text);
+.hero-bottom-text {
+  color: #ffffff;
+  text-align: left;
 }
-.hero-nav-progress-bg {
-  width: 100%;
-  height: 3px;
-  background: var(--border);
-  border-radius: 2px;
-  overflow: hidden;
-  position: relative;
+.hero-bottom-text h2 {
+  font-family: var(--font2);
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
-.hero-nav-progress-fill {
-  width: 0%;
-  height: 100%;
-  background: var(--text3);
-  transition: width 0.1s linear;
+.hero-bottom-text p {
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.9;
+  max-width: 700px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
-.hero-nav-tab.active .hero-nav-progress-fill {
-  background: var(--blue2);
+.hero-bottom-actions {
+  display: flex;
+  align-items: center;
+}
+.hero-bottom-actions button {
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: transform 0.25s, background-color 0.25s, box-shadow 0.25s;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.hero-bottom-actions button:hover {
+  transform: translateY(-2px);
+  background-color: #1e293b;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
-/* Transition classes */
-.hero-slide-transitioning .hero-slide-info {
-  opacity: 0;
-  transform: translateY(12px);
-}
-.hero-slide-transitioning .hero-preview-frame {
-  opacity: 0;
-  transform: perspective(1000px) rotateY(-8deg) rotateX(4deg) scale(0.95);
-}
-
-/* Mobile responsive */
-@media (max-width: 900px) {
-  .hero-slideshow-wrap {
-    flex-direction: column;
-    text-align: center;
-    min-height: auto;
-    gap: 2rem;
+@media (max-width: 768px) {
+  .hero-slideshow-container {
+    height: 320px !important;
   }
-  .hero-slide-info {
-    align-items: center;
+  .hero-bottom-strip {
+    height: auto !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 1rem !important;
+    gap: 10px !important;
   }
-  .hero-slide-info h1 {
-    font-size: clamp(2rem, 6.5vw, 3rem);
+  .hero-bottom-text h2 {
+    font-size: 1.2rem !important;
   }
-  .hero-slide-badge {
-    align-self: center;
+  .hero-bottom-text p {
+    font-size: 11px !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
-  .hero-slide-actions {
-    justify-content: center;
-  }
-  .hero-preview-frame-wrapper {
-    width: 280px;
-    height: 300px;
-  }
-  .hero-preview-frame {
-    transform: none !important;
-  }
-  .hero-preview-frame:hover {
-    transform: translateY(-5px) !important;
+  .hero-bottom-actions button {
+    padding: 8px 18px !important;
+    font-size: 12px !important;
+    width: 100% !important;
+    justify-content: center !important;
   }
 }
 .btn-primary{background:linear-gradient(135deg,var(--blue),var(--indigo));color:#fff;border:none;padding:13px 30px;border-radius:10px;cursor:pointer;font-size:14px;font-family:var(--font);font-weight:600;transition:all 0.25s;box-shadow:0 8px 28px rgba(59,130,246,0.35);display:inline-flex;align-items:center;gap:8px}
@@ -1828,45 +1722,34 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
  
 <!-- HOME -->
 <div class="page active" id="page-home">
-  <div class="hero" style="padding: 2.5rem 1rem 3.5rem; overflow: hidden;">
+  <div class="hero" style="padding: 0; margin-bottom: 2.5rem; border-radius: var(--r2); overflow: hidden; position: relative;">
     <!-- Hero Slider Container -->
     <div class="hero-slideshow-container" id="heroSlideshow">
-      <div class="hero-slideshow-wrap">
-        <!-- Left content -->
-        <div class="hero-slide-info">
-          <div class="hero-slide-badge" id="heroSlideBadge">
-            <span class="pulse-dot"></span>
-            <span id="heroSlideBadgeText">AI Generated Category</span>
-          </div>
-          <h1 id="heroSlideTitle">Create Stunning <em>AI Generated</em> Creations</h1>
-          <p class="hero-slide-sub" id="heroSlideSub">Post your Midjourney, Stable Diffusion, or Canvas creations. Monetize your prompts.</p>
-          
-          <div class="hero-slide-stats">
-            <span class="slide-stat-pill" id="heroSlideCount">⚡ 0 items active</span>
-          </div>
+      
+      <!-- Slide Images Wrapper -->
+      <div class="hero-slides-wrapper">
+        <img class="hero-slide-bg-img" id="heroSlideBgImg" src="/uploads/hero_ai.png" alt="Hero Banner">
+        <div class="hero-slide-overlay"></div>
+      </div>
 
-          <div class="hero-slide-actions">
-            <button class="btn-primary" id="heroSlideCta">✦ <span data-en="Start Creating" data-hi="बनाना शुरू करें">Start Creating</span></button>
-            <button class="btn-outline" id="heroSlideSecondary" onclick="goPage('channels')">📺 <span data-en="Browse Channels" data-hi="चैनल देखें">Browse Channels</span></button>
-          </div>
+      <!-- Top Right Dots Navigation -->
+      <div class="hero-top-nav-dots" id="heroTopNavDots">
+        <!-- Will be dynamically populated with 6 dots -->
+      </div>
+
+      <!-- Bottom Content Bar / Strip -->
+      <div class="hero-bottom-strip" id="heroBottomStrip">
+        <div class="hero-bottom-text">
+          <h2 id="heroSlideTitle">Create Stunning AI Generated Art</h2>
+          <p id="heroSlideSub">Post your Midjourney, Stable Diffusion, or Canvas creations. Monetize your prompts.</p>
         </div>
-
-        <!-- Right graphic/preview -->
-        <div class="hero-slide-graphic">
-          <div class="hero-preview-frame-wrapper">
-            <div class="hero-preview-glow" id="heroPreviewGlow"></div>
-            <div class="hero-preview-frame" id="heroPreviewFrame">
-              <div class="hero-preview-fallback" id="heroPreviewFallback">🎨</div>
-              <img class="hero-preview-img" id="heroPreviewImg" src="" alt="Preview">
-            </div>
-          </div>
+        <div class="hero-bottom-actions">
+          <button class="btn-primary" id="heroSlideCta">
+            <span>Explore Category</span> ✦
+          </button>
         </div>
       </div>
 
-      <!-- Slide Dots / Navigation Tabs -->
-      <div class="hero-slide-nav" id="heroSlideNav">
-        <!-- Will be dynamically populated with 6 category tabs -->
-      </div>
     </div>
   </div>
 
@@ -3162,30 +3045,23 @@ function filterHome(cat, el) {
 let heroActiveSlide = 0;
 let heroSlideTimer = null;
 let heroSlideInterval = 5000; // 5 seconds per slide
-let heroProgressAnim = null;
 
 const heroCategories = [
-  { id: "ai", label: "AI Generated", labelHi: "AI निर्मित", icon: "🎨", color: "#6366f1", filterKey: "AI", title: "Create Stunning <em>AI Generated</em> Art", titleHi: "शानदार <em>AI आर्ट</em> बनाएं", sub: "Post your Midjourney, Stable Diffusion, or Canvas creations. Monetize your prompts.", subHi: "अपने Midjourney, Stable Diffusion, या Canvas क्रिएशन्स पोस्ट करें।" },
-  { id: "gif", label: "GIFs", labelHi: "GIFs", icon: "💫", color: "#3b82f6", filterKey: "GIF", title: "Share Dynamic <em>GIFs</em> & Memes", titleHi: "रोमांचक <em>GIFs</em> शेयर करें", sub: "Express emotions with looping motion graphics, animation clips, and viral memes.", subHi: "लूपिंग मोशन ग्राफिक्स, एनिमेशन क्लिप्स और मीम्स के साथ भावनाएं व्यक्त करें।" },
-  { id: "sticker", label: "Stickers", labelHi: "स्टिकर", icon: "😎", color: "#06b6d4", filterKey: "STICKER", title: "Design Cool <em>Stickers</em>", titleHi: "कूल <em>स्टिकर्स</em> डिज़ाइन करें", sub: "Upload cute stickers, custom emoji packs, and decorative digital illustrations.", subHi: "प्यारे स्टिकर्स, कस्टम इमोजी पैक्स और डेकोरेटिव डिजिटल चित्र अपलोड करें।" },
-  { id: "art", label: "Digital Art", labelHi: "डिजिटल आर्ट", icon: "✨", color: "#14b8a6", filterKey: "DIGITAL_ART", title: "Exhibit Premium <em>Digital Art</em>", titleHi: "<em>डिजिटल आर्ट</em> प्रदर्शित करें", sub: "Showcase high-resolution concept art, vector illustrations, and matte paintings.", subHi: "हाई-रिज़ॉल्यूशन कॉन्सेप्ट आर्ट, वेक्टर इलस्ट्रेशन और पेंटिंग्स प्रदर्शित करें।" },
-  { id: "live_wallpaper", label: "Live Wallpapers", labelHi: "लाइव वॉलपेपर", icon: "📱", color: "#a5b4fc", filterKey: "LIVE_WALLPAPER", title: "Publish <em>Live Wallpapers</em>", titleHi: "<em>लाइव वॉलपेपर्स</em> पब्लिश करें", sub: "Craft interactive parallax backgrounds, phone wallpapers, and animated screensavers.", subHi: "इंटरैक्टिव लंबन पृष्ठभूमि, फोन वॉलपेपर और एनिमेटेड स्क्रीनसेवर तैयार करें।" },
-  { id: "photo", label: "Photography", labelHi: "फ़ोटोग्राफ़ी", icon: "📸", color: "#0ea5e9", filterKey: "PHOTOGRAPHY", title: "Capture Scenic <em>Photography</em>", titleHi: "खूबसूरत <em>फ़ोटोग्राफ़ी</em> कैप्चर करें", sub: "Share scenic landscapes, street snaps, macro shots, and professional color grading.", subHi: "मनमोहक दृश्य, स्ट्रीट स्नैप्स, मैक्रो शॉट्स और पेशेवर फोटोज़ शेयर करें।" }
+  { id: "ai", label: "AI Generated", labelHi: "AI निर्मित", icon: "🎨", color: "#6366f1", defaultImg: "/uploads/hero_ai.png", filterKey: "AI", title: "Create Stunning AI Generated Art", titleHi: "शानदार AI निर्मित आर्ट बनाएं", sub: "Post your Midjourney, Stable Diffusion, or Canvas creations. Monetize your prompts.", subHi: "अपने Midjourney, Stable Diffusion, या Canvas क्रिएशन्स पोस्ट करें।" },
+  { id: "gif", label: "GIFs", labelHi: "GIFs", icon: "💫", color: "#3b82f6", defaultImg: "/uploads/hero_gif.png", filterKey: "GIF", title: "Share Dynamic GIFs & Memes", titleHi: "रोमांचक GIFs और मीम्स शेयर करें", sub: "Express emotions with looping motion graphics, animation clips, and viral memes.", subHi: "लूपिंग मोशन ग्राफिक्स, एनिमेशन क्लिप्स और मीम्स के साथ भावनाएं व्यक्त करें।" },
+  { id: "sticker", label: "Stickers", labelHi: "स्टिकर", icon: "😎", color: "#06b6d4", defaultImg: "/uploads/hero_sticker.png", filterKey: "STICKER", title: "Design Cool Stickers & Emojis", titleHi: "कूल स्टिकर्स और इमोजी डिज़ाइन करें", sub: "Upload cute stickers, custom emoji packs, and decorative digital illustrations.", subHi: "प्यारे स्टिकर्स, कस्टम इमोजी पैक्स और डेकोरेटिव डिजिटल चित्र अपलोड करें।" },
+  { id: "art", label: "Digital Art", labelHi: "डिजिटल आर्ट", icon: "✨", color: "#14b8a6", defaultImg: "/uploads/hero_art.png", filterKey: "DIGITAL_ART", title: "Exhibit Premium Digital Artworks", titleHi: "प्रीमियम डिजिटल आर्ट प्रदर्शित करें", sub: "Showcase high-resolution concept art, vector illustrations, and matte paintings.", subHi: "हाई-रिज़ॉल्यूशन कॉन्सेप्ट आर्ट, वेक्टर इलस्ट्रेशन और पेंटिंग्स प्रदर्शित करें।" },
+  { id: "live_wallpaper", label: "Live Wallpapers", labelHi: "लाइव वॉलपेपर", icon: "📱", color: "#818cf8", defaultImg: "/uploads/hero_wallpaper.png", filterKey: "LIVE_WALLPAPER", title: "Publish Immersive Live Wallpapers", titleHi: "इमर्सिव लाइव वॉलपेपर्स पब्लिश करें", sub: "Craft interactive parallax backgrounds, phone wallpapers, and animated screensavers.", subHi: "इंटरैक्टिव लंबन पृष्ठभूमि, फोन वॉलपेपर और एनिमेटेड स्क्रीनसेवर तैयार करें।" },
+  { id: "photo", label: "Photography", labelHi: "फ़ोटोग्राफ़ी", icon: "📸", color: "#0ea5e9", defaultImg: "/uploads/hero_photography.png", filterKey: "PHOTOGRAPHY", title: "Capture Scenic Photography Snippets", titleHi: "खूबसूरत फ़ोटोग्राफ़ी कैप्चर करें", sub: "Share scenic landscapes, street snaps, macro shots, and professional color grading.", subHi: "मनमोहक दृश्य, स्ट्रीट स्नैप्स, मैक्रो शॉट्स और पेशेवर फोटोज़ शेयर करें।" }
 ];
 
 function initHeroSlideshow() {
-  const navContainer = document.getElementById("heroSlideNav");
-  if (!navContainer) return;
+  const dotsContainer = document.getElementById("heroTopNavDots");
+  if (!dotsContainer) return;
 
-  // Build the nav tabs
-  const currentLang = localStorage.getItem("aethra-lang") || "en";
-  navContainer.innerHTML = heroCategories.map((cat, idx) => `
-    <button class="hero-nav-tab ${idx === 0 ? 'active' : ''}" onclick="selectHeroSlide(${idx})">
-      <span class="hero-nav-tab-label">${cat.icon} ${currentLang === 'hi' ? cat.labelHi : cat.label}</span>
-      <div class="hero-nav-progress-bg">
-        <div class="hero-nav-progress-fill" id="heroProgressFill-${idx}"></div>
-      </div>
-    </button>
+  // Build the top nav dots
+  dotsContainer.innerHTML = heroCategories.map((cat, idx) => `
+    <div class="hero-nav-dot ${idx === 0 ? 'active' : ''}" onclick="selectHeroSlide(${idx})"></div>
   `).join('');
 
   heroActiveSlide = 0;
@@ -3195,56 +3071,53 @@ function initHeroSlideshow() {
 
 function updateHeroSlide(categories, idx) {
   const container = document.getElementById("heroSlideshow");
-  if (!container) return;
+  const bgImg = document.getElementById("heroSlideBgImg");
+  const bottomStrip = document.getElementById("heroBottomStrip");
+  const title = document.getElementById("heroSlideTitle");
+  const sub = document.getElementById("heroSlideSub");
+  const ctaBtn = document.getElementById("heroSlideCta");
+
+  if (!bgImg || !bottomStrip || !categories[idx]) return;
 
   const cat = categories[idx];
   const currentLang = localStorage.getItem("aethra-lang") || "en";
 
-  // Add transitioning class for animation
-  container.classList.add("hero-slide-transitioning");
+  // 1. Fade out current image
+  bgImg.classList.add("fade-out");
+  bgImg.classList.remove("zoomed");
 
-  // Filter posts to get count and latest post preview
-  const catPosts = allHomePosts.filter(p => {
-    if (cat.filterKey === "DIGITAL_ART") {
-      return p.contentType === "DIGITAL_ART" || p.contentType === "Digital Art";
-    }
-    if (cat.filterKey === "PHOTOGRAPHY") {
-      return p.contentType === "PHOTOGRAPHY" || p.contentType === "Photography";
-    }
-    return p.contentType === cat.filterKey;
-  });
-
-  const count = catPosts.length;
-  const latestPost = catPosts[0];
-
-  // Wait 250ms for fade out transition
   setTimeout(() => {
-    // Update Badge
-    const badgeText = document.getElementById("heroSlideBadgeText");
-    const badge = document.getElementById("heroSlideBadge");
-    if (badgeText) badgeText.textContent = (currentLang === 'hi' ? cat.labelHi : cat.label) + " Category";
-    if (badge) {
-      badge.style.borderColor = cat.color + '30';
-      badge.style.background = cat.color + '10';
-      const dot = badge.querySelector('.pulse-dot');
-      if (dot) dot.style.background = cat.color;
+    // 2. Filter posts in this category to see if there is any user creation
+    const catPosts = allHomePosts.filter(p => {
+      if (cat.filterKey === "DIGITAL_ART") {
+        return p.contentType === "DIGITAL_ART" || p.contentType === "Digital Art";
+      }
+      if (cat.filterKey === "PHOTOGRAPHY") {
+        return p.contentType === "PHOTOGRAPHY" || p.contentType === "Photography";
+      }
+      return p.contentType === cat.filterKey;
+    });
+
+    // Determine preview image: use latest creation if available and isUrl, otherwise default hero image
+    let previewSrc = cat.defaultImg;
+    if (catPosts.length > 0 && catPosts[0].content && typeof catPosts[0].content === 'string') {
+      const isUrl = catPosts[0].content.startsWith("http") || catPosts[0].content.startsWith("/uploads/") || catPosts[0].content.startsWith("data:");
+      if (isUrl) {
+        previewSrc = catPosts[0].content;
+      }
     }
 
-    // Update Title & Subtitle
-    const title = document.getElementById("heroSlideTitle");
-    const sub = document.getElementById("heroSlideSub");
+    // 3. Update DOM elements
+    bgImg.src = previewSrc;
+    bottomStrip.style.backgroundColor = cat.color;
+
     if (title) title.innerHTML = currentLang === 'hi' ? cat.titleHi : cat.title;
     if (sub) sub.textContent = currentLang === 'hi' ? cat.subHi : cat.sub;
 
-    // Update Count Pill
-    const countPill = document.getElementById("heroSlideCount");
-    if (countPill) countPill.innerHTML = `⚡ ${count} ${count === 1 ? 'item' : 'items'} active`;
-
-    // Update Actions (CTA) to target this category
-    const ctaBtn = document.getElementById("heroSlideCta");
+    // Hook CTA button click
     if (ctaBtn) {
       ctaBtn.onclick = () => {
-        // Find the matching pill in homeFilter and click it
+        // Filter home grid to this category
         const pills = document.querySelectorAll(".cat-row .cpill");
         pills.forEach(pill => {
           const onclickAttr = pill.getAttribute("onclick");
@@ -3259,92 +3132,33 @@ function updateHeroSlide(categories, idx) {
       };
     }
 
-    // Update Graphic/Preview Frame & Glow Color
-    const glow = document.getElementById("heroPreviewGlow");
-    if (glow) {
-      glow.style.background = `radial-gradient(circle, ${cat.color}70 0%, transparent 70%)`;
-    }
-
-    const frame = document.getElementById("heroPreviewFrame");
-    if (frame) {
-      frame.style.borderColor = cat.color + '30';
-    }
-
-    const fallback = document.getElementById("heroPreviewFallback");
-    if (fallback) {
-      fallback.textContent = cat.icon;
-      fallback.style.color = cat.color;
-      fallback.style.background = `linear-gradient(135deg, ${cat.color}20, ${cat.color}05)`;
-    }
-
-    const img = document.getElementById("heroPreviewImg");
-    if (img) {
-      img.classList.remove("loaded");
-      if (latestPost && latestPost.content && typeof latestPost.content === 'string') {
-        const isUrl = latestPost.content.startsWith("http") || latestPost.content.startsWith("/uploads/") || latestPost.content.startsWith("data:");
-        if (isUrl) {
-          img.src = latestPost.content;
-          img.onload = () => {
-            img.classList.add("loaded");
-          };
-        } else {
-          img.src = "";
-          if (fallback) fallback.textContent = latestPost.content.substring(0, 10);
-        }
+    // Update dots styling
+    const dots = document.querySelectorAll(".hero-nav-dot");
+    dots.forEach((dot, dIdx) => {
+      if (dIdx === idx) {
+        dot.classList.add("active");
+        dot.style.backgroundColor = "#ffffff";
+        dot.style.boxShadow = `0 0 8px ${cat.color}`;
       } else {
-        img.src = "";
-      }
-    }
-
-    // Update active class on nav tabs
-    const tabs = document.querySelectorAll(".hero-nav-tab");
-    tabs.forEach((tab, tIdx) => {
-      if (tIdx === idx) {
-        tab.classList.add("active");
-        const fill = document.getElementById(`heroProgressFill-${tIdx}`);
-        if (fill) fill.style.background = cat.color;
-      } else {
-        tab.classList.remove("active");
-        const fill = document.getElementById(`heroProgressFill-${tIdx}`);
-        if (fill) {
-          fill.style.width = "0%";
-          fill.style.background = "var(--text3)";
-        }
+        dot.classList.remove("active");
+        dot.style.backgroundColor = "rgba(255, 255, 255, 0.4)";
+        dot.style.boxShadow = "none";
       }
     });
 
-    // Remove transitioning class to fade content back in
-    container.classList.remove("hero-slide-transitioning");
+    // 4. Fade in new image and start slow zoom animation
+    bgImg.classList.remove("fade-out");
+    bgImg.classList.add("zoomed");
   }, 250);
 }
 
 function startHeroSlideTimer(categories) {
-  if (heroProgressAnim) clearInterval(heroProgressAnim);
+  if (heroSlideTimer) clearInterval(heroSlideTimer);
 
-  const duration = 5000; // 5 seconds
-  const step = 50; // check progress every 50ms
-  let elapsed = 0;
-
-  // Reset all fills
-  for (let i = 0; i < categories.length; i++) {
-    const fill = document.getElementById(`heroProgressFill-${i}`);
-    if (fill) fill.style.width = "0%";
-  }
-
-  heroProgressAnim = setInterval(() => {
-    elapsed += step;
-    const percentage = Math.min((elapsed / duration) * 100, 100);
-    
-    const fill = document.getElementById(`heroProgressFill-${heroActiveSlide}`);
-    if (fill) fill.style.width = percentage + "%";
-
-    if (elapsed >= duration) {
-      elapsed = 0;
-      // Go to next slide
-      heroActiveSlide = (heroActiveSlide + 1) % categories.length;
-      updateHeroSlide(categories, heroActiveSlide);
-    }
-  }, step);
+  heroSlideTimer = setInterval(() => {
+    heroActiveSlide = (heroActiveSlide + 1) % categories.length;
+    updateHeroSlide(categories, heroActiveSlide);
+  }, 5000);
 }
 
 function selectHeroSlide(idx) {
@@ -3361,20 +3175,11 @@ function updateHeroSlideLanguage() {
   const currentLang = localStorage.getItem("aethra-lang") || "en";
   const cat = heroCategories[heroActiveSlide];
   
-  const badgeText = document.getElementById("heroSlideBadgeText");
-  if (badgeText) badgeText.textContent = (currentLang === 'hi' ? cat.labelHi : cat.label) + " Category";
-  
   const title = document.getElementById("heroSlideTitle");
   if (title) title.innerHTML = currentLang === 'hi' ? cat.titleHi : cat.title;
   
   const sub = document.getElementById("heroSlideSub");
   if (sub) sub.textContent = currentLang === 'hi' ? cat.subHi : cat.sub;
-
-  const tabs = document.querySelectorAll(".hero-nav-tab-label");
-  tabs.forEach((tab, idx) => {
-    const c = heroCategories[idx];
-    tab.innerHTML = `${c.icon} ${currentLang === 'hi' ? c.labelHi : c.label}`;
-  });
 }
 
 function renderCategoryShowcase() {

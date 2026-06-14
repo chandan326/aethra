@@ -65,6 +65,7 @@ app.use("/api/support",  supportRoutes);
 const isVercel = process.env.VERCEL === "1" || process.env.NOW_REGION !== undefined;
 const uploadDir = isVercel ? "/tmp/uploads" : path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/uploads", express.static(uploadDir));
 
 // ── SPA Fallback with OG meta-tag injection ───────────────────────────────────
