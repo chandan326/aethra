@@ -61,6 +61,17 @@ app.use("/api/channels", channelRoutes);
 app.use("/api/chat",     chatRoutes);
 app.use("/api/support",  supportRoutes);
 
+app.get("/api/db-status", (req, res) => {
+  const state = mongoose.connection.readyState;
+  res.json({
+    connected: state === 1,
+    readyState: state,
+    error: global.mongoConnectionError || null,
+    envMongoUriSet: !!process.env.MONGO_URI,
+    isVercel: process.env.VERCEL === "1" || process.env.NOW_REGION !== undefined
+  });
+});
+
 // ── Static / Uploads ──────────────────────────────────────────────────────────
 const isVercel = process.env.VERCEL === "1" || process.env.NOW_REGION !== undefined;
 const uploadDir = isVercel ? "/tmp/uploads" : path.join(__dirname, "uploads");
@@ -210,6 +221,7 @@ async function startServer() {
       return;
     } catch (err) {
       console.error("❌ Atlas connection failed:", err.message);
+      global.mongoConnectionError = err.message;
     }
   }
 
