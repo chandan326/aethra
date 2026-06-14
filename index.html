@@ -2633,16 +2633,26 @@ async function renderProfilePage() {
       }
     }
 
-    // Render Posts & Stats
+    // ✅ FIX: Use creator query param to fetch only this user's posts directly from API
     const headers = token ? { "Authorization": `Bearer ${token}` } : {};
-    const postsRes = await fetch("/api/posts", { headers });
-    const posts = postsRes.ok ? await postsRes.json() : [];
-    const creatorPosts = posts.filter(p => {
-      const cId = p.creator?._id || p.creator?.id || (typeof p.creator === "string" ? p.creator : null);
-      const tId = targetUserId;
-      return cId && tId && (cId.toString() === tId.toString());
-    });
-    $('profileGrid').innerHTML = creatorPosts.length ? creatorPosts.map(mkPCard).join('') : `<p style="color:var(--text3);padding:2rem">This creator hasn't uploaded any creations yet.</p>`;
+    let creatorPosts = [];
+    try {
+      const postsRes = await fetch(`/api/posts?creator=${targetUserId}`, { headers });
+      if (postsRes.ok) {
+        const data = await postsRes.json();
+        creatorPosts = Array.isArray(data) ? data : [];
+      }
+    } catch (e) {
+      console.warn("Profile posts fetch failed:", e.message);
+      // Fallback: filter from allHomePosts in memory
+      creatorPosts = allHomePosts.filter(p => {
+        const cId = p.creator?._id || p.creator?.id || (typeof p.creator === "string" ? p.creator : null);
+        return cId && targetUserId && cId.toString() === targetUserId.toString();
+      });
+    }
+    $('profileGrid').innerHTML = creatorPosts.length 
+      ? creatorPosts.map((p, i) => mkPCard(p, i)).join('') 
+      : `<p style="color:var(--text3);padding:2rem">No posts yet. Click '+ New Post' to create your first post!</p>`;
     
     // Render Stats Dynamically
     const postCount = creatorPosts.length;
@@ -3129,7 +3139,6 @@ async function submitPost() {
 
   const description = document.getElementById("postDescriptionInput").value.trim();
   const visOpt = document.querySelector("#uploadModal .vis-grid .vis-opt.sel");
-  // Fix: strip emojis/non-alpha chars and normalize to valid values
   let visibility = "public";
   if (visOpt) {
     const vt = visOpt.textContent.toLowerCase().replace(/[^a-z]/g, "");
@@ -3154,18 +3163,19 @@ async function submitPost() {
     return;
   }
   if (!selectedFile) {
-    toast("⚠️ Please select a file to upload!");
+    toast("⚠️ Please select a file to upload, or use the AI Creator Suite to generate art!");
     return;
   }
 
+  // Show loading on button
+  const submitBtn = document.querySelector('#uploadModal .submit-btn');
+  const origBtnText = submitBtn ? submitBtn.textContent : '';
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Publishing...'; }
+
   let fileToUpload = selectedFile;
   if (selectedFile && selectedFile.type.startsWith("image/") && selectedFile.type !== "image/gif") {
-    toast("⏳ Optimizing image for mobile...");
-    try {
-      fileToUpload = await compressImage(selectedFile);
-    } catch (err) {
-      console.error("Compression failed, uploading original:", err);
-    }
+    try { fileToUpload = await compressImage(selectedFile); }
+    catch (err) { console.error("Compression failed, uploading original:", err); }
   }
 
   const formData = new FormData();
@@ -3178,14 +3188,35 @@ async function submitPost() {
   formData.append("file", fileToUpload);
 
   try {
-    toast("🚀 Uploading creation...");
     const res = await fetch("/api/posts", {
       method: "POST",
       headers: { "Authorization": `Bearer ${token}` },
       body: formData
     });
+
     if (res.ok) {
+      const newPost = await res.json();
       toast("🎉 Post published successfully on Aethra!");
+
+      // ✅ FIX: Immediately prepend new post to local state so it shows instantly
+      if (newPost && newPost._id) {
+        // Enrich with current user data so rendering works
+        if (currentUser && !newPost.creator?.displayName) {
+          newPost.creator = {
+            _id: currentUser.id || currentUser._id,
+            id: currentUser.id || currentUser._id,
+            username: currentUser.username,
+            displayName: currentUser.displayName || currentUser.username,
+            avatar: currentUser.avatar || currentUser.username.slice(0,2).toUpperCase(),
+            verified: currentUser.verified || false,
+            hasPremium: currentUser.hasPremium || false
+          };
+        }
+        allHomePosts.unshift(newPost);
+        renderHomeFeed();
+      }
+
+      // Close modal and reset form
       closeUpload();
       document.getElementById("postTitleInput").value = "";
       document.getElementById("postDescriptionInput").value = "";
@@ -3193,10 +3224,15 @@ async function submitPost() {
       document.getElementById("fileLabel").textContent = "Drop your file here or click to browse";
       selectedFile = null;
       document.getElementById("fileInput").value = "";
-      populate();
+
+      // ✅ FIX: Navigate to profile to see the post, then refresh profile
+      activeProfileUserId = null; // ensure it's showing own profile
+      goPage('profile');
+      await renderProfilePage();
+
     } else {
-      const errData = await res.json();
-      toast("⚠️ Upload failed: " + (errData.message || "Unknown error"));
+      const errData = await res.json().catch(() => ({}));
+      toast("⚠️ Upload failed: " + (errData.message || "Server error. Please try again."));
     }
   } catch (err) {
     toast("⚠️ Connection error during upload.");
