@@ -318,6 +318,97 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
 .stat-n{font-family:var(--font2);font-size:1.55rem;font-weight:800;background:linear-gradient(135deg,var(--blue2),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .stat-l{font-size:10px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:0.7px;font-weight:600}
  
+/* CATEGORY SHOWCASE */
+.cat-showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1.2rem;
+  margin-bottom: 2.5rem;
+  width: 100%;
+}
+.cat-card {
+  position: relative;
+  height: 180px;
+  border-radius: var(--r2);
+  border: 1px solid var(--border2);
+  background: var(--panel);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+.cat-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
+  border-color: var(--blue2);
+}
+.cat-card-preview {
+  width: 100%;
+  height: 65%;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg2);
+}
+.cat-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+.cat-card:hover .cat-card-img {
+  transform: scale(1.08);
+}
+.cat-card-fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: 1.8rem;
+}
+.cat-card-overlay {
+  height: 35%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  background: var(--panel2);
+  border-top: 2px solid transparent;
+  flex-shrink: 0;
+}
+.cat-card-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.cat-card-title {
+  font-family: var(--font2);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  display: block;
+}
+.cat-card-count {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 500;
+  margin-top: 1px;
+  display: block;
+}
+.cat-card-icon-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  transition: transform 0.3s ease;
+}
+.cat-card:hover .cat-card-icon-circle {
+  transform: rotate(15deg) scale(1.1);
+}
+
 /* SECTION HEADS */
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.4rem}
 .sec-title{font-family:var(--font2);font-size:1.05rem;font-weight:700;display:flex;align-items:center;gap:10px;letter-spacing:-0.3px}
@@ -1502,6 +1593,13 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
     <div class="stat-cell"><div class="stat-n">140+</div><div class="stat-l" data-en="Countries" data-hi="देश">Countries</div></div>
     <div class="stat-cell"><div class="stat-n">₹50L+</div><div class="stat-l" data-en="Creator Earnings" data-hi="क्रिएटर कमाई">Creator Earnings</div></div>
   </div>
+  
+  <!-- Live Categories Showcase Section -->
+  <div class="sec-head" style="margin-top: 1.5rem; margin-bottom: 1rem;">
+    <div class="sec-title">🎯 <span data-en="Browse by Category" data-hi="श्रेणी के अनुसार ब्राउज़ करें">Browse by Category</span></div>
+  </div>
+  <div class="cat-showcase-grid" id="catShowcase"></div>
+
   <div class="cat-row" id="homeFilter">
     <div class="cpill active" onclick="filterHome('all',this)">✨ <span data-en="All" data-hi="सभी">All</span></div>
     <div class="cpill" onclick="filterHome('ai',this)"><span class="dot" style="background:#6366f1"></span> <span data-en="AI Generated" data-hi="AI निर्मित">AI Generated</span></div>
@@ -2451,6 +2549,7 @@ async function populate() {
     displayedLimit = getDeviceLimitConfig().limit;
     allHomePosts = Array.isArray(posts) ? posts : [];
     renderHomeFeed();
+    renderCategoryShowcase();
 
     const aiPosts      = allHomePosts.filter(p => p.contentType === "AI");
     const gifPosts     = allHomePosts.filter(p => p.contentType === "GIF");
@@ -2773,6 +2872,79 @@ function filterHome(cat, el) {
   currentFilter = cat;
   displayedLimit = getDeviceLimitConfig().limit;
   renderHomeFeed();
+}
+
+function renderCategoryShowcase() {
+  const container = document.getElementById("catShowcase");
+  if (!container) return;
+
+  const categories = [
+    { id: "ai", label: "AI Generated", labelHi: "AI निर्मित", icon: "🎨", color: "#6366f1", filterKey: "AI" },
+    { id: "gif", label: "GIFs", labelHi: "GIFs", icon: "💫", color: "#3b82f6", filterKey: "GIF" },
+    { id: "sticker", label: "Stickers", labelHi: "स्टिकर", icon: "😎", color: "#06b6d4", filterKey: "STICKER" },
+    { id: "art", label: "Digital Art", labelHi: "डिजिटल आर्ट", icon: "✨", color: "#14b8a6", filterKey: "DIGITAL_ART" },
+    { id: "live_wallpaper", label: "Live Wallpapers", labelHi: "लाइव वॉलपेपर", icon: "📱", color: "#a5b4fc", filterKey: "LIVE_WALLPAPER" },
+    { id: "photo", label: "Photography", labelHi: "फ़ोटोग्राफ़ी", icon: "📸", color: "#0ea5e9", filterKey: "PHOTOGRAPHY" }
+  ];
+
+  const html = categories.map(cat => {
+    // Filter posts for this category
+    const catPosts = allHomePosts.filter(p => {
+      if (cat.filterKey === "DIGITAL_ART") {
+        return p.contentType === "DIGITAL_ART" || p.contentType === "Digital Art";
+      }
+      if (cat.filterKey === "PHOTOGRAPHY") {
+        return p.contentType === "PHOTOGRAPHY" || p.contentType === "Photography";
+      }
+      return p.contentType === cat.filterKey;
+    });
+
+    const count = catPosts.length;
+    const latestPost = catPosts[0];
+    
+    // Preview image or gradient fallback
+    let previewHtml = `<div class="cat-card-fallback" style="background: linear-gradient(135deg, ${cat.color}20, ${cat.color}05); color: ${cat.color};">${cat.icon}</div>`;
+    if (latestPost && latestPost.content) {
+      const isUrl = latestPost.content.startsWith("http") || latestPost.content.startsWith("/uploads/") || latestPost.content.startsWith("data:");
+      if (isUrl) {
+        previewHtml = `<img class="cat-card-img" src="${escapeHtml(latestPost.content)}" alt="${escapeHtml(cat.label)}">`;
+      } else {
+        previewHtml = `<div class="cat-card-fallback" style="background: linear-gradient(135deg, ${cat.color}30, ${cat.color}10); color: ${cat.color}; font-size: 2.2rem;">${latestPost.content}</div>`;
+      }
+    }
+
+    const currentLang = localStorage.getItem("aethra-lang") || "en";
+    const displayName = currentLang === "hi" ? cat.labelHi : cat.label;
+
+    return `
+      <div class="cat-card" onclick="selectCategoryShowcase('${cat.id}')">
+        <div class="cat-card-preview">${previewHtml}</div>
+        <div class="cat-card-overlay" style="border-top: 3px solid ${cat.color};">
+          <div class="cat-card-info">
+            <span class="cat-card-title">${escapeHtml(displayName)}</span>
+            <span class="cat-card-count">${count} ${count === 1 ? 'item' : 'items'}</span>
+          </div>
+          <div class="cat-card-icon-circle" style="background: ${cat.color}20; color: ${cat.color};">${cat.icon}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = html;
+}
+
+function selectCategoryShowcase(catId) {
+  const pills = document.querySelectorAll(".cat-row .cpill");
+  pills.forEach(pill => {
+    const onclickAttr = pill.getAttribute("onclick");
+    if (onclickAttr && onclickAttr.includes(`'${catId}'`)) {
+      filterHome(catId, pill);
+      const feedSection = document.getElementById("homeFilter");
+      if (feedSection) {
+        feedSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  });
 }
 
 function renderHomeFeed() {
@@ -3223,6 +3395,7 @@ async function submitPost() {
         }
         allHomePosts.unshift(newPost);
         renderHomeFeed();
+        renderCategoryShowcase();
       }
 
       // Close modal and reset form
