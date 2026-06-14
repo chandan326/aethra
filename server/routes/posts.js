@@ -222,7 +222,7 @@ router.post("/", auth, uploadSinglePostMedia, async (req, res) => {
 router.get("/", async (req, res) => {
   const mongoose = require("mongoose");
   const jwt = require("jsonwebtoken");
-  const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === "production" ? (() => { throw new Error("JWT_SECRET environment variable is required in production!"); })() : "aethrasecretkey_change_in_production");
+  const JWT_SECRET = process.env.JWT_SECRET || "aethrasecretkey_change_in_production";
   
   // Optional Authentication to get current user ID
   let userId = null;
