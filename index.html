@@ -3318,10 +3318,8 @@ function updateHeroSlide(categories, idx) {
           img.onerror = null;
           img.classList.remove("loaded");
           setTimeout(() => {
-            img.onload = () => {
-              img.classList.add("loaded");
-            };
             img.src = fallbackImagesList[fallbackActiveIdx];
+            img.classList.add("loaded");
             fallbackActiveIdx = (fallbackActiveIdx + 1) % fallbackImagesList.length;
           }, 250);
         };
