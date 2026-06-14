@@ -3295,29 +3295,27 @@ function updateHeroSlide(categories, idx) {
 
     if (img) {
       img.classList.remove("loaded");
-      let hasUrl = false;
-      if (latestPost && latestPost.content && typeof latestPost.content === 'string') {
-        const isUrl = latestPost.content.startsWith("http") || latestPost.content.startsWith("/uploads/") || latestPost.content.startsWith("data:");
-        if (isUrl) {
-          hasUrl = true;
-          img.src = latestPost.content;
-          img.onload = () => {
-            img.classList.add("loaded");
-          };
-        } else {
-          img.src = "";
-          if (fallback) fallback.textContent = latestPost.content.substring(0, 10);
-        }
-      } else {
-        img.src = "";
-      }
+      img.onload = null;
+      img.onerror = null;
 
-      if (!hasUrl) {
+      let fallbackTriggered = false;
+
+      const runFallbackCarousel = () => {
+        if (fallbackTriggered) return;
+        fallbackTriggered = true;
+
         if (fallback) {
           fallback.style.display = "none";
         }
+
+        if (fallbackSlideTimer) {
+          clearInterval(fallbackSlideTimer);
+        }
+
         fallbackActiveIdx = 0;
         const showNextFallbackImage = () => {
+          img.onload = null;
+          img.onerror = null;
           img.classList.remove("loaded");
           setTimeout(() => {
             img.src = fallbackImagesList[fallbackActiveIdx];
@@ -3329,6 +3327,34 @@ function updateHeroSlide(categories, idx) {
         };
         showNextFallbackImage();
         fallbackSlideTimer = setInterval(showNextFallbackImage, 2000);
+      };
+
+      let hasUrl = false;
+      if (latestPost && latestPost.content && typeof latestPost.content === 'string') {
+        const isUrl = latestPost.content.startsWith("http") || latestPost.content.startsWith("/uploads/") || latestPost.content.startsWith("data:");
+        if (isUrl) {
+          hasUrl = true;
+          img.onload = () => {
+            img.classList.add("loaded");
+            if (fallback) {
+              fallback.style.display = "none";
+            }
+          };
+          img.onerror = () => {
+            console.warn("Failed to load post image, falling back to carousel.");
+            runFallbackCarousel();
+          };
+          img.src = latestPost.content;
+        } else {
+          img.src = "";
+          if (fallback) fallback.textContent = latestPost.content.substring(0, 10);
+        }
+      } else {
+        img.src = "";
+      }
+
+      if (!hasUrl) {
+        runFallbackCarousel();
       }
     }
 
