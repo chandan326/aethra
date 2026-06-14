@@ -1,6 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+  window.onerror = function(message, source, lineno, colno, error) {
+    const div = document.createElement('div');
+    div.style.position = 'fixed';
+    div.style.top = '0';
+    div.style.left = '0';
+    div.style.width = '100%';
+    div.style.background = 'red';
+    div.style.color = 'white';
+    div.style.padding = '15px';
+    div.style.zIndex = '9999999';
+    div.style.fontSize = '14px';
+    div.style.fontFamily = 'monospace';
+    div.style.whiteSpace = 'pre-wrap';
+    div.style.boxShadow = '0 4px 20px rgba(0,0,0,0.5)';
+    div.textContent = 'JAVASCRIPT ERROR: ' + message + '\nFile: ' + source + '\nLine: ' + lineno + ':' + colno + '\nStack: ' + (error ? error.stack : '');
+    
+    // Append to body after DOM is loaded, or directly to documentElement if body is not ready
+    if (document.body) {
+      document.body.appendChild(div);
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.appendChild(div);
+      });
+    }
+    return false;
+  };
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aethra — Create. Inspire. Belong.</title>
@@ -2830,7 +2859,10 @@ async function populate() {
     }
 
     displayedLimit = getDeviceLimitConfig().limit;
-    allHomePosts = Array.isArray(posts) ? posts : [];
+    const dbPosts = Array.isArray(posts) ? posts : [];
+    const localPosts = JSON.parse(localStorage.getItem("aethra_local_posts") || "[]");
+    const filteredLocal = localPosts.filter(lp => !dbPosts.some(dp => dp._id === lp._id));
+    allHomePosts = [...filteredLocal, ...dbPosts];
     renderHomeFeed();
     renderCategoryShowcase();
     initHeroSlideshow();
@@ -3956,6 +3988,12 @@ async function submitPost() {
             hasPremium: currentUser.hasPremium || false
           };
         }
+        
+        // Save to localStorage list for client-side persistence
+        const localPosts = JSON.parse(localStorage.getItem("aethra_local_posts") || "[]");
+        localPosts.unshift(newPost);
+        localStorage.setItem("aethra_local_posts", JSON.stringify(localPosts));
+
         allHomePosts.unshift(newPost);
         renderHomeFeed();
         renderCategoryShowcase();
@@ -3971,6 +4009,12 @@ async function submitPost() {
       selectedFile = null;
       document.getElementById("fileInput").value = "";
 
+      // Reset submit button state
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = origBtnText || 'Publish Post';
+      }
+
       // ✅ FIX: Navigate to profile to see the post, then refresh profile
       activeProfileUserId = null; // ensure it's showing own profile
       goPage('profile');
@@ -3979,9 +4023,17 @@ async function submitPost() {
     } else {
       const errData = await res.json().catch(() => ({}));
       toast("⚠️ Upload failed: " + (errData.message || "Server error. Please try again."));
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = origBtnText || 'Publish Post';
+      }
     }
   } catch (err) {
     toast("⚠️ Connection error during upload.");
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = origBtnText || 'Publish Post';
+    }
   }
 }
 
