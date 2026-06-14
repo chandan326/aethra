@@ -3163,6 +3163,14 @@ let heroActiveSlide = 0;
 let heroSlideTimer = null;
 let heroSlideInterval = 5000; // 5 seconds per slide
 let heroProgressAnim = null;
+let fallbackSlideTimer = null;
+let fallbackActiveIdx = 0;
+const fallbackImagesList = [
+  "/uploads/hero_slide_goku.jpg",
+  "/uploads/hero_slide_rama.jpg",
+  "/uploads/hero_slide_slenderman.jpg",
+  "/uploads/hero_slide_krishna.jpg"
+];
 
 const heroCategories = [
   { id: "ai", label: "AI Generated", labelHi: "AI निर्मित", icon: "🎨", color: "#6366f1", filterKey: "AI", title: "Create Stunning <em>AI Generated</em> Art", titleHi: "शानदार <em>AI आर्ट</em> बनाएं", sub: "Post your Midjourney, Stable Diffusion, or Canvas creations. Monetize your prompts.", subHi: "अपने Midjourney, Stable Diffusion, या Canvas क्रिएशन्स पोस्ट करें।" },
@@ -3275,14 +3283,23 @@ function updateHeroSlide(categories, idx) {
       fallback.textContent = cat.icon;
       fallback.style.color = cat.color;
       fallback.style.background = `linear-gradient(135deg, ${cat.color}20, ${cat.color}05)`;
+      fallback.style.display = "flex";
+      fallback.style.opacity = "0.8";
     }
 
     const img = document.getElementById("heroPreviewImg");
+    if (fallbackSlideTimer) {
+      clearInterval(fallbackSlideTimer);
+      fallbackSlideTimer = null;
+    }
+
     if (img) {
       img.classList.remove("loaded");
+      let hasUrl = false;
       if (latestPost && latestPost.content && typeof latestPost.content === 'string') {
         const isUrl = latestPost.content.startsWith("http") || latestPost.content.startsWith("/uploads/") || latestPost.content.startsWith("data:");
         if (isUrl) {
+          hasUrl = true;
           img.src = latestPost.content;
           img.onload = () => {
             img.classList.add("loaded");
@@ -3293,6 +3310,25 @@ function updateHeroSlide(categories, idx) {
         }
       } else {
         img.src = "";
+      }
+
+      if (!hasUrl) {
+        if (fallback) {
+          fallback.style.display = "none";
+        }
+        fallbackActiveIdx = 0;
+        const showNextFallbackImage = () => {
+          img.classList.remove("loaded");
+          setTimeout(() => {
+            img.src = fallbackImagesList[fallbackActiveIdx];
+            img.onload = () => {
+              img.classList.add("loaded");
+            };
+            fallbackActiveIdx = (fallbackActiveIdx + 1) % fallbackImagesList.length;
+          }, 250);
+        };
+        showNextFallbackImage();
+        fallbackSlideTimer = setInterval(showNextFallbackImage, 2000);
       }
     }
 
