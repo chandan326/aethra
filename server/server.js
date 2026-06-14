@@ -148,9 +148,13 @@ const localUri = process.env.LOCAL_MONGO_URI || "mongodb://127.0.0.1:27017/aethr
  * Every route already checks mongoose.connection.readyState and falls back to mock data.
  */
 async function startServer() {
+  const isVercel = process.env.VERCEL === "1" || process.env.NOW_REGION !== undefined;
+  
   if (atlasUri) {
     try {
-      await mongoose.connect(atlasUri, { serverSelectionTimeoutMS: 5000 });
+      // Use shorter timeout on Vercel to fail fast and prevent cold start timeout
+      const timeout = isVercel ? 2000 : 5000;
+      await mongoose.connect(atlasUri, { serverSelectionTimeoutMS: timeout });
       console.log("✅ Connected to MongoDB Atlas");
       await seedDatabase();
       return;
@@ -159,13 +163,16 @@ async function startServer() {
     }
   }
 
-  try {
-    await mongoose.connect(localUri, { serverSelectionTimeoutMS: 3000 });
-    console.log("✅ Connected to local MongoDB");
-    await seedDatabase();
-    return;
-  } catch (err) {
-    console.error("❌ Local MongoDB failed:", err.message);
+  // Skip trying local MongoDB on Vercel
+  if (!isVercel) {
+    try {
+      await mongoose.connect(localUri, { serverSelectionTimeoutMS: 2000 });
+      console.log("✅ Connected to local MongoDB");
+      await seedDatabase();
+      return;
+    } catch (err) {
+      console.error("❌ Local MongoDB failed:", err.message);
+    }
   }
 
   console.log("⚠️  Offline mock-database mode — data served from JSON cache.");
