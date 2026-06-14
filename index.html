@@ -9,31 +9,34 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
 <style>
 :root, [data-theme="nebula"] {
-  --bg:#06080f;
-  --bg2:#090c15;
-  --bg3:#0c1020;
-  --panel:#0e1221;
-  --panel2:#131828;
-  --border:rgba(99,147,255,0.08);
-  --border2:rgba(99,147,255,0.16);
-  --border3:rgba(99,147,255,0.26);
+  --bg:#f8fafc;
+  --bg2:#f1f5f9;
+  --bg3:#e2e8f0;
+  --panel:#ffffff;
+  --panel2:#f8fafc;
+  --border:rgba(15,23,42,0.06);
+  --border2:rgba(15,23,42,0.1);
+  --border3:rgba(15,23,42,0.2);
   --blue:#3b82f6;
-  --blue2:#60a5fa;
-  --blue3:#93c5fd;
-  --blue-deep:#1d4ed8;
-  --blue-glow:rgba(59,130,246,0.18);
+  --blue2:#1d4ed8;
+  --blue3:#2563eb;
+  --blue-deep:#1e3a8a;
+  --blue-glow:rgba(59,130,246,0.1);
   --indigo:#6366f1;
-  --cyan:#06b6d4;
-  --sky:#0ea5e9;
-  --teal:#14b8a6;
-  --text:#eef2ff;
-  --text2:#8892b0;
-  --text3:#4a5480;
+  --cyan:#0891b2;
+  --sky:#0284c7;
+  --teal:#0d9488;
+  --text:#0f172a;
+  --text2:#475569;
+  --text3:#94a3b8;
   --font:'DM Sans',sans-serif;
   --font2:'Syne',sans-serif;
   --r:12px;
   --r2:20px;
   --r3:28px;
+  --nav-bg:rgba(255,255,255,0.85);
+  --search-bg:rgba(15,23,42,0.04);
+  --dropdown-bg:rgba(255,255,255,0.98);
 }
 [data-theme="amoled"] {
   --bg:#000000;
@@ -61,6 +64,9 @@
   --r:12px;
   --r2:20px;
   --r3:28px;
+  --nav-bg:rgba(0,0,0,0.85);
+  --search-bg:rgba(255,255,255,0.04);
+  --dropdown-bg:rgba(8,8,8,0.98);
 }
 [data-theme="cyberpunk"] {
   --bg:#12041b;
@@ -88,6 +94,9 @@
   --r:12px;
   --r2:20px;
   --r3:28px;
+  --nav-bg:rgba(18,4,27,0.85);
+  --search-bg:rgba(255,255,255,0.04);
+  --dropdown-bg:rgba(28,7,43,0.98);
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -111,9 +120,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(25px,-18px) scale(1.04)}66%{transform:translate(-18px,25px) scale(0.96)}}
  
 /* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba(6,8,15,0.85);backdrop-filter:blur(28px) saturate(180%);border-bottom:1px solid var(--border)}
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(--nav-bg);backdrop-filter:blur(28px) saturate(180%);border-bottom:1px solid var(--border)}
 .nav-wrap{max-width:1440px;margin:0 auto;height:100%;display:flex;align-items:center;padding:0 2rem;gap:1.5rem;justify-content:space-between}
-.logo{font-family:var(--font2);font-size:1.6rem;font-weight:800;color:#fff;text-decoration:none;display:flex;align-items:center;gap:12px;letter-spacing:-0.5px}
+.logo{font-family:var(--font2);font-size:1.6rem;font-weight:800;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:12px;letter-spacing:-0.5px}
 .logo-mark{width:38px;height:38px;background:linear-gradient(135deg,var(--blue),var(--indigo));border-radius:10px;display:grid;place-items:center;font-size:18px;font-weight:900;color:#fff;flex-shrink:0;box-shadow:0 4px 20px rgba(59,130,246,0.45);letter-spacing:-1px}
 .nav-left {
   display: flex;
@@ -194,12 +203,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
   left: 0;
   top: calc(100% + 8px);
   width: 250px;
-  background: rgba(10, 12, 22, 0.95);
+  background: var(--dropdown-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border2);
   border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);
   z-index: 1000;
   overflow: hidden;
   padding: 6px 0;
@@ -1451,7 +1460,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
                 <span class="menu-lang-title" data-en="Theme" data-hi="थीम">Theme</span>
               </div>
               <div class="menu-lang-toggle" style="width: 100%; display: flex; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin-top: 4px;">
-                <button class="lang-btn active" id="themeNebula" onclick="setTheme('nebula'); event.stopPropagation();" style="flex: 1; text-align: center; font-size: 11px; padding: 6px 0;">Nebula</button>
+                <button class="lang-btn active" id="themeNebula" onclick="setTheme('nebula'); event.stopPropagation();" style="flex: 1; text-align: center; font-size: 11px; padding: 6px 0;">Bright</button>
                 <button class="lang-btn" id="themeAmoled" onclick="setTheme('amoled'); event.stopPropagation();" style="flex: 1; text-align: center; font-size: 11px; padding: 6px 0;">AMOLED</button>
                 <button class="lang-btn" id="themeCyberpunk" onclick="setTheme('cyberpunk'); event.stopPropagation();" style="flex: 1; text-align: center; font-size: 11px; padding: 6px 0;">Cyberpunk</button>
               </div>
@@ -1465,7 +1474,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:rgba
     <!-- CENTER SECTION: Centered Search Bar -->
     <div class="nav-center">
       <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 13px;">🔍</span>
-      <input type="text" id="navbarSearch" placeholder="Search creations & products..." oninput="handleSearch(this.value)" style="width: 100%; height: 44px; padding: 0 14px 0 38px; border-radius: 22px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: #fff; font-family: var(--font); font-size: 13px; outline: none; transition: all 0.3s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);" onfocus="this.style.borderColor='var(--blue)'; this.style.background='rgba(255,255,255,0.07)'; this.style.boxShadow='0 0 10px rgba(59,130,246,0.25)';" onblur="this.style.borderColor='var(--border)'; this.style.background='rgba(255,255,255,0.04)'; this.style.boxShadow='inset 0 2px 4px rgba(0,0,0,0.15)';">
+      <input type="text" id="navbarSearch" placeholder="Search creations & products..." oninput="handleSearch(this.value)" style="width: 100%; height: 44px; padding: 0 14px 0 38px; border-radius: 22px; background: var(--search-bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 13px; outline: none; transition: all 0.3s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);" onfocus="this.style.borderColor='var(--blue)'; this.style.boxShadow='0 0 10px rgba(59,130,246,0.25)';" onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='inset 0 2px 4px rgba(0,0,0,0.05)';">
     </div>
 
     <!-- RIGHT SECTION: Login, Logout, Profile Avatar, Subscriptions Button -->
