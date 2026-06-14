@@ -3281,30 +3281,49 @@ window.addEventListener('click', e => {
   }
 });
 
-function switchPTab(el,tab){
-  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
-  const g=document.getElementById('profileGrid');
+async function switchPTab(el, tab) {
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const g = document.getElementById('profileGrid');
   const targetUserId = activeProfileUserId || (currentUser ? (currentUser.id || currentUser._id) : null);
   if (!targetUserId) return;
 
-  fetch("/api/posts").then(r => r.json()).then(posts => {
-    const creatorPosts = posts.filter(p => {
-      const cId = p.creator?._id || p.creator?.id || p.creator;
-      return cId && (cId.toString() === targetUserId.toString());
-    });
-    
-    if(tab==='posts') {
-      g.innerHTML=creatorPosts.length ? creatorPosts.map(mkPCard).join('') : `<p style="color:var(--text3);padding:2rem">This creator hasn't uploaded any creations yet.</p>`;
-    } else if(tab==='private') {
-      g.innerHTML=creatorPosts.filter(i=>i.visibility==='private').length ? creatorPosts.filter(i=>i.visibility==='private').map(mkPCard).join('') : `<p style="color:var(--text3);padding:2rem">🔒 Private posts will appear here.</p>`;
-    } else if(tab==='paid') {
-      g.innerHTML=creatorPosts.filter(i=>i.pricing==='paid').length ? creatorPosts.filter(i=>i.pricing==='paid').map(mkPCard).join('') : `<p style="color:var(--text3);padding:2rem">💰 Paid posts will appear here.</p>`;
-    } else if(tab==='dashboard') {
-      renderDashboard();
-    } else {
-      g.innerHTML=`<p style="color:var(--text3);padding:2rem">🛒 Shop listings will appear here.</p>`;
+  const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+  let creatorPosts = [];
+  try {
+    const postsRes = await fetch(`/api/posts?creator=${targetUserId}`, { headers });
+    if (postsRes.ok) {
+      const data = await postsRes.json();
+      creatorPosts = Array.isArray(data) ? data : [];
     }
-  });
+  } catch (e) {
+    console.warn("Profile tab posts fetch failed:", e.message);
+    // Fallback: filter from allHomePosts in memory
+    creatorPosts = allHomePosts.filter(p => {
+      const cId = p.creator?._id || p.creator?.id || (typeof p.creator === "string" ? p.creator : null);
+      return cId && targetUserId && cId.toString() === targetUserId.toString();
+    });
+  }
+
+  if (tab === 'posts') {
+    g.innerHTML = creatorPosts.length 
+      ? creatorPosts.map((p, i) => mkPCard(p, i)).join('') 
+      : `<p style="color:var(--text3);padding:2rem">This creator hasn't uploaded any creations yet.</p>`;
+  } else if (tab === 'private') {
+    const priv = creatorPosts.filter(i => i.visibility === 'private');
+    g.innerHTML = priv.length 
+      ? priv.map((p, i) => mkPCard(p, i)).join('') 
+      : `<p style="color:var(--text3);padding:2rem">🔒 Private posts will appear here.</p>`;
+  } else if (tab === 'paid') {
+    const paid = creatorPosts.filter(i => i.pricing === 'paid');
+    g.innerHTML = paid.length 
+      ? paid.map((p, i) => mkPCard(p, i)).join('') 
+      : `<p style="color:var(--text3);padding:2rem">💰 Paid posts will appear here.</p>`;
+  } else if (tab === 'dashboard') {
+    renderDashboard();
+  } else {
+    g.innerHTML = `<p style="color:var(--text3);padding:2rem">🛒 Shop listings will appear here.</p>`;
+  }
 }
 
 function formatDashboardDate(dateStr) {
