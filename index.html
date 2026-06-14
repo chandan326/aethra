@@ -38,33 +38,33 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
 <style>
 :root, [data-theme="nebula"] {
-  --bg:#f8fafc;
-  --bg2:#f1f5f9;
-  --bg3:#e2e8f0;
+  --bg:#f1f5f9;
+  --bg2:#e2e8f0;
+  --bg3:#cbd5e1;
   --panel:#ffffff;
   --panel2:#f8fafc;
-  --border:rgba(15,23,42,0.06);
-  --border2:rgba(15,23,42,0.1);
-  --border3:rgba(15,23,42,0.2);
+  --border:rgba(15,23,42,0.08);
+  --border2:rgba(15,23,42,0.12);
+  --border3:rgba(15,23,42,0.22);
   --blue:#3b82f6;
   --blue2:#1d4ed8;
   --blue3:#2563eb;
   --blue-deep:#1e3a8a;
-  --blue-glow:rgba(59,130,246,0.1);
+  --blue-glow:rgba(59,130,246,0.12);
   --indigo:#6366f1;
   --cyan:#0891b2;
   --sky:#0284c7;
   --teal:#0d9488;
   --text:#0f172a;
-  --text2:#475569;
-  --text3:#94a3b8;
+  --text2:#334155;
+  --text3:#566a7f;
   --font:'DM Sans',sans-serif;
   --font2:'Syne',sans-serif;
   --r:12px;
   --r2:20px;
   --r3:28px;
   --nav-bg:rgba(255,255,255,0.85);
-  --search-bg:rgba(15,23,42,0.04);
+  --search-bg:rgba(15,23,42,0.06);
   --dropdown-bg:rgba(255,255,255,0.98);
 }
 [data-theme="amoled"] {
@@ -192,12 +192,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
   box-shadow: 0 4px 16px rgba(59,130,246,0.4);
 }
 .npill:hover:not(.active) {
-  background: rgba(255,255,255,0.05);
+  background: var(--search-bg);
   color: var(--text);
 }
 .nav-end{display:flex;align-items:center;gap:10px;flex-shrink:0;flex:1;justify-content:flex-end}
-.lang-toggle, .menu-lang-toggle{display:flex;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:8px;overflow:hidden}
-.lang-btn{padding:6px 12px;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;border:none;background:none;font-family:var(--font);transition:all 0.15s}
+.lang-toggle, .menu-lang-toggle{display:flex;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;overflow:hidden}
+.lang-btn{padding:6px 12px;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;border:none;background:none;font-family:var(--font);transition:all 0.15s}
 .lang-btn.active{background:linear-gradient(135deg,var(--blue),var(--indigo));color:#fff}
 .btn-ghost{background:rgba(255,255,255,0.04);border:1px solid var(--border2);color:var(--text);padding:7px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-family:var(--font);font-weight:500;transition:all 0.2s}
 
@@ -210,7 +210,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--search-bg);
   border: 1px solid var(--border);
   color: var(--text);
   padding: 0 20px;
@@ -261,7 +261,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
   text-decoration: none;
 }
 .menu-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--search-bg);
 }
 .menu-item-icon {
   font-size: 16px;
@@ -270,7 +270,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--search-bg);
   border-radius: 8px;
 }
 .menu-item-text {
@@ -309,7 +309,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
 .menu-lang-title {
   font-size: 13px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text);
 }
 .menu-lang-toggle {
   margin-left: auto;
@@ -1391,7 +1391,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--r);
   padding: 10px;
@@ -1538,7 +1538,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
   }
 }
 .sub-card {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--panel);
   border: 1px solid var(--border2);
   border-radius: var(--r2);
   padding: 1.5rem 1.2rem;
@@ -1624,9 +1624,9 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
 }
 .sub-btn {
   width: 100%;
-  background: rgba(255,255,255,0.05);
+  background: var(--search-bg);
   border: 1px solid var(--border2);
-  color: #fff;
+  color: var(--text);
   padding: 8px 0;
   border-radius: 8px;
   font-size: 12px;
@@ -1829,7 +1829,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
                 <span class="menu-item-icon">🎨</span>
                 <span class="menu-lang-title" data-en="Theme" data-hi="थीम">Theme</span>
               </div>
-              <div class="menu-lang-toggle" style="width: 100%; display: flex; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin-top: 4px;">
+              <div class="menu-lang-toggle" style="width: 100%; display: flex; background: var(--bg2); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin-top: 4px;">
                 <button class="lang-btn active" id="themeNebula" onclick="setTheme('nebula'); event.stopPropagation();" style="flex: 1; text-align: center; font-size: 11px; padding: 6px 0;">Bright</button>
                 <button class="lang-btn" id="themeAmoled" onclick="setTheme('amoled'); event.stopPropagation();" style="flex: 1; text-align: center; font-size: 11px; padding: 6px 0;">AMOLED</button>
                 <button class="lang-btn" id="themeCyberpunk" onclick="setTheme('cyberpunk'); event.stopPropagation();" style="flex: 1; text-align: center; font-size: 11px; padding: 6px 0;">Cyberpunk</button>
@@ -2150,7 +2150,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
     <button class="modal-x" onclick="closeUpload()">✕</button>
     
     <!-- Tab bar for Upload vs AI Creator Suite -->
-    <div style="display: flex; gap: 8px; margin-bottom: 1.2rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 20px; padding: 4px;">
+    <div style="display: flex; gap: 8px; margin-bottom: 1.2rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 4px;">
       <button id="tabUploadFile" onclick="switchUploadTab('upload')" style="flex: 1; height: 38px; border-radius: 16px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: all 0.2s; background: linear-gradient(135deg,var(--blue),var(--indigo)); color: #fff;">📎 Upload File</button>
       <button id="tabAiSuite" onclick="switchUploadTab('ai')" style="flex: 1; height: 38px; border-radius: 16px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: all 0.2s; background: transparent; color: var(--text2);">✨ AI Creator Suite</button>
     </div>
@@ -2279,15 +2279,15 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
               <div id="prodModalType" style="font-size: 10px; text-transform: uppercase; color: var(--text3); font-weight: 600; letter-spacing: 0.5px;"></div>
             </div>
           </div>
-          <h2 id="prodModalTitle" style="font-family: var(--font2); font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem; line-height: 1.2;"></h2>
+          <h2 id="prodModalTitle" style="font-family: var(--font2); font-size: 1.5rem; font-weight: 800; color: var(--text); margin-bottom: 0.5rem; line-height: 1.2;"></h2>
           <p id="prodModalDesc" style="font-size: 13px; color: var(--text2); line-height: 1.6; font-weight: 300; word-break: break-word;"></p>
           <hr style="border:none; border-top:1px solid var(--border); margin:1.5rem 0 1rem 0">
-          <div style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 1rem; font-family: var(--font2); display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 1rem; font-family: var(--font2); display: flex; justify-content: space-between; align-items: center;">
             <span>💬 <span data-en="Comments" data-hi="टिप्पणियाँ">Comments</span> (<span id="prodModalCommentsCount">0</span>)</span>
           </div>
           <div id="prodModalCommentsList" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 1.2rem;"></div>
           <div id="prodModalCommentInputZone" style="display: flex; gap: 8px; align-items: flex-end; margin-top: 1rem;">
-            <textarea id="prodModalCommentText" placeholder="Write a comment..." style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 8px 12px; font-size: 13px; font-family: var(--font); resize: none; height: 36px; min-height: 36px; max-height: 80px;" oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';"></textarea>
+            <textarea id="prodModalCommentText" placeholder="Write a comment..." style="flex: 1; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 8px 12px; font-size: 13px; font-family: var(--font); resize: none; height: 36px; min-height: 36px; max-height: 80px;" oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';"></textarea>
             <button class="btn-cta" onclick="submitComment()" style="height: 36px; padding: 0 16px; border-radius: 8px; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 4px; box-shadow: none;">Post</button>
           </div>
         </div>
@@ -3360,11 +3360,17 @@ function updateHeroSlide(categories, idx) {
         }
 
         const showNextFallbackImage = () => {
-          img.onload = null;
-          img.onerror = null;
-          img.src = fallbackImagesList[fallbackActiveIdx];
-          img.classList.add("loaded");
-          fallbackActiveIdx = (fallbackActiveIdx + 1) % fallbackImagesList.length;
+          img.classList.remove("loaded");
+          setTimeout(() => {
+            img.onload = () => {
+              img.classList.add("loaded");
+            };
+            img.onerror = () => {
+              console.warn("Fallback image failed to load");
+            };
+            img.src = fallbackImagesList[fallbackActiveIdx];
+            fallbackActiveIdx = (fallbackActiveIdx + 1) % fallbackImagesList.length;
+          }, 300);
         };
         showNextFallbackImage();
         fallbackSlideTimer = setInterval(showNextFallbackImage, 2000);
