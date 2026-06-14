@@ -1587,18 +1587,19 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
       <button class="btn-outline" onclick="goPage('channels')">📺 <span data-en="Browse Channels" data-hi="चैनल देखें">Browse Channels</span></button>
     </div>
   </div>
+
+  <!-- Live Categories Showcase Section -->
+  <div class="sec-head" style="margin-top: 1.5rem; margin-bottom: 1rem;">
+    <div class="sec-title">🎯 <span data-en="Browse by Category" data-hi="श्रेणी के अनुसार ब्राउज़ करें">Browse by Category</span></div>
+  </div>
+  <div class="cat-showcase-grid" id="catShowcase"></div>
+  
   <div class="stats-row">
     <div class="stat-cell"><div class="stat-n">2.4M+</div><div class="stat-l" data-en="Creators" data-hi="क्रिएटर्स">Creators</div></div>
     <div class="stat-cell"><div class="stat-n">18M+</div><div class="stat-l" data-en="Posts Shared" data-hi="पोस्ट शेयर">Posts Shared</div></div>
     <div class="stat-cell"><div class="stat-n">140+</div><div class="stat-l" data-en="Countries" data-hi="देश">Countries</div></div>
     <div class="stat-cell"><div class="stat-n">₹50L+</div><div class="stat-l" data-en="Creator Earnings" data-hi="क्रिएटर कमाई">Creator Earnings</div></div>
   </div>
-  
-  <!-- Live Categories Showcase Section -->
-  <div class="sec-head" style="margin-top: 1.5rem; margin-bottom: 1rem;">
-    <div class="sec-title">🎯 <span data-en="Browse by Category" data-hi="श्रेणी के अनुसार ब्राउज़ करें">Browse by Category</span></div>
-  </div>
-  <div class="cat-showcase-grid" id="catShowcase"></div>
 
   <div class="cat-row" id="homeFilter">
     <div class="cpill active" onclick="filterHome('all',this)">✨ <span data-en="All" data-hi="सभी">All</span></div>
@@ -2904,7 +2905,7 @@ function renderCategoryShowcase() {
     
     // Preview image or gradient fallback
     let previewHtml = `<div class="cat-card-fallback" style="background: linear-gradient(135deg, ${cat.color}20, ${cat.color}05); color: ${cat.color};">${cat.icon}</div>`;
-    if (latestPost && latestPost.content) {
+    if (latestPost && latestPost.content && typeof latestPost.content === 'string') {
       const isUrl = latestPost.content.startsWith("http") || latestPost.content.startsWith("/uploads/") || latestPost.content.startsWith("data:");
       if (isUrl) {
         previewHtml = `<img class="cat-card-img" src="${escapeHtml(latestPost.content)}" alt="${escapeHtml(cat.label)}">`;
