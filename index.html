@@ -3344,16 +3344,12 @@ function updateHeroSlide(categories, idx) {
           clearInterval(fallbackSlideTimer);
         }
 
-        fallbackActiveIdx = 0;
         const showNextFallbackImage = () => {
           img.onload = null;
           img.onerror = null;
-          img.classList.remove("loaded");
-          setTimeout(() => {
-            img.src = fallbackImagesList[fallbackActiveIdx];
-            img.classList.add("loaded");
-            fallbackActiveIdx = (fallbackActiveIdx + 1) % fallbackImagesList.length;
-          }, 250);
+          img.src = fallbackImagesList[fallbackActiveIdx];
+          img.classList.add("loaded");
+          fallbackActiveIdx = (fallbackActiveIdx + 1) % fallbackImagesList.length;
         };
         showNextFallbackImage();
         fallbackSlideTimer = setInterval(showNextFallbackImage, 2000);

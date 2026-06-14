@@ -1,32 +1,35 @@
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 
+const finalUrl = process.env.CLOUDINARY_URL || "cloudinary://434572755227279:IqJXROIpkbFsqR2CVSLVPOAJZVY@dky63jssw";
+const finalCloudName = process.env.CLOUDINARY_CLOUD_NAME || "dky63jssw";
+const finalApiKey = process.env.CLOUDINARY_API_KEY || "434572755227279";
+const finalApiSecret = process.env.CLOUDINARY_API_SECRET || "IqJXROIpkbFsqR2CVSLVPOAJZVY";
+
 const hasUrl = !!(
-  process.env.CLOUDINARY_URL &&
-  process.env.CLOUDINARY_URL.startsWith("cloudinary://") &&
-  !process.env.CLOUDINARY_URL.includes("**********") &&
-  !process.env.CLOUDINARY_URL.includes("your_")
+  finalUrl &&
+  finalUrl.startsWith("cloudinary://") &&
+  !finalUrl.includes("**********") &&
+  !finalUrl.includes("your_")
 );
 
 const hasKeys = !!(
-  process.env.CLOUDINARY_CLOUD_NAME &&
-  process.env.CLOUDINARY_API_KEY &&
-  process.env.CLOUDINARY_API_SECRET &&
-  process.env.CLOUDINARY_CLOUD_NAME !== "your_cloud_name" &&
-  process.env.CLOUDINARY_API_KEY !== "your_api_key" &&
-  process.env.CLOUDINARY_API_SECRET !== "your_api_secret"
+  finalCloudName &&
+  finalApiKey &&
+  finalApiSecret &&
+  finalCloudName !== "your_cloud_name" &&
+  finalApiKey !== "your_api_key" &&
+  finalApiSecret !== "your_api_secret"
 );
 
 const isConfigured = hasUrl || hasKeys;
 
 if (isConfigured) {
-  if (hasKeys && !hasUrl) {
-    cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET
-    });
-  }
+  cloudinary.config({
+    cloud_name: finalCloudName,
+    api_key: finalApiKey,
+    api_secret: finalApiSecret
+  });
   console.log("☁️ Cloudinary storage configured successfully.");
 } else {
   console.warn("⚠️ Cloudinary credentials missing. Operating in local fallback mode.");

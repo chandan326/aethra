@@ -140,7 +140,7 @@ app.use(express.static(path.join(__dirname, "../")));
 mongoose.set("bufferCommands", false);
 
 const port     = process.env.PORT || 5000;
-const atlasUri = process.env.MONGO_URI;
+const atlasUri = process.env.MONGO_URI || "mongodb+srv://chandanrai771714_db_user:Test12345@cluster0.cxkc0uv.mongodb.net/aethra?retryWrites=true&w=majority";
 const localUri = process.env.LOCAL_MONGO_URI || "mongodb://127.0.0.1:27017/aethra";
 
 const dnsPromises = require("dns").promises;
