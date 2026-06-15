@@ -154,54 +154,6 @@ const port     = process.env.PORT || 5000;
 const atlasUri = process.env.MONGO_URI || "mongodb+srv://chandanrai771714_db_user:Test12345@cluster0.cxkc0uv.mongodb.net/aethra?retryWrites=true&w=majority";
 const localUri = process.env.LOCAL_MONGO_URI || "mongodb://127.0.0.1:27017/aethra";
 
-const dnsPromises = require("dns").promises;
-
-async function resolveSrvToStandardUri(srvUri) {
-  if (!srvUri || !srvUri.startsWith("mongodb+srv://")) return srvUri;
-  
-  try {
-    const match = srvUri.match(/^mongodb\+srv:\/\/([^:]+):([^@]+)@([^/]+)\/([^?]*)(?:\?(.*))?$/);
-    if (!match) return srvUri;
-    
-    const [, username, password, srvHost, database, originalOptions] = match;
-    
-    // Create resolver and use public DNS servers as fallback
-    const resolver = new dnsPromises.Resolver();
-    resolver.setServers(["8.8.8.8", "1.1.1.1"]);
-    
-    console.log(`🔍 Resolving SRV records for _mongodb._tcp.${srvHost}...`);
-    const srvRecords = await resolver.resolveSrv(`_mongodb._tcp.${srvHost}`);
-    if (!srvRecords || !srvRecords.length) {
-      throw new Error("No SRV records found");
-    }
-    
-    const hostsList = srvRecords.map(r => `${r.name}:${r.port}`).join(",");
-    
-    // Resolve TXT options (like replicaSet name)
-    let txtOptions = "";
-    try {
-      const txtRecords = await resolver.resolveTxt(srvHost);
-      if (txtRecords && txtRecords.length) {
-        txtOptions = txtRecords[0].join("&");
-      }
-    } catch (txtErr) {
-      console.warn("⚠️ TXT resolution failed, continuing without TXT options:", txtErr.message);
-    }
-    
-    // Build standard connection string
-    let finalOptions = "ssl=true";
-    if (txtOptions) finalOptions += `&${txtOptions}`;
-    if (originalOptions) finalOptions += `&${originalOptions}`;
-    
-    const standardUri = `mongodb://${username}:${password}@${hostsList}/${database}?${finalOptions}`;
-    console.log("✅ Successfully resolved SRV to standard connection string!");
-    return standardUri;
-  } catch (err) {
-    console.warn("⚠️ DNS SRV resolution failed, falling back to original URI:", err.message);
-    return srvUri;
-  }
-}
-
 /**
  * ✅ FIXED: ONE startup connection attempt only.
  * DO NOT add per-request reconnect middleware — it causes 5s timeouts on Vercel.
@@ -212,10 +164,8 @@ async function startServer() {
   
   if (atlasUri) {
     try {
-      // Use shorter timeout on Vercel to fail fast and prevent cold start timeout
-      const timeout = isVercel ? 2000 : 5000;
-      const resolvedUri = await resolveSrvToStandardUri(atlasUri);
-      await mongoose.connect(resolvedUri, { serverSelectionTimeoutMS: timeout });
+      // Direct connection with 5s timeout to support Vercel cold starts
+      await mongoose.connect(atlasUri, { serverSelectionTimeoutMS: 5000 });
       console.log("✅ Connected to MongoDB Atlas");
       await seedDatabase();
       return;
