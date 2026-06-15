@@ -6372,12 +6372,14 @@ function upiSimSuccess() {
   // Play chime sound
   playUpiSuccessChime();
   
-  // Auto-close and fire transaction callback after 2.5s
+  // Fire transaction callback immediately for a snappier, real-time download experience
+  if (upiSimCallback) {
+    upiSimCallback();
+  }
+  
+  // Auto-close simulated phone screen after 2.5s
   setTimeout(() => {
     closeUpiSim();
-    if (upiSimCallback) {
-      upiSimCallback();
-    }
   }, 2500);
 }
 
