@@ -9,9 +9,10 @@ module.exports = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     
-    // If MongoDB is connected, reject any mock user ID to force a fresh login/register
-    if (mongoose.connection.readyState === 1 && 
-        (decoded.id === "mock_user_id" || (typeof decoded.id === "string" && decoded.id.startsWith("mock_user_")))) {
+    // If MongoDB is connected or connecting, reject any mock user ID to force a fresh login/register
+    const state = mongoose.connection.readyState;
+    const isMockUser = decoded.id === "mock_user_id" || (typeof decoded.id === "string" && decoded.id.startsWith("mock_user_"));
+    if ((state === 1 || state === 2) && isMockUser) {
       return res.status(401).json({ message: "Offline preview session. Please log out and sign up/log in again." });
     }
 

@@ -49,6 +49,25 @@ app.use((req, res, next) => {
   next();
 });
 
+// Middleware to wait for database connection if currently connecting (readyState === 2)
+app.use(async (req, res, next) => {
+  if (mongoose.connection.readyState === 2) {
+    await new Promise((resolve) => {
+      const interval = setInterval(() => {
+        if (mongoose.connection.readyState !== 2) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 50);
+      setTimeout(() => {
+        clearInterval(interval);
+        resolve();
+      }, 1500); // Wait up to 1.5 seconds
+    });
+  }
+  next();
+});
+
 // ── API Routes ────────────────────────────────────────────────────────────────
 const postRoutes    = require("./routes/posts");
 const channelRoutes = require("./routes/channels");
