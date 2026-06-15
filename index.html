@@ -3139,6 +3139,16 @@ async function populate() {
       console.log("Database status:", dbStatus);
       if (!dbStatus.connected) {
         console.warn("MongoDB Atlas Database Offline: Operating in Temporary Mock Mode!", dbStatus.error);
+      } else {
+        const savedUser = currentUser;
+        if (savedUser && (savedUser.id === "mock_user_id" || savedUser._id === "mock_user_id" || (typeof (savedUser.id || savedUser._id) === "string" && (savedUser.id || savedUser._id).startsWith("mock_")))) {
+          console.warn("MongoDB is Online. Clearing offline mockup user session.");
+          localStorage.removeItem("token");
+          token = null;
+          currentUser = null;
+          updateAuthUI();
+          toast("🔒 Offline session ended. Please log in or sign up!");
+        }
       }
     }
   } catch (dbStatusErr) {
@@ -6623,6 +6633,105 @@ async function handleProfileFollow(creatorId, btn) {
 updateCartBadge();
 setupQrCodeUploadListeners();
 setTheme(localStorage.getItem('aethra-theme') || 'nebula');
+
+/* DEVELOPER DIAGNOSTICS HUD JS */
+let debugLogs = [];
+const originalConsoleError = console.error;
+console.error = function(...args) {
+  originalConsoleError.apply(console, args);
+  logToDebugHud("ERROR: " + args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' '));
+};
+
+const originalConsoleWarn = console.warn;
+console.warn = function(...args) {
+  originalConsoleWarn.apply(console, args);
+  logToDebugHud("WARN: " + args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' '));
+};
+
+function logToDebugHud(msg) {
+  debugLogs.push(msg);
+  if (debugLogs.length > 50) debugLogs.shift();
+  const logEl = document.getElementById("debugConsoleLogs");
+  if (logEl) {
+    logEl.textContent = debugLogs.join("\n\n");
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+}
+
+function toggleDebugHud() {
+  const hud = document.getElementById("devDebugHud");
+  if (!hud) return;
+  if (hud.style.display === "none") {
+    updateDebugHudInfo();
+    hud.style.display = "block";
+  } else {
+    hud.style.display = "none";
+  }
+}
+
+async function updateDebugHudInfo() {
+  const dbEl = document.getElementById("debugDbState");
+  const errEl = document.getElementById("debugDbError");
+  const cloudEl = document.getElementById("debugCloudState");
+  const vercelEl = document.getElementById("debugIsVercel");
+  const userEl = document.getElementById("debugUser");
+  const tokenEl = document.getElementById("debugToken");
+  
+  if (token) {
+    tokenEl.textContent = token.substring(0, 15) + "...";
+  } else {
+    tokenEl.textContent = "Missing / Not logged in";
+  }
+  
+  if (currentUser) {
+    userEl.textContent = `${currentUser.username} (${currentUser.id || currentUser._id})`;
+  } else {
+    userEl.textContent = "None";
+  }
+  
+  try {
+    const res = await fetch("/api/db-status");
+    if (res.ok) {
+      const data = await res.json();
+      dbEl.textContent = data.connected ? "Connected (1)" : `Offline (readyState: ${data.readyState})`;
+      dbEl.style.color = data.connected ? "#10b981" : "#ef4444";
+      errEl.textContent = data.error || "None";
+      errEl.style.color = data.error ? "#ef4444" : "#10b981";
+      vercelEl.textContent = data.isVercel ? "Yes" : "No";
+    }
+  } catch (err) {
+    dbEl.textContent = "Fetch failed";
+    dbEl.style.color = "#ef4444";
+    errEl.textContent = err.message;
+  }
+  
+  cloudEl.textContent = "Configured (Fallback)";
+  cloudEl.style.color = "#10b981";
+}
 </script>
+
+<!-- DEVELOPER DIAGNOSTICS HUD HTML -->
+<button id="devDebugBtn" onclick="toggleDebugHud()" style="position:fixed; bottom:20px; left:20px; z-index:9999; background:rgba(15,23,42,0.85); border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.25); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);">⚙️</button>
+
+<div id="devDebugHud" style="display:none; position:fixed; bottom:70px; left:20px; z-index:9999; width:340px; max-height:400px; background:rgba(15,23,42,0.95); border:1px solid rgba(255,255,255,0.15); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5); font-family:monospace; font-size:11px; color:#e2e8f0; overflow-y:auto; padding:12px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);">
+  <div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">
+    <span style="font-weight:700; color:#38bdf8;">🔧 Developer Diagnostics</span>
+    <button onclick="toggleDebugHud()" style="background:transparent; border:none; color:#94a3b8; cursor:pointer; font-size:12px;">✕</button>
+  </div>
+  <div style="margin-bottom:8px;">
+    <strong>Database:</strong> <span id="debugDbState">Checking...</span><br>
+    <strong>DB Error:</strong> <span id="debugDbError" style="color:#ef4444;">None</span><br>
+    <strong>Cloudinary:</strong> <span id="debugCloudState">Checking...</span><br>
+    <strong>Is Vercel:</strong> <span id="debugIsVercel">Checking...</span>
+  </div>
+  <div style="margin-bottom:8px; border-top:1px solid rgba(255,255,255,0.05); padding-top:6px;">
+    <strong>Active User:</strong> <span id="debugUser">None</span><br>
+    <strong>Token:</strong> <span id="debugToken">None</span>
+  </div>
+  <div style="border-top:1px solid rgba(255,255,255,0.05); padding-top:6px;">
+    <strong style="color:#f59e0b;">Console Errors / API Failures:</strong>
+    <div id="debugConsoleLogs" style="margin-top:4px; max-height:180px; overflow-y:auto; background:rgba(0,0,0,0.3); border-radius:4px; padding:6px; font-size:10px; color:#f87171; white-space:pre-wrap; word-break:break-all;">No errors recorded yet.</div>
+  </div>
+</div>
 </body>
 </html>
