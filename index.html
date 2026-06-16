@@ -1112,6 +1112,17 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
 .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--panel2);border:1px solid var(--border2);color:var(--text);padding:11px 22px;border-radius:100px;font-size:13px;font-weight:500;z-index:3000;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);white-space:nowrap;box-shadow:0 16px 40px rgba(0,0,8,0.6)}
 .toast.show{transform:translateX(-50%) translateY(0)}
  
+/* Hide scrollbars for swipable elements */
+.cat-row::-webkit-scrollbar,
+.hero-slide-nav::-webkit-scrollbar {
+  display: none !important;
+}
+.cat-row,
+.hero-slide-nav {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
 /* MOBILE */
 @media(max-width:780px){
   .nav-left .npill {
@@ -1165,40 +1176,61 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
     height: auto !important;
     max-height: calc(100vh - 170px) !important;
   }
+  .hero-slide-nav {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    justify-content: flex-start !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 12px !important;
+    padding-bottom: 8px !important;
+  }
+  .hero-nav-tab {
+    flex: 0 0 auto !important;
+    min-width: 130px !important;
+  }
 }
 
 /* MOBILE RESPONSIVE ADAPTATIONS */
 @media(max-width:600px){
   nav {
-    height: 96px !important;
+    height: 64px !important;
   }
   .nav-wrap {
-    flex-wrap: wrap !important;
-    padding: 8px 12px !important;
-    gap: 6px 0 !important;
+    flex-wrap: nowrap !important;
+    padding: 0 12px !important;
+    gap: 8px !important;
   }
   .nav-left {
-    flex: 1 1 auto !important;
+    flex: 0 0 auto !important;
     justify-content: flex-start !important;
     gap: 8px !important;
   }
-  .nav-end {
-    flex: 1 1 auto !important;
-    justify-content: flex-end !important;
-    gap: 6px !important;
+  .logo-text {
+    display: none !important;
   }
   .nav-center {
-    flex: 0 0 100% !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    order: 3 !important;
+    flex: 1 !important;
+    width: auto !important;
+    max-width: none !important;
+    order: 2 !important;
     margin: 0 !important;
   }
   .nav-center input {
-    height: 34px !important;
+    height: 38px !important;
+    padding-left: 32px !important;
+    font-size: 12px !important;
+  }
+  .nav-center span {
+    font-size: 12px !important;
+    left: 12px !important;
+  }
+  .nav-end {
+    flex: 0 0 auto !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
   }
   .page {
-    margin-top: 112px !important;
+    margin-top: 80px !important;
   }
   
   /* Collapsing labels to save space inside the header */
@@ -1368,7 +1400,51 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
     width: 100% !important;
     max-width: 240px !important;
   }
+  .chat-panel {
+    position: fixed !important;
+    bottom: 5.5rem !important;
+    left: 1rem !important;
+    right: 1rem !important;
+    width: auto !important;
+    max-width: none !important;
+    height: 420px !important;
+    max-height: calc(100vh - 160px) !important;
+  }
+  .profile-stats {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+    text-align: center !important;
+    margin: 1.2rem 0 !important;
+  }
+  .profile-stats > div {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+  .pstat-n {
+    font-size: 1.1rem !important;
+    font-weight: 800 !important;
+  }
+  .pstat-l {
+    font-size: 9px !important;
+    color: var(--text3) !important;
+  }
+  #profileActionsContainer {
+    width: 100% !important;
+    justify-content: center !important;
+    gap: 6px !important;
+  }
+  #profileActionsContainer button {
+    flex: 1 !important;
+    min-width: 110px !important;
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    text-align: center !important;
+    justify-content: center !important;
+  }
 }
+
 
 /* CATEGORY FEED GRID */
 .home-feed-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-top: 1.5rem; }
@@ -1933,7 +2009,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
     <div class="nav-left">
       <a class="logo" href="#" onclick="goPage('home');return false">
         <div class="logo-mark">Ae</div>
-        Aethra
+        <span class="logo-text">Aethra</span>
       </a>
       <div class="menu-dropdown-container" id="menuDropdownContainer">
         <button class="menu-trigger-btn" onclick="toggleMenuDropdown(event)">
@@ -3343,12 +3419,14 @@ function initBeforeAfterSlider() {
   
   function onStart(e) {
     isDragging = true;
+    if (e.cancelable) e.preventDefault();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     moveSlider(clientX);
   }
   
   function onMove(e) {
     if (!isDragging) return;
+    if (e.cancelable) e.preventDefault();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     moveSlider(clientX);
   }
@@ -3363,8 +3441,8 @@ function initBeforeAfterSlider() {
   window.addEventListener("mouseup", onEnd);
   
   // Touch events (mobile responsive)
-  slider.addEventListener("touchstart", onStart);
-  window.addEventListener("touchmove", onMove);
+  slider.addEventListener("touchstart", onStart, { passive: false });
+  window.addEventListener("touchmove", onMove, { passive: false });
   window.addEventListener("touchend", onEnd);
 }
 
