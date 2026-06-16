@@ -2002,6 +2002,22 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
 .pcard, .creator-card, .mkt-card, .scard, .exp-item {
   position: relative !important;
   overflow: hidden !important;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease !important;
+}
+.pcard:hover, .creator-card:hover, .mkt-card:hover, .scard:hover, .exp-item:hover {
+  transform: translateY(-6px) !important;
+  box-shadow: 0 16px 32px rgba(59, 130, 246, 0.18) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+.pcard::before, .creator-card::before, .mkt-card::before, .scard::before, .exp-item::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: radial-gradient(220px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), rgba(99, 102, 241, 0.09), transparent 80%) !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  transition: opacity 0.4s ease !important;
 }
 .pcard::after, .creator-card::after, .mkt-card::after, .scard::after, .exp-item::after {
   content: '' !important;
@@ -2009,18 +2025,22 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
   inset: 0 !important;
   border-radius: inherit !important;
   padding: 1.5px !important;
-  background: radial-gradient(130px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), rgba(59, 130, 246, 0.4), transparent 70%) !important;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
-  -webkit-mask-composite: xor !important;
+  background: radial-gradient(140px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), rgba(59, 130, 246, 0.55), transparent 70%) !important;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0) !important;
+  -webkit-mask-composite: destination-out !important;
   mask-composite: exclude !important;
   pointer-events: none !important;
   opacity: 0 !important;
   transition: opacity 0.3s ease !important;
   z-index: 5 !important;
 }
+.pcard:hover::before, .creator-card:hover::before, .mkt-card:hover::before, .scard:hover::before, .exp-item:hover::before {
+  opacity: 1 !important;
+}
 .pcard:hover::after, .creator-card:hover::after, .mkt-card:hover::after, .scard:hover::after, .exp-item:hover::after {
   opacity: 1 !important;
 }
+
 
 /* Glassmorphic Loading Skeletons */
 .skeleton-card {
