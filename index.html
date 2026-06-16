@@ -2567,7 +2567,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
 <!-- PRODUCT DETAILS MODAL -->
 <div class="modal-bg" id="productModal">
   <div class="modal" style="max-width: 650px; padding: 0; border-radius: var(--r3); max-height: 520px; overflow: hidden;">
-    <button class="modal-x" onclick="closeProductModal()" style="top: 1rem; right: 1rem; z-index: 10;">✕</button>
+    <button class="modal-back-btn" onclick="closeProductModal()" style="position: absolute; top: 1.2rem; left: 1.2rem; z-index: 10; display: flex; align-items: center; gap: 6px; background: var(--panel); border: 1px solid var(--border2); color: var(--text); padding: 8px 14px; border-radius: 100px; cursor: pointer; font-size: 12px; font-weight: 700; font-family: var(--font); box-shadow: 0 4px 16px rgba(0,0,0,0.1); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.04)'; this.style.borderColor='var(--blue)';" onmouseout="this.style.transform='scale(1)'; this.style.borderColor='var(--border2)';">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 1px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      <span data-en="Back" data-hi="वापस">Back</span>
+    </button>
     <div style="display: grid; grid-template-columns: 1.1fr 1fr; height: 520px; max-height: 520px; min-height: 0; overflow: hidden;">
       <!-- Left side: Image preview -->
       <div id="prodModalMedia" style="background: var(--panel2); display: flex; align-items: center; justify-content: center; position: relative; font-size: 5rem; height: 100%; max-height: 100%; min-height: 0; overflow: hidden;">
@@ -5457,6 +5460,23 @@ function closeProductModal() {
     window.history.pushState(null, "", "/");
   }
 }
+
+// Single-page router for browser back/forward buttons
+window.addEventListener("popstate", () => {
+  const pathMatch = window.location.pathname.match(/^\/posts\/([a-zA-Z0-9_-]+)/);
+  if (pathMatch) {
+    const postId = pathMatch[1];
+    if (allHomePosts.some(p => (p._id || p.id) === postId)) {
+      openProductDetail(postId);
+    }
+  } else {
+    // If navigating back to home, close the modal dynamically
+    if (document.getElementById("productModal").classList.contains("open")) {
+      document.getElementById("productModal").classList.remove("open");
+      currentSelectedProduct = null;
+    }
+  }
+});
 
 function formatCommentDate(dateStr) {
   const d = new Date(dateStr);
