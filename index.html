@@ -1055,7 +1055,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
   from { transform: translateY(20px) scale(0.95); opacity: 0; }
   to { transform: translateY(0) scale(1); opacity: 1; }
 }
-.chat-panel{position:fixed;bottom:5.5rem;right:2rem;z-index:901;width:385px;height:590px;background:var(--panel);border:1px solid var(--border2);border-radius:var(--r3);overflow:hidden;display:none;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,8,0.7),0 0 0 1px rgba(59,130,246,0.05)}
+.chat-panel{position:fixed;bottom:5.5rem;right:2rem;z-index:1010;width:360px;height:min(490px,70vh);background:var(--panel);border:1px solid var(--border2);border-radius:var(--r3);overflow:hidden;display:none;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,8,0.7),0 0 0 1px rgba(59,130,246,0.05)}
 .chat-panel.open{display:flex;animation: chatSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards}
 .chat-header{padding:1rem 1.2rem;background:linear-gradient(135deg,rgba(29,78,216,0.25),rgba(99,102,241,0.15));border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
 .chat-av{width:38px;height:38px;background:linear-gradient(135deg,var(--blue-deep),var(--indigo));border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(59,130,246,0.35)}
@@ -1173,13 +1173,13 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
     margin-top: 76px !important;
   }
   .chat-panel {
-    width: calc(100vw - 2rem) !important;
-    right: 1rem !important;
-    left: 1rem !important;
-    top: 92px !important;
-    bottom: 6rem !important;
-    height: auto !important;
-    max-height: calc(100vh - 170px) !important;
+    width: 330px !important;
+    right: 1.5rem !important;
+    left: auto !important;
+    bottom: 5.5rem !important;
+    height: min(450px, 65vh) !important;
+    max-height: none !important;
+    z-index: 1100 !important;
   }
   .hero-slide-nav {
     flex-wrap: nowrap !important;
@@ -1301,10 +1301,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
     bottom: 5.2rem !important;
     right: 1rem !important;
     left: auto !important;
-    width: 328px !important;
+    width: 320px !important;
     max-width: calc(100vw - 2rem) !important;
-    height: 390px !important;
-    max-height: calc(100vh - 180px) !important;
+    height: min(400px, 60vh) !important;
+    max-height: none !important;
     border-radius: var(--r2) !important;
     border: 1px solid var(--border2) !important;
     z-index: 1500 !important;
@@ -1412,8 +1412,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
     right: 1rem !important;
     width: auto !important;
     max-width: none !important;
-    height: 420px !important;
-    max-height: calc(100vh - 160px) !important;
+    height: min(380px, 58vh) !important;
+    max-height: none !important;
   }
   .profile-stats {
     display: grid !important;
