@@ -651,4 +651,57 @@ router.post("/:id/comments", auth, async (req, res) => {
   }
 });
 
+router.get("/stats", async (req, res) => {
+  const mongoose = require("mongoose");
+  
+  if (mongoose.connection.readyState !== 1) {
+    // Offline Mock Mode Stats
+    const totalCreators = Object.keys(global.mockUsersDb || {}).length || 15;
+    const totalPosts = (global.mockPosts || []).length || 9;
+    
+    // Extract unique locations
+    const uniqueLocations = new Set(Object.values(global.mockUsersDb || {}).map(u => u.location).filter(Boolean));
+    const totalCountries = uniqueLocations.size || 10;
+    
+    // Sum earnings of mock users
+    let totalEarnings = 0;
+    Object.values(global.mockUsersDb || {}).forEach(u => {
+      totalEarnings += (u.earnings || 0);
+    });
+    if (totalEarnings === 0) totalEarnings = 24000; 
+
+    return res.json({
+      creators: totalCreators,
+      posts: totalPosts,
+      countries: totalCountries,
+      earnings: totalEarnings
+    });
+  }
+  
+  try {
+    const creatorsCount = await User.countDocuments({});
+    const postsCount = await Post.countDocuments({});
+    
+    // Unique countries count
+    const uniqueCountries = await User.distinct("location");
+    const countriesCount = uniqueCountries.filter(Boolean).length || 1;
+    
+    // Aggregate sum of user earnings
+    const earningsSum = await User.aggregate([
+      { $group: { _id: null, total: { $sum: "$earnings" } } }
+    ]);
+    const totalEarnings = earningsSum.length > 0 ? earningsSum[0].total : 0;
+    
+    res.json({
+      creators: creatorsCount,
+      posts: postsCount,
+      countries: countriesCount,
+      earnings: totalEarnings
+    });
+  } catch (err) {
+    console.error("Error fetching stats:", err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

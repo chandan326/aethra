@@ -2278,19 +2278,19 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
   
   <div class="stats-row">
     <div class="stat-cell">
-      <div class="stat-n" data-target="2.4" data-suffix="M+">0</div>
+      <div class="stat-n" id="statCreators" data-target="2.4" data-suffix="M+">0</div>
       <div class="stat-l" data-en="Creators" data-hi="क्रिएटर्स">Creators</div>
     </div>
     <div class="stat-cell">
-      <div class="stat-n" data-target="18" data-suffix="M+">0</div>
+      <div class="stat-n" id="statPosts" data-target="18" data-suffix="M+">0</div>
       <div class="stat-l" data-en="Posts Shared" data-hi="पोस्ट शेयर">Posts Shared</div>
     </div>
     <div class="stat-cell">
-      <div class="stat-n" data-target="140" data-suffix="+">0</div>
+      <div class="stat-n" id="statCountries" data-target="140" data-suffix="+">0</div>
       <div class="stat-l" data-en="Countries" data-hi="देश">Countries</div>
     </div>
     <div class="stat-cell">
-      <div class="stat-n" data-target="50" data-prefix="₹" data-suffix="L+">0</div>
+      <div class="stat-n" id="statEarnings" data-target="50" data-prefix="₹" data-suffix="L+">0</div>
       <div class="stat-l" data-en="Creator Earnings" data-hi="क्रिएटर कमाई">Creator Earnings</div>
     </div>
   </div>
@@ -3219,7 +3219,7 @@ async function populate() {
     renderCategoryShowcase();
     initHeroSlideshow();
     initBeforeAfterSlider();
-    animateStatsCounters();
+    fetchAndAnimateStats();
 
     const aiPosts      = allHomePosts.filter(p => p.contentType === "AI");
     const gifPosts     = allHomePosts.filter(p => p.contentType === "GIF");
@@ -3697,6 +3697,70 @@ function animateStatsCounters() {
   }, { threshold: 0.1 });
   
   counters.forEach(c => observer.observe(c));
+}
+
+async function fetchAndAnimateStats() {
+  try {
+    const res = await fetch("/api/posts/stats");
+    if (res.ok) {
+      const data = await res.json();
+      
+      const creatorsEl = document.getElementById("statCreators");
+      const postsEl = document.getElementById("statPosts");
+      const countriesEl = document.getElementById("statCountries");
+      const earningsEl = document.getElementById("statEarnings");
+      
+      // Helper to format values dynamically based on database scale
+      function formatStat(el, val, type) {
+        if (!el) return;
+        
+        let target = val;
+        let suffix = "";
+        let prefix = "";
+        
+        if (type === "creators" || type === "posts") {
+          if (val >= 1000000) {
+            target = val / 1000000;
+            suffix = "M+";
+          } else if (val >= 1000) {
+            target = val / 1000;
+            suffix = "K+";
+          } else {
+            target = val;
+            suffix = "+";
+          }
+        } else if (type === "countries") {
+          target = val;
+          suffix = "+";
+        } else if (type === "earnings") {
+          prefix = "₹";
+          if (val >= 100000) {
+            target = val / 100000;
+            suffix = "L+";
+          } else if (val >= 1000) {
+            target = val / 1000;
+            suffix = "K+";
+          } else {
+            target = val;
+            suffix = "";
+          }
+        }
+        
+        el.setAttribute("data-target", target);
+        el.setAttribute("data-prefix", prefix);
+        el.setAttribute("data-suffix", suffix);
+      }
+      
+      formatStat(creatorsEl, data.creators, "creators");
+      formatStat(postsEl, data.posts, "posts");
+      formatStat(countriesEl, data.countries, "countries");
+      formatStat(earningsEl, data.earnings, "earnings");
+    }
+  } catch (err) {
+    console.warn("Failed to load real-time stats:", err);
+  } finally {
+    animateStatsCounters();
+  }
 }
 
 function initHeroSlideshow() {
