@@ -5505,12 +5505,7 @@ async function handleAuthSubmit(e) {
       
       startOtpCountdown();
       
-      if (data.debugOtp) {
-        toast("💡 [DEV MODE] OTP: " + data.debugOtp, 8000);
-        document.getElementById("authOtp").value = data.debugOtp;
-      } else {
-        toast("📧 Verification code sent to your email!");
-      }
+      toast("📧 Verification code sent to your email!");
       return;
     }
     
@@ -5591,12 +5586,7 @@ async function resendVerificationOtp() {
     const data = await res.json();
     if (res.ok) {
       startOtpCountdown();
-      if (data.debugOtp) {
-        toast("💡 [DEV MODE] New OTP: " + data.debugOtp, 8000);
-        document.getElementById("authOtp").value = data.debugOtp;
-      } else {
-        toast("📧 New verification code sent to your email!");
-      }
+      toast("📧 New verification code sent to your email!");
     } else {
       toast("⚠️ " + (data.message || "Failed to resend code"));
     }

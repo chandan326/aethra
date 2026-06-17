@@ -5,11 +5,8 @@ async function sendVerificationEmail(toEmail, otp) {
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
 
-  console.log(`🔑 Verification OTP for ${toEmail}: ${otp}`);
-
   if (!smtpUser || !smtpPass) {
-    console.warn("⚠️ SMTP credentials not set in .env. Falling back to console-only OTP logging.");
-    return { success: true, logged: true };
+    throw new Error("SMTP email credentials are not configured on the server. Please set SMTP_USER and SMTP_PASS in the .env file.");
   }
 
   try {

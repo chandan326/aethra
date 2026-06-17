@@ -192,11 +192,6 @@ router.post("/register", async (req, res) => {
       email
     };
 
-    // If SMTP is not set, expose OTP in development for testing convenience
-    if (!process.env.SMTP_USER) {
-      responsePayload.debugOtp = otp;
-    }
-
     res.status(201).json(responsePayload);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -264,10 +259,6 @@ router.post("/login", async (req, res) => {
         verificationRequired: true,
         email: user.email
       };
-
-      if (!process.env.SMTP_USER) {
-        responsePayload.debugOtp = otp;
-      }
 
       return res.status(403).json(responsePayload);
     }
@@ -352,9 +343,6 @@ router.post("/resend-otp", async (req, res) => {
     await sendVerificationEmail(email, otp);
 
     const responsePayload = { message: "Verification code resent successfully." };
-    if (!process.env.SMTP_USER) {
-      responsePayload.debugOtp = otp;
-    }
     res.json(responsePayload);
   } catch (err) {
     res.status(500).json({ message: err.message });
