@@ -6567,7 +6567,7 @@ async function handleProductAction() {
     // Direct payment UPI QR scan
     const creator = currentSelectedProduct.creator;
     const payeeName = creator ? (creator.displayName || creator.username) : "Aethra Platform";
-    const payeeUpi = creator ? (creator.upiId || "aethra@okaxis") : "aethra@okaxis";
+    const payeeUpi = creator ? (creator.upiId || "8178287835@fam") : "8178287835@fam";
     const payeeQr = creator ? (creator.qrCodeImage || "") : "";
     pendingPaidDownloadItem = currentSelectedProduct;
     showUpiQrModal(payeeName, payeeUpi, currentSelectedProduct.price, `Buy "${currentSelectedProduct.title}"`, payeeQr);
@@ -6840,7 +6840,7 @@ function checkoutCart() {
   };
   
   document.getElementById("cartModal").classList.remove("open");
-  showUpiQrModal("Aethra Platform Checkout", "payments@aethra", grandTotal, "Checkout Cart Order");
+  showUpiQrModal("Aethra Platform Checkout", "8178287835@fam", grandTotal, "Checkout Cart Order");
 }
 
 /* UPI QR MODAL HANDLERS */
@@ -6887,7 +6887,11 @@ function showUpiQrModal(payeeName, payeeUpi, amount, purposeText = "Payment", pa
 
   const isValidUpi = payeeUpi && payeeUpi.includes("@");
 
-  if (isValidUpi) {
+  if (payeeUpi === "8178287835@fam") {
+    customQrImg.src = "/aethra_payment_qr.jpg";
+    customQr.style.display = "block";
+    defaultQr.style.display = "none";
+  } else if (isValidUpi) {
     const upiUri = `upi://pay?pa=${encodeURIComponent(payeeUpi)}&pn=${encodeURIComponent(payeeName)}&am=${encodeURIComponent(amount)}&tn=${encodeURIComponent(purposeText)}`;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiUri)}`;
     customQrImg.src = qrUrl;
@@ -6898,9 +6902,9 @@ function showUpiQrModal(payeeName, payeeUpi, amount, purposeText = "Payment", pa
     customQr.style.display = "block";
     defaultQr.style.display = "none";
   } else {
-    customQrImg.src = "";
-    customQr.style.display = "none";
-    defaultQr.style.display = "block";
+    customQrImg.src = "/aethra_payment_qr.jpg";
+    customQr.style.display = "block";
+    defaultQr.style.display = "none";
   }
 
   // Update languages
@@ -7283,7 +7287,7 @@ function closeSubscriptionModal() {
 
 function purchaseSubscription(planName, price, months) {
   closeSubscriptionModal();
-  showUpiQrModal("Aethra VIP Subscriptions", "vip@aethra", price, `Aethra VIP (${planName})`);
+  showUpiQrModal("Aethra VIP Subscriptions", "8178287835@fam", price, `Aethra VIP (${planName})`);
   
   upiPaymentCallback = async function() {
     try {
