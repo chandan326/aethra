@@ -5651,6 +5651,46 @@ function renderChatChannels() {
   }).join('');
 }
 
+let chatPollInterval = null;
+
+async function fetchMessagesForActiveChannel() {
+  if (!token || !activeChannel) return;
+  try {
+    const res = await fetch(`/api/chat/messages?chatWith=${activeChannel.id}`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const messages = await res.json();
+      activeChannel.history = messages.map(m => {
+        const isUser = m.sender === currentUser._id || m.sender === (currentUser.id || "current_user");
+        return {
+          role: isUser ? "user" : "bot",
+          content: m.content,
+          time: fmtTime(new Date(m.createdAt))
+        };
+      });
+      renderChannelMessages();
+    }
+  } catch (err) {
+    console.error("Error fetching messages:", err);
+  }
+}
+
+async function initializeChatChannels() {
+  if (!token) return;
+  try {
+    const res = await fetch("/api/chat/conversations", {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      chatChannels = data;
+    }
+  } catch (err) {
+    console.error("Error loading chat channels:", err);
+  }
+}
+
 function selectChatChannel(id) {
   if (isLoading) return;
   const channel = chatChannels.find(ch => ch.id === id);
@@ -5669,7 +5709,7 @@ function selectChatChannel(id) {
   document.getElementById("chatFootNote").textContent = `${channel.name} · Aethra Connected`;
   
   renderQuickReplies();
-  renderChannelMessages();
+  fetchMessagesForActiveChannel();
   
   const chatPanel = document.getElementById("chatPanel");
   if (chatPanel) {
@@ -5700,7 +5740,8 @@ function filterChatList() {
 function renderQuickReplies() {
   const bar = document.getElementById("qpBar");
   if (!bar) return;
-  bar.innerHTML = activeChannel.quickReplies.map(qr => {
+  const quickReplies = activeChannel.quickReplies || [];
+  bar.innerHTML = quickReplies.map(qr => {
     return `<button class="qp" onclick="quickSend('${escapeHtml(qr)}')">${escapeHtml(qr)}</button>`;
   }).join('');
 }
@@ -5709,15 +5750,17 @@ function renderChannelMessages() {
   const msgs = document.getElementById("chatMsgs");
   if (!msgs) return;
   
-  if (activeChannel.history.length === 0) {
-    activeChannel.history.push({
+  const history = activeChannel.history || [];
+  
+  if (history.length === 0 && activeChannel.initialMessage) {
+    history.push({
       role: "bot",
       content: activeChannel.initialMessage,
       time: fmtTime(new Date())
     });
   }
   
-  msgs.innerHTML = activeChannel.history.map(msg => {
+  msgs.innerHTML = history.map(msg => {
     if (msg.role === "bot") {
       return `
         <div class="msg bot">
@@ -5749,113 +5792,38 @@ function renderChannelMessages() {
   msgs.scrollTop = msgs.scrollHeight;
 }
 
-function initializeChatChannels() {
-  const defaultAethra = chatChannels.find(ch => ch.id === "aethra");
-  const defaultMeera = chatChannels.find(ch => ch.id === "meera");
-  const defaultRavi = chatChannels.find(ch => ch.id === "ravi");
-  const defaultPriya = chatChannels.find(ch => ch.id === "priya");
-  
-  chatChannels = [defaultAethra, defaultMeera, defaultRavi, defaultPriya].filter(Boolean);
-
-  if (currentUser && currentUser.following && currentUser.following.length > 0) {
-    currentUser.following.forEach(followedId => {
-      if (followedId === "meera" || followedId === "ravi" || followedId === "priya") return;
-      
-      const post = allHomePosts.find(p => p.creator && (p.creator._id === followedId || p.creator.id === followedId));
-      if (post && post.creator) {
-        const c = post.creator;
-        const cId = c._id || c.id;
-        
-        if (chatChannels.some(ch => ch.id === cId)) return;
-        
-        chatChannels.push({
-          id: cId,
-          name: c.displayName || c.username || `Creator_${cId.slice(-4)}`,
-          subtitle: "Active now · Creator",
-          avatar: (c.displayName || c.username || "CR").slice(0, 2).toUpperCase(),
-          avatarStyle: "background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff;",
-          quickReplies: [
-            "Are your presets available? ⚙️",
-            "I want to order custom art! 🎨",
-            "Can we collaborate? 🤝"
-          ],
-          initialMessage: `👋 Hello! Thanks for following my profile! I specialize in high-quality creations. Drop any questions here and I'll get back to you soon!`,
-          history: []
-        });
-      }
-    });
-  }
-}
-
-function getCreatorMockResponse(creatorId, userMsg) {
-  const msg = userMsg.toLowerCase();
-  const chan = chatChannels.find(c => c.id === creatorId) || activeChannel;
-  const name = chan.name;
-  
-  if (creatorId === "meera" || name.toLowerCase().includes("meera")) {
-    if (msg.includes("order") || msg.includes("custom") || msg.includes("price") || msg.includes("commission")) {
-      return "I would love to take on a custom art commission! My rates start at ₹4,999 for high-res digital illustrations. Feel free to describe your concept, and I'll send over a custom offer! 🎨";
-    }
-    if (msg.includes("collab") || msg.includes("work together")) {
-      return "Collaborations sound exciting! Please drop your email or project brief so I can check my schedule. 🤝";
-    }
-    if (msg.includes("license") || msg.includes("commercial")) {
-      return "All my standard items on Aethra come with a personal license. For commercial rights, please purchase the extended usage license in my store! 💼";
-    }
-    return "Thanks for your message! 💖 I will get back to you shortly. Let me know if you're interested in any specific prints or custom commissions!";
-  }
-  
-  if (creatorId === "ravi" || name.toLowerCase().includes("ravi")) {
-    if (msg.includes("software") || msg.includes("app") || msg.includes("edit")) {
-      return "I mainly use After Effects, Blender, and Cinema4D for my projects. Let me know if you need any preset details! 🎬";
-    }
-    if (msg.includes("animate") || msg.includes("logo") || msg.includes("sticker")) {
-      return "Yes, I can animate your logo/stickers! It usually takes 2-3 days. Let's align on the concept! ✨";
-    }
-    if (msg.includes("overlay") || msg.includes("stream")) {
-      return "Absolutely! I design custom overlays, stream alerts, and transitions. Check my portfolio or send your stream theme details! 🚀";
-    }
-    return "Hey! Appreciate the support. I'm usually editing, but I check my chat daily. Ask away and let's build something awesome! 🎥";
-  }
-  
-  if (creatorId === "priya" || name.toLowerCase().includes("priya")) {
-    if (msg.includes("print") || msg.includes("buy") || msg.includes("canvas")) {
-      return "Yes, high-quality canvas prints are available! I ship globally. Let me know which photograph you want to frame! 🖼";
-    }
-    if (msg.includes("preset") || msg.includes("filter")) {
-      return "My Lightroom presets are available in my store list! Check the Presets Pack item to buy and download immediately. ⚙️";
-    }
-    if (msg.includes("camera") || msg.includes("lens") || msg.includes("gear")) {
-      return "I shoot with a Sony A7R V and prime lenses (mostly 35mm and 85mm). Love capturing natural light! 📸";
-    }
-    return "Thanks for stopping by! 📷 Drop any questions about photography tips, preset setup, or framing options, and I'll answer ASAP!";
-  }
-  
-  // Smart Dynamic Generator Response for dynamically followed creators
-  if (msg.includes("preset") || msg.includes("filter") || msg.includes("camera") || msg.includes("lens")) {
-    return `Hey! 📸 I love talking about gear and editing. For presets and assets, check my listings page on my profile. Let me know if you have specific setup questions!`;
-  }
-  if (msg.includes("art") || msg.includes("custom") || msg.includes("commission") || msg.includes("price") || msg.includes("buy")) {
-    return `I'm absolutely open for custom commissions or design gigs! 🎨 Drop a short brief of what you need, your timeline, and estimated budget, and I'll share my quotes.`;
-  }
-  if (msg.includes("collab") || msg.includes("collaborate") || msg.includes("work together") || msg.includes("email")) {
-    return `Working together sounds awesome! 🤝 Send me your collaboration concept and contact email, and my team will reach out to schedule a call.`;
-  }
-  
-  return `Thanks for reaching out to me! 🌟 I'm currently creating new content, but I check my Aethra inbox daily. Let me know if you want custom work done or have questions about my recent uploads!`;
-}
-
 function toggleChat(){
   const p=document.getElementById('chatPanel');
   p.classList.toggle('open');
   if(p.classList.contains('open')) {
-    initializeChatChannels();
-    if (!chatChannels.some(ch => ch.id === activeChannel.id)) {
-      activeChannel = chatChannels[0];
+    if (!token) {
+      toast("🔑 Please log in first to access your messages!");
+      p.classList.remove('open');
+      openAuth();
+      return;
     }
-    renderChatChannels();
-    selectChatChannel(activeChannel.id);
+    
+    initializeChatChannels().then(() => {
+      if (!chatChannels.some(ch => ch.id === activeChannel.id)) {
+        activeChannel = chatChannels[0] || { id: "aethra", name: "Aethra AI", subtitle: "Online", avatar: "Ae", avatarStyle: "background: linear-gradient(135deg, var(--blue), var(--indigo)); color: #fff;", quickReplies: [], initialMessage: "", history: [] };
+      }
+      selectChatChannel(activeChannel.id);
+    });
+    
+    // Start real-time messages & DMs polling (every 1.5 seconds)
+    clearInterval(chatPollInterval);
+    chatPollInterval = setInterval(async () => {
+      if (p.classList.contains('open') && activeChannel) {
+        await fetchMessagesForActiveChannel();
+        await initializeChatChannels();
+        renderChatChannels();
+      }
+    }, 1500);
+    
     document.getElementById('chatInput').focus();
+  } else {
+    // Clear polling interval when panel is closed
+    clearInterval(chatPollInterval);
   }
 }
 
@@ -5863,6 +5831,13 @@ function startChatWithCreator(creatorId, username) {
   const p = document.getElementById('chatPanel');
   if (!p.classList.contains('open')) {
     p.classList.add('open');
+  }
+  
+  if (!token) {
+    window.postAuthRedirect = 'home'; // fallback
+    toast("🔑 Please log in to chat with creators!");
+    openAuth();
+    return;
   }
   
   // Try to find the creator details
@@ -5875,7 +5850,7 @@ function startChatWithCreator(creatorId, username) {
   else if (normalized.includes("ravi")) targetChanId = "ravi";
   else if (normalized.includes("priya")) targetChanId = "priya";
   
-  // Make sure channel is registered in chatChannels
+  // Ensure the target creator is registered in our local memory channel structure
   let channel = chatChannels.find(ch => ch.id === targetChanId);
   if (!channel) {
     channel = {
@@ -5892,17 +5867,23 @@ function startChatWithCreator(creatorId, username) {
       initialMessage: `👋 Hello! Thanks for starting a chat with me! Drop any questions here and I'll get back to you soon.`,
       history: []
     };
-    chatChannels.push(channel);
+    chatChannels.unshift(channel);
   }
   
-  initializeChatChannels();
-  if (!chatChannels.some(ch => ch.id === targetChanId)) {
-    chatChannels.push(channel);
+  // Setup real-time polling interval if it hasn't been started yet
+  if (!chatPollInterval) {
+    chatPollInterval = setInterval(async () => {
+      if (p.classList.contains('open') && activeChannel) {
+        await fetchMessagesForActiveChannel();
+        await initializeChatChannels();
+        renderChatChannels();
+      }
+    }, 1500);
   }
   
   selectChatChannel(targetChanId);
   
-  document.getElementById('chatInput').value = `Hi, I want to talk to @${username} and learn more about your creations!`;
+  document.getElementById('chatInput').value = `Hi @${username}, I want to learn more about your creations!`;
   document.getElementById('chatInput').focus();
   toast(`💬 Connected to @${username}'s chat channel!`);
 }
@@ -5977,7 +5958,7 @@ async function sendChat(){
   isLoading=true;btn.disabled=true;
   input.value='';input.style.height='auto';
   
-  // Append user message
+  // Optimistically show user message
   const nowStr = fmtTime(new Date());
   activeChannel.history.push({role:'user',content:text,time:nowStr});
   renderChannelMessages();
@@ -5985,52 +5966,40 @@ async function sendChat(){
   // Hide quick replies
   document.getElementById('qpBar').style.display='none';
   
-  // Show typing indicator
+  // Show typing indicator if partner is Aethra AI
   const typingEl = document.getElementById("chatTypingIndicator");
-  if(typingEl) {
+  if(activeChannel.id === "aethra" && typingEl) {
     document.getElementById("typingSender").textContent = activeChannel.name;
     typingEl.style.display = "block";
     const msgs = document.getElementById("chatMsgs");
     msgs.scrollTop = msgs.scrollHeight;
   }
 
-  if (activeChannel.id === "aethra") {
-    try{
-      const historyPayload = activeChannel.history.map(h => ({
-        role: h.role === 'bot' ? 'assistant' : 'user',
-        content: h.content
-      }));
-      const resp=await fetch('/api/chat',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({messages:historyPayload})
-      });
-      const data=await resp.json();
-      if(!resp.ok) throw new Error(data.message || "Failed to get response");
-      const reply=data.reply || 'Sorry, I had trouble responding. Please try again!';
-      
-      activeChannel.history.push({role:'bot',content:parseMarkdown(reply),time:fmtTime(new Date())});
-    }catch(err){
-      activeChannel.history.push({role:'bot',content:`⚠️ ${err.message}`,time:fmtTime(new Date())});
-    }finally{
-      if(typingEl) typingEl.style.display = "none";
-      isLoading=false;btn.disabled=false;
-      renderChannelMessages();
-      document.getElementById('qpBar').style.display='flex';
-      document.getElementById('chatInput').focus();
+  try {
+    const res = await fetch("/api/chat/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ recipientId: activeChannel.id, content: text })
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      await fetchMessagesForActiveChannel();
+      await initializeChatChannels();
+      renderChatChannels();
     }
-  } else {
-    // Talk to creator (Mocked simulation with delay)
-    setTimeout(() => {
-      const replyText = getCreatorMockResponse(activeChannel.id, text);
-      activeChannel.history.push({role:'bot',content:replyText,time:fmtTime(new Date())});
-      
-      if(typingEl) typingEl.style.display = "none";
-      isLoading=false;btn.disabled=false;
-      renderChannelMessages();
-      document.getElementById('qpBar').style.display='flex';
-      document.getElementById('chatInput').focus();
-    }, 1500);
+  } catch (err) {
+    console.error("Error sending message:", err);
+    activeChannel.history.push({role:'bot',content:`⚠️ Failed to send: ${err.message}`,time:fmtTime(new Date())});
+    renderChannelMessages();
+  } finally {
+    if (typingEl) typingEl.style.display = "none";
+    isLoading=false;btn.disabled=false;
+    document.getElementById('qpBar').style.display='flex';
+    document.getElementById('chatInput').focus();
   }
 }
 

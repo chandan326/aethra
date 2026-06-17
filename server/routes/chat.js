@@ -1,5 +1,9 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
+const auth = require("../middleware/auth");
+const User = require("../models/User");
+const Message = require("../models/Message");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // Helper to provide clean mock answers if no key is set
@@ -39,60 +43,267 @@ function getMockResponse(text) {
   return "👋 Hello! I'm Aethra AI, your creative assistant.\n\nI can help you build your channel, generate prompts for AI art, choose hashtags, or plan your marketplace pricing. What creative project are you working on today? 😊";
 }
 
-router.post("/", async (req, res) => {
+// In-memory fallback if MongoDB is not connected
+if (!global.mockMessages) {
+  global.mockMessages = [];
+}
+
+// 1. GET ALL CONVERSATIONS/CHANNELS FOR CURRENT USER
+router.get("/conversations", auth, async (req, res) => {
   try {
-    const { messages } = req.body;
-    if (!Array.isArray(messages) || !messages.length) {
-      return res.status(400).json({ message: "Messages history must be a valid array and is required" });
+    const isOnline = mongoose.connection.readyState === 1;
+    const userId = req.user.id;
+    let userMessages = [];
+
+    if (isOnline) {
+      userMessages = await Message.find({
+        $or: [
+          { sender: userId },
+          { recipient: userId }
+        ]
+      }).sort({ createdAt: -1 });
+    } else {
+      userMessages = global.mockMessages
+        .filter(m => m.sender === userId || m.recipient === userId)
+        .sort((a, b) => b.createdAt - a.createdAt);
     }
 
-    const lastMsgObj = messages[messages.length - 1];
-    if (!lastMsgObj || typeof lastMsgObj.content !== "string") {
-      return res.status(400).json({ message: "Invalid message format" });
+    const convoMap = new Map();
+    for (const msg of userMessages) {
+      const otherId = msg.sender.toString() === userId ? msg.recipient : msg.sender.toString();
+      if (!convoMap.has(otherId)) {
+        convoMap.set(otherId, msg);
+      }
     }
 
-    const lastMessage = lastMsgObj.content;
-    const apiKey = process.env.GEMINI_API_KEY;
+    // Build the conversations list
+    const list = [];
+    const defaults = ["aethra", "meera", "ravi", "priya"];
 
-    if (!apiKey) {
-      // Return realistic mock response if no API key is configured
-      const reply = getMockResponse(lastMessage);
-      return res.json({ reply });
+    for (const [otherId, lastMsg] of convoMap.entries()) {
+      if (otherId === "aethra") {
+        list.push({
+          id: "aethra",
+          name: "Aethra AI",
+          subtitle: "Online · Powered by Gemini",
+          avatar: "Ae",
+          avatarStyle: "background: linear-gradient(135deg, var(--blue), var(--indigo)); color: #fff;",
+          lastMessage: lastMsg.content,
+          lastMessageTime: lastMsg.createdAt
+        });
+      } else {
+        const isValidObjectId = mongoose.Types.ObjectId.isValid(otherId);
+        let name = "Creator";
+        let avatar = "CR";
+        let avatarStyle = "background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff;";
+        let subtitle = "Active now · Creator";
+
+        if (isValidObjectId && isOnline) {
+          const u = await User.findById(otherId);
+          if (u) {
+            name = u.displayName || u.username;
+            avatar = name.slice(0, 2).toUpperCase();
+          }
+        } else {
+          // Defaults or mock creators fallback
+          if (otherId === "meera") {
+            name = "Artist Meera";
+            avatar = "ME";
+            avatarStyle = "background: #f43f5e; color: #fff;";
+            subtitle = "Online · Digital Artist";
+          } else if (otherId === "ravi") {
+            name = "Ravi Photo";
+            avatar = "RV";
+            avatarStyle = "background: #10b981; color: #fff;";
+            subtitle = "Active 2h ago · Creator";
+          } else if (otherId === "priya") {
+            name = "Pixel Priya";
+            avatar = "PP";
+            avatarStyle = "background: #0ea5e9; color: #fff;";
+            subtitle = "Online · Photographer";
+          }
+        }
+
+        list.push({
+          id: otherId,
+          name,
+          subtitle,
+          avatar,
+          avatarStyle,
+          lastMessage: lastMsg.content,
+          lastMessageTime: lastMsg.createdAt
+        });
+      }
     }
 
-    const systemInstruction = `You are Aethra AI, a smart and friendly creative assistant for Aethra — India's top creative platform where users share AI-generated images, GIFs, stickers, and digital art. Help creators with content strategy, AI tool recommendations, hashtag ideas, monetization, prompt engineering, and platform features.
-    
-    Platform features:
-    - AI image sharing (Midjourney, DALL·E, Stable Diffusion)
-    - GIF creation & sharing  
-    - Sticker pack creation and sales
-    - Creative channels & subscriber tiers
-    - Public / Private / Followers-only visibility
-    - Free & Paid content with ₹ pricing
-    - Marketplace for selling art
-    
-    Tone: Enthusiastic, concise, helpful. Use emojis naturally. Give actionable specific advice. If the user writes in Hindi, respond in Hindi. Keep responses under 200 words. Use markdown for clarity.`;
+    // Prepopulate defaults if they don't have any messages yet
+    defaults.forEach(defId => {
+      if (!convoMap.has(defId)) {
+        let name = "Aethra AI";
+        let avatar = "Ae";
+        let avatarStyle = "background: linear-gradient(135deg, var(--blue), var(--indigo)); color: #fff;";
+        let subtitle = "Online · Powered by Gemini";
+        let initialMessage = "Hello! Let me know if you need help creating content.";
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      systemInstruction
+        if (defId === "meera") {
+          name = "Artist Meera";
+          avatar = "ME";
+          avatarStyle = "background: #f43f5e; color: #fff;";
+          subtitle = "Online · Digital Artist";
+          initialMessage = "Hello! 🎨 Meera here. Welcome to my creative studio!";
+        } else if (defId === "ravi") {
+          name = "Ravi Photo";
+          avatar = "RV";
+          avatarStyle = "background: #10b981; color: #fff;";
+          subtitle = "Active 2h ago · Creator";
+          initialMessage = "Hey! 📸 Got questions about my digital downloads or camera setup?";
+        } else if (defId === "priya") {
+          name = "Pixel Priya";
+          avatar = "PP";
+          avatarStyle = "background: #0ea5e9; color: #fff;";
+          subtitle = "Online · Photographer";
+          initialMessage = "Hello! 📸 Priya here. Welcome to my creative photography studio!";
+        }
+
+        list.push({
+          id: defId,
+          name,
+          subtitle,
+          avatar,
+          avatarStyle,
+          lastMessage: initialMessage,
+          lastMessageTime: new Date(Date.now() - 3600000) // 1 hour ago placeholder
+        });
+      }
     });
 
-    // Format history for Gemini
-    const history = messages.slice(0, -1).map(m => ({
-      role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }]
-    }));
+    // Sort list by last message time descending
+    list.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
 
-    const chat = model.startChat({ history });
-    const result = await chat.sendMessage(lastMessage);
-    const response = await result.response;
-    
-    res.json({ reply: response.text() });
+    res.json(list);
   } catch (err) {
-    console.error("Gemini API Error:", err.message);
-    res.status(500).json({ message: "Failed to communicate with AI model. Falling back to platform offline assistant." });
+    console.error("Fetch conversations error:", err);
+    res.status(500).json({ message: "Failed to fetch conversations" });
+  }
+});
+
+// 2. GET MESSAGES FOR A SINGLE CHAT PARTNER
+router.get("/messages", auth, async (req, res) => {
+  try {
+    const isOnline = mongoose.connection.readyState === 1;
+    const userId = req.user.id;
+    const chatWith = req.query.chatWith;
+
+    if (!chatWith) {
+      return res.status(400).json({ message: "chatWith parameter is required" });
+    }
+
+    let messages = [];
+    if (isOnline) {
+      messages = await Message.find({
+        $or: [
+          { sender: userId, recipient: chatWith },
+          { sender: chatWith, recipient: userId }
+        ]
+      }).sort({ createdAt: 1 });
+    } else {
+      messages = global.mockMessages
+        .filter(m => (m.sender === userId && m.recipient === chatWith) || (m.sender === chatWith && m.recipient === userId))
+        .sort((a, b) => a.createdAt - b.createdAt);
+    }
+
+    res.json(messages);
+  } catch (err) {
+    console.error("Fetch messages error:", err);
+    res.status(500).json({ message: "Failed to fetch message history" });
+  }
+});
+
+// 3. SEND A MESSAGE (WITH AI AUTOREPLY INTEGRATION IF TARGET IS 'AETHRA')
+router.post("/messages", auth, async (req, res) => {
+  try {
+    const isOnline = mongoose.connection.readyState === 1;
+    const userId = req.user.id;
+    const { recipientId, content } = req.body;
+
+    if (!recipientId || !content) {
+      return res.status(400).json({ message: "recipientId and content are required" });
+    }
+
+    let savedUserMsg;
+    if (isOnline) {
+      const msg = new Message({
+        sender: userId,
+        recipient: recipientId,
+        content
+      });
+      savedUserMsg = await msg.save();
+    } else {
+      savedUserMsg = {
+        _id: new mongoose.Types.ObjectId().toString(),
+        sender: userId,
+        recipient: recipientId,
+        content,
+        createdAt: new Date()
+      };
+      global.mockMessages.push(savedUserMsg);
+    }
+
+    let savedBotMsg = null;
+
+    // Trigger AI response if the chat partner is Aethra AI
+    if (recipientId === "aethra") {
+      let replyText = "";
+      const apiKey = process.env.GEMINI_API_KEY;
+
+      if (apiKey) {
+        try {
+          const genAI = new GoogleGenerativeAI(apiKey);
+          const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            systemInstruction: `You are Aethra AI, a smart creative assistant for Aethra (monetize AI art, stickers, wallpapers). Help the user. Keep it under 200 words. Respond in Hindi if the user writes in Hindi.`
+          });
+          const chat = model.startChat({ history: [] });
+          const result = await chat.sendMessage(content);
+          const response = await result.response;
+          replyText = response.text();
+        } catch (apiErr) {
+          console.error("Gemini API error in chat route:", apiErr.message);
+          replyText = getMockResponse(content);
+        }
+      } else {
+        replyText = getMockResponse(content);
+      }
+
+      if (isOnline) {
+        const botMsg = new Message({
+          sender: new mongoose.Types.ObjectId("60c72b2f9b1d8a001c8c8c8c"), // static model ID placeholder
+          recipient: userId,
+          content: replyText
+        });
+        // Override sender display label in frontend using the 'aethra' string match
+        botMsg.sender = "aethra"; 
+        savedBotMsg = await botMsg.save();
+      } else {
+        savedBotMsg = {
+          _id: new mongoose.Types.ObjectId().toString(),
+          sender: "aethra",
+          recipient: userId,
+          content: replyText,
+          createdAt: new Date()
+        };
+        global.mockMessages.push(savedBotMsg);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: savedUserMsg,
+      reply: savedBotMsg
+    });
+  } catch (err) {
+    console.error("Send message error:", err);
+    res.status(500).json({ message: "Failed to send message" });
   }
 });
 
