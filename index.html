@@ -2554,8 +2554,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
           </div>
 
           <div class="hero-slide-actions">
-            <button class="btn-primary" id="heroSlideCta">✦ <span data-en="Start Creating" data-hi="बनाना शुरू करें">Start Creating</span></button>
-            <button class="btn-outline" id="heroSlideSecondary" onclick="goPage('channels')">📺 <span data-en="Browse Channels" data-hi="चैनल देखें">Browse Channels</span></button>
+            <button class="btn-primary" id="heroSlideCta" onclick="handleStartCreating()">✦ <span data-en="Start Creating" data-hi="बनाना शुरू करें">Start Creating</span></button>
+            <button class="btn-outline" id="heroSlideSecondary" onclick="handleBrowseChannels()">📺 <span data-en="Browse Channels" data-hi="चैनल देखें">Browse Channels</span></button>
           </div>
         </div>
 
@@ -4346,24 +4346,7 @@ function updateHeroSlide(categories, idx) {
     const countPill = document.getElementById("heroSlideCount");
     if (countPill) countPill.innerHTML = `⚡ ${count} ${count === 1 ? 'item' : 'items'} active`;
 
-    // Update Actions (CTA) to target this category
-    const ctaBtn = document.getElementById("heroSlideCta");
-    if (ctaBtn) {
-      ctaBtn.onclick = () => {
-        // Find the matching pill in homeFilter and click it
-        const pills = document.querySelectorAll(".cat-row .cpill");
-        pills.forEach(pill => {
-          const onclickAttr = pill.getAttribute("onclick");
-          if (onclickAttr && onclickAttr.includes(`'${cat.id}'`)) {
-            filterHome(cat.id, pill);
-            const feedSection = document.getElementById("homeFilter");
-            if (feedSection) {
-              feedSection.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
-          }
-        });
-      };
-    }
+
 
     // Update Graphic/Preview Frame & Glow Color
     const glow = document.getElementById("heroPreviewGlow");
@@ -4648,10 +4631,29 @@ function showMoreHome() {
 
 function handleStartCreating() {
   if (!token) {
+    window.postAuthRedirect = 'profile';
     toast("🔑 Please log in or register to set up your profile and channel!");
     openAuth();
   } else {
     goPage('profile');
+  }
+}
+
+function handleBrowseChannels() {
+  const searchInput = document.getElementById("navbarSearch");
+  if (searchInput) {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+    setTimeout(() => {
+      searchInput.focus();
+      searchInput.select();
+      if (typeof showSearchSuggestions === "function") {
+        showSearchSuggestions();
+      }
+    }, 400);
+    toast("🔍 Search box focused! Find creators & posts.");
   }
 }
 function filterMkt(cat,el){document.querySelectorAll('#page-market .cpill').forEach(p=>p.classList.remove('active'));el.classList.add('active');toast('🔍 Showing: '+el.textContent.trim());}
@@ -6117,6 +6119,11 @@ function openAuth() {
 
 function closeAuth() {
   document.getElementById("authModal").classList.remove("open");
+  if (token && window.postAuthRedirect) {
+    const dest = window.postAuthRedirect;
+    window.postAuthRedirect = null;
+    goPage(dest);
+  }
 }
 
 let forgotPasswordEmail = "";
