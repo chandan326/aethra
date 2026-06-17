@@ -3848,7 +3848,7 @@ function filterHome(cat, el) {
 let heroActiveSlide = 0;
 let heroSlideTimer = null;
 let heroSlideInterval = 5000; // 5 seconds per slide
-let heroProgressAnim = null;
+let heroTimeout = null;
 let fallbackSlideTimer = null;
 let fallbackActiveIdx = 0;
 const fallbackImagesList = [
@@ -4240,17 +4240,24 @@ function updateHeroSlide(categories, idx) {
       }
     }
 
-    // Update active class on nav tabs
+    // Update active class on nav tabs and run smooth CSS transition
     const tabs = document.querySelectorAll(".hero-nav-tab");
     tabs.forEach((tab, tIdx) => {
+      const fill = document.getElementById(`heroProgressFill-${tIdx}`);
       if (tIdx === idx) {
         tab.classList.add("active");
-        const fill = document.getElementById(`heroProgressFill-${tIdx}`);
-        if (fill) fill.style.background = cat.color;
+        if (fill) {
+          fill.style.background = cat.color;
+          fill.style.transition = "none";
+          fill.style.width = "0%";
+          fill.offsetHeight; // force reflow
+          fill.style.transition = "width 5000ms linear";
+          fill.style.width = "100%";
+        }
       } else {
         tab.classList.remove("active");
-        const fill = document.getElementById(`heroProgressFill-${tIdx}`);
         if (fill) {
+          fill.style.transition = "none";
           fill.style.width = "0%";
           fill.style.background = "var(--text3)";
         }
@@ -4263,32 +4270,14 @@ function updateHeroSlide(categories, idx) {
 }
 
 function startHeroSlideTimer(categories) {
-  if (heroProgressAnim) clearInterval(heroProgressAnim);
+  if (heroTimeout) clearTimeout(heroTimeout);
 
-  const duration = 5000; // 5 seconds
-  const step = 50; // check progress every 50ms
-  let elapsed = 0;
-
-  // Reset all fills
-  for (let i = 0; i < categories.length; i++) {
-    const fill = document.getElementById(`heroProgressFill-${i}`);
-    if (fill) fill.style.width = "0%";
-  }
-
-  heroProgressAnim = setInterval(() => {
-    elapsed += step;
-    const percentage = Math.min((elapsed / duration) * 100, 100);
-    
-    const fill = document.getElementById(`heroProgressFill-${heroActiveSlide}`);
-    if (fill) fill.style.width = percentage + "%";
-
-    if (elapsed >= duration) {
-      elapsed = 0;
-      // Go to next slide
-      heroActiveSlide = (heroActiveSlide + 1) % categories.length;
-      updateHeroSlide(categories, heroActiveSlide);
-    }
-  }, step);
+  heroTimeout = setTimeout(() => {
+    // Go to next slide
+    heroActiveSlide = (heroActiveSlide + 1) % categories.length;
+    updateHeroSlide(categories, heroActiveSlide);
+    startHeroSlideTimer(categories);
+  }, 5000); // 5 seconds
 }
 
 function selectHeroSlide(idx) {
