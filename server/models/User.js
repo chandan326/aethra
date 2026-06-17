@@ -18,6 +18,10 @@ const UserSchema = new mongoose.Schema({
   subscriptionPlan: { type: String, default: "" },
   subscriptionExpiresAt: { type: Date },
   qrCodeImage: { type: String, default: "" },
+  isEmailVerified: { type: Boolean, default: false },
+  emailVerificationOtp: { type: String, default: "" },
+  emailVerificationOtpExpires: { type: Date },
+  isGoogleUser: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 

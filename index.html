@@ -2153,6 +2153,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
   100% { background-position: -200% 0; }
 }
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <div class="mesh"><div class="mb mb1"></div><div class="mb mb2"></div><div class="mb mb3"></div><div class="mb mb4"></div></div>
@@ -2690,15 +2691,17 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
 
 <!-- AUTH MODAL -->
 <div class="modal-bg" id="authModal">
-  <div class="modal" style="max-width: 400px;">
+  <div class="modal" style="max-width: 400px; padding: 2rem;">
     <div class="modal-title" id="authModalTitle">🔐 Log In</div>
     <button class="modal-x" onclick="closeAuth()">✕</button>
+    
+    <!-- STANDARD SIGN IN / SIGN UP FORM -->
     <form id="authForm" onsubmit="handleAuthSubmit(event)">
       <label class="flabel" id="userLabel">Username or Email</label>
       <input class="finput" type="text" id="authUsername" placeholder="Enter username or email" required>
       
       <div id="emailField" style="display: none;">
-        <label class="flabel">Email Address</label>
+        <label class="flabel">Email Address (Gmail recommended)</label>
         <input class="finput" type="email" id="authEmail" placeholder="Enter email">
       </div>
       
@@ -2706,8 +2709,35 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
       <input class="finput" type="password" id="authPassword" placeholder="Enter password" required>
       
       <button class="submit-btn" type="submit" id="authSubmitBtn" style="margin-top: 10px;">Log In</button>
+      
+      <!-- GOOGLE AUTH DIVIDER & BUTTON CONTAINER -->
+      <div id="googleAuthDivider" style="display: flex; align-items: center; justify-content: center; margin: 16px 0; font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px;">
+        <span style="border-top: 1px solid var(--border2); flex-grow: 1; margin-right: 10px;"></span>
+        <span>Or Continue With</span>
+        <span style="border-top: 1px solid var(--border2); flex-grow: 1; margin-left: 10px;"></span>
+      </div>
+      <div id="googleBtnContainer" style="display: flex; justify-content: center; width: 100%; min-height: 40px;"></div>
     </form>
-    <div style="text-align: center; margin-top: 1.2rem; font-size: 13px; color: var(--text2);">
+
+    <!-- OTP VERIFICATION BLOCK -->
+    <div id="otpVerificationBlock" style="display: none; flex-direction: column;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 44px; margin-bottom: 12px;">✉️</div>
+        <div style="font-size: 14px; color: var(--text); font-weight: 700; margin-bottom: 6px;">Verify your Gmail Address</div>
+        <div style="font-size: 12px; color: var(--text3); line-height: 1.5;">We have sent a 6-digit verification code to <span id="verificationEmailDisplay" style="color: var(--blue2); font-weight: 600;"></span>. Enter it below to unlock your account.</div>
+      </div>
+      <form id="otpForm" onsubmit="handleOtpSubmit(event)">
+        <label class="flabel">6-Digit Verification Code</label>
+        <input class="finput" type="text" id="authOtp" placeholder="••••••" pattern="[0-9]{6}" maxlength="6" required style="letter-spacing: 8px; text-align: center; font-size: 24px; font-weight: 800; font-family: monospace; background: var(--panel2);">
+        <button class="submit-btn" type="submit" style="margin-top: 15px;">🔒 Verify & Login</button>
+      </form>
+      <div style="text-align: center; margin-top: 1.2rem; font-size: 12px; color: var(--text3);">
+        <span id="resendCountdown" style="display: inline-block; margin-bottom: 4px;"></span><br>
+        <a href="#" onclick="resendVerificationOtp(); return false;" id="resendOtpLink" style="color: var(--blue2); text-decoration: none; font-weight: 600;">Resend OTP Code</a>
+      </div>
+    </div>
+
+    <div id="authSwitchContainer" style="text-align: center; margin-top: 1.2rem; font-size: 13px; color: var(--text2);">
       <span id="authSwitchText">Don't have an account?</span> 
       <a href="#" onclick="toggleAuthMode(); return false;" id="authSwitchLink" style="color: var(--blue2); text-decoration: none; font-weight: 500;">Sign Up</a>
     </div>
@@ -5363,10 +5393,29 @@ function updateAuthUI() {
   populate();
 }
 
+let verificationEmail = "";
+let resendTimer = null;
+let resendSeconds = 30;
+
 function openAuth() {
   authMode = "login";
   document.getElementById("authModal").classList.add("open");
+  document.getElementById("authForm").style.display = "block";
+  document.getElementById("otpVerificationBlock").style.display = "none";
+  document.getElementById("authSwitchContainer").style.display = "block";
   updateAuthModalDOM();
+  
+  // Render Google Button dynamically if Client ID is configured and it hasn't been rendered yet
+  if (typeof google !== "undefined" && googleClientId && !document.getElementById("googleBtnContainer").children.length) {
+    try {
+      google.accounts.id.renderButton(
+        document.getElementById("googleBtnContainer"),
+        { theme: "outline", size: "large", width: "100%", text: "continue_with" }
+      );
+    } catch(e) {
+      console.warn("Failed to render Google button:", e);
+    }
+  }
 }
 
 function closeAuth() {
@@ -5396,6 +5445,8 @@ function updateAuthModalDOM() {
     submitBtn.textContent = "Log In";
     switchText.textContent = "Don't have an account?";
     switchLink.textContent = "Sign Up";
+    document.getElementById("googleAuthDivider").style.display = "flex";
+    document.getElementById("googleBtnContainer").style.display = "flex";
   } else {
     title.innerHTML = "📝 Sign Up";
     userLabel.textContent = "Username";
@@ -5405,6 +5456,8 @@ function updateAuthModalDOM() {
     submitBtn.textContent = "Create Account";
     switchText.textContent = "Already have an account?";
     switchLink.textContent = "Log In";
+    document.getElementById("googleAuthDivider").style.display = "none";
+    document.getElementById("googleBtnContainer").style.display = "none";
   }
 }
 
@@ -5440,6 +5493,27 @@ async function handleAuthSubmit(e) {
     clearTimeout(timeoutId);
     
     const data = await res.json();
+    
+    // Check if verification is required
+    if (data.verificationRequired || res.status === 403) {
+      verificationEmail = data.email || email || username;
+      document.getElementById("verificationEmailDisplay").textContent = verificationEmail;
+      document.getElementById("authForm").style.display = "none";
+      document.getElementById("otpVerificationBlock").style.display = "flex";
+      document.getElementById("authSwitchContainer").style.display = "none";
+      document.getElementById("authModalTitle").innerHTML = "✉️ Email Verification";
+      
+      startOtpCountdown();
+      
+      if (data.debugOtp) {
+        toast("💡 [DEV MODE] OTP: " + data.debugOtp, 8000);
+        document.getElementById("authOtp").value = data.debugOtp;
+      } else {
+        toast("📧 Verification code sent to your email!");
+      }
+      return;
+    }
+    
     if (!res.ok) {
       toast("⚠️ " + (data.message || "Authentication failed"));
       return;
@@ -5462,6 +5536,162 @@ async function handleAuthSubmit(e) {
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = originalText;
+  }
+}
+
+async function handleOtpSubmit(e) {
+  e.preventDefault();
+  const otp = document.getElementById("authOtp").value.trim();
+  if (otp.length !== 6) {
+    toast("⚠️ Code must be 6 digits!");
+    return;
+  }
+  
+  const submitBtn = e.target.querySelector("button[type='submit']");
+  const originalText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "⏳ Verifying...";
+  
+  try {
+    const res = await fetch("/api/auth/verify-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: verificationEmail, otp })
+    });
+    
+    const data = await res.json();
+    if (!res.ok) {
+      toast("⚠️ " + (data.message || "Verification failed"));
+      return;
+    }
+    
+    token = data.token;
+    localStorage.setItem("token", token);
+    currentUser = data.user;
+    closeAuth();
+    toast("🎉 Email verified! Welcome to Aethra!");
+    updateAuthUI();
+    await populate();
+  } catch (err) {
+    toast("⚠️ Verification error. Please try again.");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
+  }
+}
+
+async function resendVerificationOtp() {
+  try {
+    toast("⏳ Resending code...");
+    const res = await fetch("/api/auth/resend-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: verificationEmail })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      startOtpCountdown();
+      if (data.debugOtp) {
+        toast("💡 [DEV MODE] New OTP: " + data.debugOtp, 8000);
+        document.getElementById("authOtp").value = data.debugOtp;
+      } else {
+        toast("📧 New verification code sent to your email!");
+      }
+    } else {
+      toast("⚠️ " + (data.message || "Failed to resend code"));
+    }
+  } catch (err) {
+    toast("⚠️ Network error resending code.");
+  }
+}
+
+function startOtpCountdown() {
+  const countdownEl = document.getElementById("resendCountdown");
+  const linkEl = document.getElementById("resendOtpLink");
+  if (!countdownEl || !linkEl) return;
+
+  linkEl.style.display = "none";
+  countdownEl.style.display = "inline-block";
+  resendSeconds = 30;
+  countdownEl.textContent = `Resend available in ${resendSeconds}s`;
+  
+  if (resendTimer) clearInterval(resendTimer);
+  
+  resendTimer = setInterval(() => {
+    resendSeconds--;
+    countdownEl.textContent = `Resend available in ${resendSeconds}s`;
+    if (resendSeconds <= 0) {
+      clearInterval(resendTimer);
+      countdownEl.style.display = "none";
+      linkEl.style.display = "inline-block";
+    }
+  }, 1000);
+}
+
+// Google OAuth Credential Handler
+async function handleGoogleCredentialResponse(response) {
+  try {
+    toast("⏳ Authenticating with Google...");
+    const res = await fetch("/api/auth/google", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: response.credential })
+    });
+    
+    const data = await res.json();
+    if (!res.ok) {
+      toast("⚠️ Google authentication failed: " + (data.message || "Unknown error"));
+      return;
+    }
+    
+    token = data.token;
+    localStorage.setItem("token", token);
+    currentUser = data.user;
+    closeAuth();
+    toast(`🎉 Sign-in successful! Welcome, ${currentUser.displayName || currentUser.username}!`);
+    updateAuthUI();
+    await populate();
+  } catch (err) {
+    toast("⚠️ Google verification connection failed.");
+    console.error("Google sign-in error:", err);
+  }
+}
+
+// Global Google Client ID variable
+let googleClientId = "";
+
+async function initGoogleAuth() {
+  try {
+    const res = await fetch("/api/auth/google-client-id");
+    const data = await res.json();
+    googleClientId = data.googleClientId;
+    
+    if (googleClientId && typeof google !== "undefined") {
+      google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: handleGoogleCredentialResponse,
+        auto_select: false
+      });
+      // Try rendering button if element exists and modal is already rendered
+      const btnContainer = document.getElementById("googleBtnContainer");
+      if (btnContainer) {
+        google.accounts.id.renderButton(
+          btnContainer,
+          { theme: "outline", size: "large", width: "100%", text: "continue_with" }
+        );
+      }
+    } else {
+      const div = document.getElementById("googleAuthDivider");
+      const btn = document.getElementById("googleBtnContainer");
+      if (div) div.style.display = "none";
+      if (btn) btn.style.display = "none";
+    }
+  } catch (err) {
+    console.warn("Could not load Google Client ID config:", err);
+    const div = document.getElementById("googleAuthDivider");
+    const btn = document.getElementById("googleBtnContainer");
+    if (div) div.style.display = "none";
+    if (btn) btn.style.display = "none";
   }
 }
 
@@ -5580,6 +5810,7 @@ async function handleSupportSubmit(e) {
 }
 
 checkAuth();
+initGoogleAuth();
 
 let currentSelectedProduct = null;
 

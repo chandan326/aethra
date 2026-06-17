@@ -9,6 +9,11 @@ const { uploadToCloudinary } = require("../utils/cloudinary");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const { sendVerificationEmail } = require("../utils/email");
+
+function generateOtp() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
 const mockUsersDbPath = path.join(__dirname, "../mockUsersDb.json");
 
@@ -150,7 +155,8 @@ router.post("/register", async (req, res) => {
       verified: false,
       earnings: 0,
       hasPremium: false,
-      subscriptionPlan: ""
+      subscriptionPlan: "",
+      isEmailVerified: true
     };
     const token = jwt.sign({ id: newId, username }, JWT_SECRET, { expiresIn: "7d" });
     saveMockUsers();
@@ -162,20 +168,36 @@ router.post("/register", async (req, res) => {
     if (user) return res.status(400).json({ message: "Username or email already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const otp = generateOtp();
+    const otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
     user = new User({
       username,
       email,
       password: hashedPassword,
       displayName: username,
-      avatar: username.slice(0, 2).toUpperCase()
+      avatar: username.slice(0, 2).toUpperCase(),
+      isEmailVerified: false,
+      emailVerificationOtp: otp,
+      emailVerificationOtpExpires: otpExpires
     });
     await user.save();
 
-    const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: "7d" });
-    const userObj = user.toObject();
-    delete userObj.password;
-    userObj.id = user._id;
-    res.status(201).json({ token, user: userObj });
+    // Send verification email
+    await sendVerificationEmail(email, otp);
+
+    const responsePayload = {
+      message: "Verification code sent to your Gmail. Please verify to complete signup.",
+      verificationRequired: true,
+      email
+    };
+
+    // If SMTP is not set, expose OTP in development for testing convenience
+    if (!process.env.SMTP_USER) {
+      responsePayload.debugOtp = otp;
+    }
+
+    res.status(201).json(responsePayload);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -211,7 +233,8 @@ router.post("/login", async (req, res) => {
         verified: false,
         earnings: 0,
         hasPremium: false,
-        subscriptionPlan: ""
+        subscriptionPlan: "",
+        isEmailVerified: true
       };
       foundUser = mockUsersDb[newId];
       saveMockUsers();
@@ -227,12 +250,209 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    // Check email verification status
+    if (!user.isEmailVerified) {
+      const otp = generateOtp();
+      user.emailVerificationOtp = otp;
+      user.emailVerificationOtpExpires = Date.now() + 10 * 60 * 1000;
+      await user.save();
+
+      await sendVerificationEmail(user.email, otp);
+
+      const responsePayload = {
+        message: "Please verify your email address to log in. Verification code sent.",
+        verificationRequired: true,
+        email: user.email
+      };
+
+      if (!process.env.SMTP_USER) {
+        responsePayload.debugOtp = otp;
+      }
+
+      return res.status(403).json(responsePayload);
+    }
+
     const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: "7d" });
     const userObj = user.toObject();
     delete userObj.password;
     userObj.id = user._id;
     res.json({ token, user: userObj });
   } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Verify OTP
+router.post("/verify-otp", async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) {
+    return res.status(400).json({ message: "Email and OTP are required" });
+  }
+
+  if (mongoose.connection.readyState !== 1) {
+    return res.json({ token: "mock-token", user: { username: "preview_user", isEmailVerified: true } });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({ message: "Email is already verified" });
+    }
+
+    if (user.emailVerificationOtp !== otp || Date.now() > user.emailVerificationOtpExpires) {
+      return res.status(400).json({ message: "Invalid or expired verification code" });
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationOtp = "";
+    user.emailVerificationOtpExpires = undefined;
+    await user.save();
+
+    const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: "7d" });
+    const userObj = user.toObject();
+    delete userObj.password;
+    userObj.id = user._id;
+
+    res.json({ token, user: userObj, message: "Email verified successfully!" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Resend OTP
+router.post("/resend-otp", async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  if (mongoose.connection.readyState !== 1) {
+    return res.json({ message: "OTP resent successfully (Mock mode)" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({ message: "Email is already verified" });
+    }
+
+    const otp = generateOtp();
+    user.emailVerificationOtp = otp;
+    user.emailVerificationOtpExpires = Date.now() + 10 * 60 * 1000;
+    await user.save();
+
+    await sendVerificationEmail(email, otp);
+
+    const responsePayload = { message: "Verification code resent successfully." };
+    if (!process.env.SMTP_USER) {
+      responsePayload.debugOtp = otp;
+    }
+    res.json(responsePayload);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get Google Client ID
+router.get("/google-client-id", (req, res) => {
+  res.json({ googleClientId: process.env.GOOGLE_CLIENT_ID || "" });
+});
+
+// Google Authentication
+router.post("/google", async (req, res) => {
+  const { token: idToken } = req.body;
+  if (!idToken) {
+    return res.status(400).json({ message: "Google ID token is required" });
+  }
+
+  try {
+    // Verify with Google tokeninfo endpoint
+    const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+    if (!verifyRes.ok) {
+      const errorText = await verifyRes.text();
+      console.error("Google verify token response failed:", errorText);
+      return res.status(400).json({ message: "Invalid Google token" });
+    }
+
+    const payload = await verifyRes.json();
+    const email = payload.email;
+    if (!email) {
+      return res.status(400).json({ message: "Google token did not provide an email" });
+    }
+
+    if (mongoose.connection.readyState !== 1) {
+      // Mock Mode fallback
+      const newId = "mock_google_user_" + Date.now();
+      const mockUser = {
+        _id: newId,
+        id: newId,
+        username: email.split("@")[0],
+        displayName: payload.name || email.split("@")[0],
+        avatar: payload.picture || "👤",
+        bio: "Offline Google User - changes are not saved.",
+        location: "India 🇮🇳",
+        verified: true,
+        isEmailVerified: true,
+        isGoogleUser: true
+      };
+      mockUsersDb[newId] = mockUser;
+      const jwtToken = jwt.sign({ id: newId, username: mockUser.username }, JWT_SECRET, { expiresIn: "7d" });
+      saveMockUsers();
+      return res.json({ token: jwtToken, user: mockUser });
+    }
+
+    // Find or create user
+    let user = await User.findOne({ email });
+    if (!user) {
+      // Create a new user since it is a new Google signup
+      const username = email.split("@")[0] + "_" + Math.floor(1000 + Math.random() * 9000);
+      const randomPassword = await bcrypt.hash(Math.random().toString(36).substring(2, 15), 10);
+      user = new User({
+        username,
+        email,
+        password: randomPassword,
+        displayName: payload.name || username,
+        avatar: payload.picture || "👤",
+        isEmailVerified: true,
+        isGoogleUser: true
+      });
+      await user.save();
+    } else {
+      // Existing user - link Google if not already linked and verify email
+      let updated = false;
+      if (!user.isEmailVerified) {
+        user.isEmailVerified = true;
+        updated = true;
+      }
+      if (!user.isGoogleUser) {
+        user.isGoogleUser = true;
+        updated = true;
+      }
+      if (payload.picture && (!user.avatar || user.avatar === "👤" || user.avatar.length <= 2)) {
+        user.avatar = payload.picture;
+        updated = true;
+      }
+      if (updated) {
+        await user.save();
+      }
+    }
+
+    const jwtToken = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: "7d" });
+    const userObj = user.toObject();
+    delete userObj.password;
+    userObj.id = user._id;
+
+    res.json({ token: jwtToken, user: userObj, message: "Google Sign-In successful!" });
+  } catch (err) {
+    console.error("Google authentication error:", err.message);
     res.status(500).json({ message: err.message });
   }
 });
