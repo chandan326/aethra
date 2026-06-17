@@ -3410,6 +3410,7 @@ async function populate() {
       console.warn("Channels fetch failed:", fetchErr.message);
     }
     channels = Array.isArray(channels) ? channels : [];
+    allChannels = channels;
     allGlobalCreators = channels.map((c, i) => ({
       id: c.owner?._id || c.owner?.id || "",
       name: c.owner?.displayName || c.owner?.username || "Creator",
@@ -3693,6 +3694,7 @@ function getDeviceLimitConfig() {
 }
 let allHomePosts = [];
 let allGlobalCreators = [];
+let allChannels = [];
 window.deepLinkTriggered = false;
 let currentFilter = 'all';
 let displayedLimit = 10;
@@ -5338,7 +5340,7 @@ function toast(msg){
 }
 function fmtTime(d){return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
 
-const chatChannels = [
+let chatChannels = [
   {
     id: "aethra",
     name: "Aethra AI",
@@ -5493,9 +5495,50 @@ function renderChannelMessages() {
   msgs.scrollTop = msgs.scrollHeight;
 }
 
+function initializeChatChannels() {
+  const defaultAethra = chatChannels.find(ch => ch.id === "aethra");
+  const defaultMeera = chatChannels.find(ch => ch.id === "meera");
+  const defaultRavi = chatChannels.find(ch => ch.id === "ravi");
+  const defaultPriya = chatChannels.find(ch => ch.id === "priya");
+  
+  chatChannels = [defaultAethra, defaultMeera, defaultRavi, defaultPriya].filter(Boolean);
+
+  if (currentUser && currentUser.following && currentUser.following.length > 0) {
+    currentUser.following.forEach(followedId => {
+      if (followedId === "meera" || followedId === "ravi" || followedId === "priya") return;
+      
+      const post = allHomePosts.find(p => p.creator && (p.creator._id === followedId || p.creator.id === followedId));
+      if (post && post.creator) {
+        const c = post.creator;
+        const cId = c._id || c.id;
+        
+        if (chatChannels.some(ch => ch.id === cId)) return;
+        
+        chatChannels.push({
+          id: cId,
+          name: c.displayName || c.username || `Creator_${cId.slice(-4)}`,
+          subtitle: "Active now · Creator",
+          avatar: (c.displayName || c.username || "CR").slice(0, 2).toUpperCase(),
+          avatarStyle: "background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff;",
+          quickReplies: [
+            "Are your presets available? ⚙️",
+            "I want to order custom art! 🎨",
+            "Can we collaborate? 🤝"
+          ],
+          initialMessage: `👋 Hello! Thanks for following my profile! I specialize in high-quality creations. Drop any questions here and I'll get back to you soon!`,
+          history: []
+        });
+      }
+    });
+  }
+}
+
 function getCreatorMockResponse(creatorId, userMsg) {
   const msg = userMsg.toLowerCase();
-  if (creatorId === "meera") {
+  const chan = chatChannels.find(c => c.id === creatorId) || activeChannel;
+  const name = chan.name;
+  
+  if (creatorId === "meera" || name.toLowerCase().includes("meera")) {
     if (msg.includes("order") || msg.includes("custom") || msg.includes("price") || msg.includes("commission")) {
       return "I would love to take on a custom art commission! My rates start at ₹4,999 for high-res digital illustrations. Feel free to describe your concept, and I'll send over a custom offer! 🎨";
     }
@@ -5506,7 +5549,9 @@ function getCreatorMockResponse(creatorId, userMsg) {
       return "All my standard items on Aethra come with a personal license. For commercial rights, please purchase the extended usage license in my store! 💼";
     }
     return "Thanks for your message! 💖 I will get back to you shortly. Let me know if you're interested in any specific prints or custom commissions!";
-  } else if (creatorId === "ravi") {
+  }
+  
+  if (creatorId === "ravi" || name.toLowerCase().includes("ravi")) {
     if (msg.includes("software") || msg.includes("app") || msg.includes("edit")) {
       return "I mainly use After Effects, Blender, and Cinema4D for my projects. Let me know if you need any preset details! 🎬";
     }
@@ -5517,7 +5562,9 @@ function getCreatorMockResponse(creatorId, userMsg) {
       return "Absolutely! I design custom overlays, stream alerts, and transitions. Check my portfolio or send your stream theme details! 🚀";
     }
     return "Hey! Appreciate the support. I'm usually editing, but I check my chat daily. Ask away and let's build something awesome! 🎥";
-  } else if (creatorId === "priya") {
+  }
+  
+  if (creatorId === "priya" || name.toLowerCase().includes("priya")) {
     if (msg.includes("print") || msg.includes("buy") || msg.includes("canvas")) {
       return "Yes, high-quality canvas prints are available! I ship globally. Let me know which photograph you want to frame! 🖼";
     }
@@ -5529,13 +5576,29 @@ function getCreatorMockResponse(creatorId, userMsg) {
     }
     return "Thanks for stopping by! 📷 Drop any questions about photography tips, preset setup, or framing options, and I'll answer ASAP!";
   }
-  return "Hello! Thank you for reaching out. I'll get back to you as soon as possible!";
+  
+  // Smart Dynamic Generator Response for dynamically followed creators
+  if (msg.includes("preset") || msg.includes("filter") || msg.includes("camera") || msg.includes("lens")) {
+    return `Hey! 📸 I love talking about gear and editing. For presets and assets, check my listings page on my profile. Let me know if you have specific setup questions!`;
+  }
+  if (msg.includes("art") || msg.includes("custom") || msg.includes("commission") || msg.includes("price") || msg.includes("buy")) {
+    return `I'm absolutely open for custom commissions or design gigs! 🎨 Drop a short brief of what you need, your timeline, and estimated budget, and I'll share my quotes.`;
+  }
+  if (msg.includes("collab") || msg.includes("collaborate") || msg.includes("work together") || msg.includes("email")) {
+    return `Working together sounds awesome! 🤝 Send me your collaboration concept and contact email, and my team will reach out to schedule a call.`;
+  }
+  
+  return `Thanks for reaching out to me! 🌟 I'm currently creating new content, but I check my Aethra inbox daily. Let me know if you want custom work done or have questions about my recent uploads!`;
 }
 
 function toggleChat(){
   const p=document.getElementById('chatPanel');
   p.classList.toggle('open');
   if(p.classList.contains('open')) {
+    initializeChatChannels();
+    if (!chatChannels.some(ch => ch.id === activeChannel.id)) {
+      activeChannel = chatChannels[0];
+    }
     renderChatChannels();
     selectChatChannel(activeChannel.id);
     document.getElementById('chatInput').focus();
@@ -5548,11 +5611,40 @@ function startChatWithCreator(creatorId, username) {
     p.classList.add('open');
   }
   
-  let targetChanId = "aethra";
+  // Try to find the creator details
+  const post = allHomePosts.find(p => p.creator && (p.creator._id === creatorId || p.creator.id === creatorId));
+  const displayName = post && post.creator ? (post.creator.displayName || post.creator.username) : username;
+  
+  let targetChanId = creatorId;
   const normalized = username.toLowerCase();
   if (normalized.includes("meera")) targetChanId = "meera";
   else if (normalized.includes("ravi")) targetChanId = "ravi";
   else if (normalized.includes("priya")) targetChanId = "priya";
+  
+  // Make sure channel is registered in chatChannels
+  let channel = chatChannels.find(ch => ch.id === targetChanId);
+  if (!channel) {
+    channel = {
+      id: targetChanId,
+      name: displayName,
+      subtitle: "Active now · Creator",
+      avatar: displayName.slice(0, 2).toUpperCase(),
+      avatarStyle: "background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff;",
+      quickReplies: [
+        "Are your presets available? ⚙️",
+        "I want to order custom art! 🎨",
+        "Can we collaborate? 🤝"
+      ],
+      initialMessage: `👋 Hello! Thanks for starting a chat with me! Drop any questions here and I'll get back to you soon.`,
+      history: []
+    };
+    chatChannels.push(channel);
+  }
+  
+  initializeChatChannels();
+  if (!chatChannels.some(ch => ch.id === targetChanId)) {
+    chatChannels.push(channel);
+  }
   
   selectChatChannel(targetChanId);
   
@@ -6225,21 +6317,47 @@ async function handleLike(postId, btn) {
     openAuth();
     return;
   }
+  
+  const post = allHomePosts.find(p => p._id === postId || p.id === postId);
+  if (!post) return;
+
+  const myId = currentUser ? (currentUser.id || currentUser._id) : "mock_user_id";
+  if (!post.likes) post.likes = [];
+  
+  const likedIdx = post.likes.indexOf(myId);
+  const isLikedNow = likedIdx === -1;
+  
+  if (isLikedNow) {
+    post.likes.push(myId);
+  } else {
+    post.likes.splice(likedIdx, 1);
+  }
+  
+  // Instantly update UI
+  const countEl = document.getElementById(`likes-count-${postId}`);
+  if (countEl) countEl.textContent = post.likes.length;
+  btn.style.color = isLikedNow ? "var(--blue2)" : "";
+  btn.textContent = isLikedNow ? "♥ Liked" : "♡ Like";
+  
+  const detailLikeBtn = document.getElementById("detailLikeBtn");
+  if (detailLikeBtn) {
+    detailLikeBtn.style.color = isLikedNow ? "var(--blue2)" : "";
+    detailLikeBtn.textContent = isLikedNow ? "♥ Liked" : "♡ Like";
+  }
+  const detailLikeCount = document.getElementById("detailLikeCount");
+  if (detailLikeCount) {
+    detailLikeCount.textContent = post.likes.length;
+  }
+
+  toast(isLikedNow ? "❤️ Liked post!" : "💔 Unliked post");
+
   try {
-    const res = await fetch(`/api/posts/${postId}/like`, {
+    await fetch(`/api/posts/${postId}/like`, {
       method: "POST",
       headers: { "Authorization": `Bearer ${token}` }
     });
-    if (res.ok) {
-      const data = await res.json();
-      const countEl = document.getElementById(`likes-count-${postId}`);
-      if (countEl) countEl.textContent = data.likesCount;
-      btn.style.color = data.isLiked ? "var(--blue2)" : "";
-      btn.textContent = data.isLiked ? "♥ Liked" : "♡ Like";
-      toast(data.isLiked ? "❤️ Liked post!" : "💔 Unliked post");
-    }
   } catch (err) {
-    console.error("Like error:", err);
+    console.error("Background like error:", err);
   }
 }
 
@@ -6249,21 +6367,42 @@ async function handleSubscribe(channelId, btn) {
     openAuth();
     return;
   }
+  
+  const ch = allChannels.find(c => c._id === channelId || c.id === channelId);
+  if (!ch) return;
+  
+  const myId = currentUser ? (currentUser.id || currentUser._id) : "mock_user_id";
+  if (!ch.subscribers) ch.subscribers = [];
+  
+  const subIdx = ch.subscribers.indexOf(myId);
+  const isSubscribedNow = subIdx === -1;
+  
+  if (isSubscribedNow) {
+    ch.subscribers.push(myId);
+  } else {
+    ch.subscribers.splice(subIdx, 1);
+  }
+  
+  btn.textContent = isSubscribedNow ? "Subscribed" : "Subscribe";
+  toast(isSubscribedNow ? "🔔 Subscribed to channel!" : "🔕 Unsubscribed");
+  
+  const chList = document.getElementById("channelsList");
+  if (chList) {
+    chList.innerHTML = allChannels.map((c, i) => `
+      <div class="channel-card"><span class="ch-icon">${escapeHtml(c.icon || "📺")}</span>
+        <div class="ch-name">${escapeHtml(c.name)}</div><div class="ch-handle">@${escapeHtml(c.handle)}</div>
+        <div class="ch-desc">${escapeHtml(c.description || "")}</div>
+        <div class="ch-meta"><div class="ch-meta-item">👥 ${c.subscribers?.length || 0} subscribers</div></div>
+        <button class="ch-sub-btn" onclick="handleSubscribe('${c._id}', this)">${currentUser && c.subscribers?.some(s => s.toString() === (currentUser.id || currentUser._id || '').toString()) ? 'Subscribed' : 'Subscribe'}</button></div>`).join('');
+  }
+
   try {
-    const res = await fetch(`/api/channels/${channelId}/subscribe`, {
+    await fetch(`/api/channels/${channelId}/subscribe`, {
       method: "POST",
       headers: { "Authorization": `Bearer ${token}` }
     });
-    const data = await res.json();
-    if (!res.ok) {
-      toast("⚠️ " + (data.message || "Failed to subscribe"));
-      return;
-    }
-    btn.textContent = data.isSubscribed ? "Subscribed" : "Subscribe";
-    toast(data.isSubscribed ? "🔔 Subscribed to channel!" : "🔕 Unsubscribed");
-    populate();
   } catch (err) {
-    console.error("Subscribe error:", err);
+    console.error("Background subscribe error:", err);
   }
 }
 
@@ -7312,37 +7451,43 @@ async function handleProfileFollow(creatorId, btn) {
     return;
   }
   
-  btn.disabled = true;
+  if (!currentUser.following) currentUser.following = [];
+  const index = currentUser.following.indexOf(creatorId);
+  const isFollowingNow = index === -1;
+  
+  if (isFollowingNow) {
+    currentUser.following.push(creatorId);
+    btn.textContent = "✓ Following";
+    btn.style.background = "var(--bg3)";
+    btn.style.color = "var(--text)";
+    toast("👤 Followed creator successfully!");
+  } else {
+    currentUser.following.splice(index, 1);
+    btn.textContent = "Follow";
+    btn.style.background = "var(--blue)";
+    btn.style.color = "#fff";
+    toast("👤 Unfollowed creator");
+  }
+  
+  // Re-render profile stats count instantly if profile page is active
+  const profStats = document.querySelectorAll(".pstat-n");
+  if (profStats.length > 0) {
+    // Let's increment or decrement the followers count dynamically
+    const followersEl = profStats[0]; // First stat is usually followers or posts
+    // We can just call renderProfilePage() to update stats cleanly!
+    await renderProfilePage();
+  }
+
   try {
-    const res = await fetch(`/api/auth/follow/${creatorId}`, {
+    await fetch(`/api/auth/follow/${creatorId}`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       }
     });
-    
-    if (res.ok) {
-      const data = await res.json();
-      toast(data.message);
-      
-      if (!currentUser.following) currentUser.following = [];
-      const index = currentUser.following.indexOf(creatorId);
-      if (data.message.toLowerCase().includes("unfollow") || data.message.toLowerCase().includes("unfollowed")) {
-        if (index > -1) currentUser.following.splice(index, 1);
-      } else {
-        if (index === -1) currentUser.following.push(creatorId);
-      }
-      
-      await populate();
-    } else {
-      const err = await res.json();
-      toast("⚠️ " + (err.message || "Failed to follow"));
-    }
   } catch (err) {
-    toast("⚠️ Connection error.");
-  } finally {
-    btn.disabled = false;
+    console.error("Background follow error:", err);
   }
 }
 
