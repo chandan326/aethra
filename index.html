@@ -168,6 +168,104 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
   max-width: 480px;
   margin: 0 auto;
 }
+.search-suggestions {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  max-height: 350px;
+  overflow-y: auto;
+  z-index: 1010;
+  backdrop-filter: blur(20px);
+  padding: 6px 0;
+  transition: all 0.2s ease;
+}
+.suggestion-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text3);
+  padding: 8px 16px 4px;
+  letter-spacing: 0.5px;
+}
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font);
+}
+.suggestion-item:hover {
+  background: var(--panel2);
+}
+.suggestion-item-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  overflow: hidden;
+  border: 1px solid var(--border2);
+  flex-shrink: 0;
+}
+.suggestion-item-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.suggestion-item-details {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.suggestion-item-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.suggestion-item-subtitle {
+  font-size: 11px;
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+.suggestion-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.suggestion-badge.post {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--blue2);
+}
+.suggestion-badge.channel {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+}
+.suggestion-no-results {
+  padding: 16px;
+  text-align: center;
+  color: var(--text3);
+  font-size: 13px;
+}
 .npill {
   padding: 0 20px;
   height: 44px;
@@ -2212,10 +2310,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
       <button class="npill active" onclick="goExplore(this)" data-en="Explore" data-hi="खोजें">Explore</button>
     </div>
 
-    <!-- CENTER SECTION: Centered Search Bar -->
-    <div class="nav-center">
-      <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 13px;">🔍</span>
-      <input type="text" id="navbarSearch" placeholder="Search creations & products..." oninput="handleSearch(this.value)" style="width: 100%; height: 44px; padding: 0 14px 0 38px; border-radius: 22px; background: var(--search-bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 13px; outline: none; transition: all 0.3s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);" onfocus="this.style.borderColor='var(--blue)'; this.style.boxShadow='0 0 10px rgba(59,130,246,0.25)';" onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='inset 0 2px 4px rgba(0,0,0,0.05)';">
+    <div class="nav-center" id="searchContainer">
+      <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 13px; pointer-events: none; z-index: 2;">🔍</span>
+      <input type="text" id="navbarSearch" placeholder="Search creations & products..." oninput="handleSearch(this.value)" onfocus="showSearchSuggestions()" style="width: 100%; height: 44px; padding: 0 14px 0 38px; border-radius: 22px; background: var(--search-bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 13px; outline: none; transition: all 0.3s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); z-index: 1;">
+      <div id="searchSuggestions" class="search-suggestions" style="display: none;"></div>
     </div>
 
     <!-- RIGHT SECTION: Login, Logout, Profile Avatar, Subscriptions Button -->
@@ -3309,6 +3407,17 @@ async function populate() {
       console.warn("Channels fetch failed:", fetchErr.message);
     }
     channels = Array.isArray(channels) ? channels : [];
+    allGlobalCreators = channels.map((c, i) => ({
+      id: c.owner?._id || c.owner?.id || "",
+      name: c.owner?.displayName || c.owner?.username || "Creator",
+      handle: c.handle || "",
+      icon: c.icon || "📺",
+      description: c.description || "",
+      subs: c.subscribers?.length || 0,
+      verified: c.owner?.verified,
+      hasPremium: c.owner?.hasPremium || false,
+      color: gc(i)
+    }));
 
     setHtml('channelsList', channels.map((c, i) => `
     <div class="channel-card"><span class="ch-icon">${escapeHtml(c.icon || "📺")}</span>
@@ -3580,6 +3689,7 @@ function getDeviceLimitConfig() {
   return { limit: 10, step: 10 };
 }
 let allHomePosts = [];
+let allGlobalCreators = [];
 window.deepLinkTriggered = false;
 let currentFilter = 'all';
 let displayedLimit = 10;
@@ -3592,7 +3702,136 @@ function handleSearch(val) {
   
   displayedLimit = getDeviceLimitConfig().limit;
   renderHomeFeed();
+  showSearchSuggestions();
 }
+
+function showSearchSuggestions() {
+  const query = document.getElementById("navbarSearch").value.trim().toLowerCase();
+  const dropdown = document.getElementById("searchSuggestions");
+  if (!dropdown) return;
+
+  if (query.length === 0) {
+    // Premium initial state: Show Top Creators and Recent/Popular Creations
+    const topCreators = allGlobalCreators.slice(0, 3);
+    const topPosts = allHomePosts.slice(0, 3);
+    
+    let html = "";
+    
+    if (topCreators.length > 0) {
+      html += `<div class="suggestion-group-title">👑 TOP CREATORS</div>`;
+      topCreators.forEach(c => {
+        html += `
+          <div class="suggestion-item" onclick="selectCreatorSuggestion('${c.id}')">
+            <div class="suggestion-item-icon">${escapeHtml(c.icon || "👤")}</div>
+            <div class="suggestion-item-details">
+              <div class="suggestion-item-title">${escapeHtml(c.name)}</div>
+              <div class="suggestion-item-subtitle">@${escapeHtml(c.handle)} · ${c.subs} subscribers</div>
+            </div>
+            <span class="suggestion-badge channel">VIP</span>
+          </div>
+        `;
+      });
+    }
+
+    if (topPosts.length > 0) {
+      html += `<div class="suggestion-group-title">🔥 TRENDING CREATIONS</div>`;
+      topPosts.forEach(p => {
+        const creatorName = p.creator?.displayName || p.creator?.username || "Creator";
+        html += `
+          <div class="suggestion-item" onclick="selectPostSuggestion('${p._id || p.id}')">
+            <div class="suggestion-item-icon">🎨</div>
+            <div class="suggestion-item-details">
+              <div class="suggestion-item-title">${escapeHtml(p.title)}</div>
+              <div class="suggestion-item-subtitle">by ${escapeHtml(creatorName)} · ${escapeHtml(p.contentType)}</div>
+            </div>
+            <span class="suggestion-badge post">${p.pricing === "free" ? "FREE" : "₹" + p.price}</span>
+          </div>
+        `;
+      });
+    }
+
+    if (html === "") {
+      dropdown.style.display = "none";
+    } else {
+      dropdown.innerHTML = html;
+      dropdown.style.display = "block";
+    }
+    return;
+  }
+
+  // Active search filtering
+  const matchedPosts = allHomePosts.filter(p => p.title.toLowerCase().includes(query)).slice(0, 5);
+  const matchedCreators = allGlobalCreators.filter(c => 
+    c.name.toLowerCase().includes(query) || 
+    c.handle.toLowerCase().includes(query) || 
+    c.description.toLowerCase().includes(query)
+  ).slice(0, 5);
+
+  let html = "";
+
+  if (matchedCreators.length > 0) {
+    html += `<div class="suggestion-group-title">CREATORS & CHANNELS</div>`;
+    matchedCreators.forEach(c => {
+      html += `
+        <div class="suggestion-item" onclick="selectCreatorSuggestion('${c.id}')">
+          <div class="suggestion-item-icon">${escapeHtml(c.icon || "👤")}</div>
+          <div class="suggestion-item-details">
+            <div class="suggestion-item-title">${escapeHtml(c.name)}</div>
+            <div class="suggestion-item-subtitle">@${escapeHtml(c.handle)} · ${c.subs} subscribers</div>
+          </div>
+          <span class="suggestion-badge channel">Channel</span>
+        </div>
+      `;
+    });
+  }
+
+  if (matchedPosts.length > 0) {
+    html += `<div class="suggestion-group-title">CREATIONS</div>`;
+    matchedPosts.forEach(p => {
+      const creatorName = p.creator?.displayName || p.creator?.username || "Creator";
+      html += `
+        <div class="suggestion-item" onclick="selectPostSuggestion('${p._id || p.id}')">
+          <div class="suggestion-item-icon">🎨</div>
+          <div class="suggestion-item-details">
+            <div class="suggestion-item-title">${escapeHtml(p.title)}</div>
+            <div class="suggestion-item-subtitle">by ${escapeHtml(creatorName)} · ${escapeHtml(p.contentType)}</div>
+          </div>
+          <span class="suggestion-badge post">${p.pricing === "free" ? "FREE" : "₹" + p.price}</span>
+        </div>
+      `;
+    });
+  }
+
+  if (html === "") {
+    html = `<div class="suggestion-no-results">No results found for "${escapeHtml(query)}"</div>`;
+  }
+
+  dropdown.innerHTML = html;
+  dropdown.style.display = "block";
+}
+
+function selectPostSuggestion(id) {
+  const dropdown = document.getElementById("searchSuggestions");
+  if (dropdown) dropdown.style.display = "none";
+  document.getElementById("navbarSearch").value = "";
+  openProductDetail(id);
+}
+
+function selectCreatorSuggestion(id) {
+  const dropdown = document.getElementById("searchSuggestions");
+  if (dropdown) dropdown.style.display = "none";
+  document.getElementById("navbarSearch").value = "";
+  showUserProfile(id);
+}
+
+// Global click-out behavior to close search suggestions dropdown
+document.addEventListener("click", (e) => {
+  const searchContainer = document.getElementById("searchContainer");
+  const suggestionsDropdown = document.getElementById("searchSuggestions");
+  if (searchContainer && !searchContainer.contains(e.target)) {
+    if (suggestionsDropdown) suggestionsDropdown.style.display = "none";
+  }
+});
 
 function filterHome(cat, el) {
   document.querySelectorAll('#homeFilter .cpill').forEach(p => p.classList.remove('active'));
