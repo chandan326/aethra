@@ -9,7 +9,7 @@ const { uploadToCloudinary } = require("../utils/cloudinary");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const { sendVerificationEmail } = require("../utils/email");
+const { sendVerificationEmail, sendResetPasswordEmail } = require("../utils/email");
 
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -348,6 +348,88 @@ router.post("/resend-otp", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+// Forgot Password
+router.post("/forgot-password", async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ message: "Username or email is required" });
+  }
+
+  if (mongoose.connection.readyState !== 1) {
+    // Offline Mock Mode
+    const foundUser = Object.values(mockUsersDb).find(u => u.username === email || u.email === email);
+    if (!foundUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    return res.json({ message: "Reset code sent to your registered Gmail address. (Mock Offline Mode)" });
+  }
+
+  try {
+    const user = await User.findOne({ $or: [{ email }, { username: email }] });
+    if (!user) {
+      return res.status(404).json({ message: "User not found with that username or email." });
+    }
+
+    const otp = generateOtp();
+    user.resetPasswordOtp = otp;
+    user.resetPasswordOtpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save();
+
+    await sendResetPasswordEmail(user.email, otp);
+
+    res.json({ message: "Password reset verification code sent to your Gmail.", email: user.email });
+  } catch (err) {
+    console.error("Error in forgot-password:", err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Reset Password
+router.post("/reset-password", async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+  if (!email || !otp || !newPassword) {
+    return res.status(400).json({ message: "Email, OTP, and new password are required" });
+  }
+
+  if (mongoose.connection.readyState !== 1) {
+    // Offline Mock Mode
+    const foundUser = Object.values(mockUsersDb).find(u => u.username === email || u.email === email);
+    if (!foundUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    foundUser.password = newPassword;
+    saveMockUsers();
+    return res.json({ message: "Password reset successfully. You can now log in." });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.resetPasswordOtp !== otp || Date.now() > user.resetPasswordOtpExpires) {
+      return res.status(400).json({ message: "Invalid or expired verification code" });
+    }
+
+    // Update password securely
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetPasswordOtp = "";
+    user.resetPasswordOtpExpires = undefined;
+    
+    // Automatically verify email if resetting password succeeds
+    user.isEmailVerified = true;
+    
+    await user.save();
+
+    res.json({ message: "Password reset successfully. You can now log in." });
+  } catch (err) {
+    console.error("Error resetting password:", err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 // Get Google Client ID
 router.get("/google-client-id", (req, res) => {

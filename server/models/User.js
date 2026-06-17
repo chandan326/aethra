@@ -22,6 +22,8 @@ const UserSchema = new mongoose.Schema({
   emailVerificationOtp: { type: String, default: "" },
   emailVerificationOtpExpires: { type: Date },
   isGoogleUser: { type: Boolean, default: false },
+  resetPasswordOtp: { type: String, default: "" },
+  resetPasswordOtpExpires: { type: Date },
   createdAt: { type: Date, default: Date.now }
 });
 

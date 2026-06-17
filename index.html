@@ -2708,7 +2708,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
       <label class="flabel">Password</label>
       <input class="finput" type="password" id="authPassword" placeholder="Enter password" required>
       
-      <button class="submit-btn" type="submit" id="authSubmitBtn" style="margin-top: 10px;">Log In</button>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: -6px; margin-bottom: 12px; font-size: 12px;">
+        <span style="visibility: hidden;">Placeholder</span>
+        <a href="#" onclick="openForgotPassword(); return false;" style="color: var(--blue2); text-decoration: none; font-weight: 500;">Forgot Password?</a>
+      </div>
+      
+      <button class="submit-btn" type="submit" id="authSubmitBtn" style="margin-top: 5px;">Log In</button>
       
       <!-- GOOGLE AUTH DIVIDER & BUTTON CONTAINER -->
       <div id="googleAuthDivider" style="display: flex; align-items: center; justify-content: center; margin: 16px 0; font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px;">
@@ -2735,6 +2740,59 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
         <span id="resendCountdown" style="display: inline-block; margin-bottom: 4px;"></span><br>
         <a href="#" onclick="resendVerificationOtp(); return false;" id="resendOtpLink" style="color: var(--blue2); text-decoration: none; font-weight: 600;">Resend OTP Code</a>
       </div>
+    </div>
+
+    <!-- FORGOT PASSWORD: EMAIL/USERNAME INPUT -->
+    <div id="forgotPasswordEmailBlock" style="display: none; flex-direction: column;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 44px; margin-bottom: 12px;">🔑</div>
+        <div style="font-size: 14px; color: var(--text); font-weight: 700; margin-bottom: 6px;">Forgot Your Password?</div>
+        <div style="font-size: 12px; color: var(--text3); line-height: 1.5;">Enter your registered username or email address and we will send you a 6-digit OTP to reset your password.</div>
+      </div>
+      <form onsubmit="handleForgotPasswordEmailSubmit(event)">
+        <label class="flabel">Username or Email</label>
+        <input class="finput" type="text" id="forgotEmailInput" placeholder="Enter username or email" required>
+        <button class="submit-btn" type="submit" style="margin-top: 15px;">📧 Send Reset Code</button>
+      </form>
+      <div style="text-align: center; margin-top: 1.2rem; font-size: 13px;">
+        <a href="#" onclick="backToLogin(); return false;" style="color: var(--text2); text-decoration: none; font-weight: 500;">✕ Back to Login</a>
+      </div>
+    </div>
+
+    <!-- FORGOT PASSWORD: OTP VERIFICATION -->
+    <div id="forgotPasswordOtpBlock" style="display: none; flex-direction: column;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 44px; margin-bottom: 12px;">✉️</div>
+        <div style="font-size: 14px; color: var(--text); font-weight: 700; margin-bottom: 6px;">Reset Password Verification</div>
+        <div style="font-size: 12px; color: var(--text3); line-height: 1.5;">We have sent a 6-digit reset password OTP to <span id="resetEmailDisplay" style="color: var(--blue2); font-weight: 600;"></span>. Enter it below.</div>
+      </div>
+      <form onsubmit="handleForgotPasswordOtpSubmit(event)">
+        <label class="flabel">6-Digit Verification Code</label>
+        <input class="finput" type="text" id="forgotOtpInput" placeholder="••••••" pattern="[0-9]{6}" maxlength="6" required style="letter-spacing: 8px; text-align: center; font-size: 24px; font-weight: 800; font-family: monospace; background: var(--panel2);">
+        <button class="submit-btn" type="submit" style="margin-top: 15px;">🔒 Confirm Code</button>
+      </form>
+      <div style="text-align: center; margin-top: 1.2rem; font-size: 12px; color: var(--text3);">
+        <span id="forgotResendCountdown" style="display: inline-block; margin-bottom: 4px;"></span><br>
+        <a href="#" onclick="resendForgotPasswordOtp(); return false;" id="forgotResendOtpLink" style="color: var(--blue2); text-decoration: none; font-weight: 600;">Resend Reset OTP</a>
+      </div>
+    </div>
+
+    <!-- FORGOT PASSWORD: NEW PASSWORD INPUT -->
+    <div id="forgotPasswordNewBlock" style="display: none; flex-direction: column;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 44px; margin-bottom: 12px;">🛡️</div>
+        <div style="font-size: 14px; color: var(--text); font-weight: 700; margin-bottom: 6px;">Set New Password</div>
+        <div style="font-size: 12px; color: var(--text3); line-height: 1.5;">Choose a strong new security password for your Aethra account.</div>
+      </div>
+      <form onsubmit="handleForgotPasswordNewSubmit(event)">
+        <label class="flabel">New Password</label>
+        <input class="finput" type="password" id="forgotNewPasswordInput" placeholder="Enter new password" minlength="6" required style="margin-bottom: 10px;">
+        
+        <label class="flabel">Confirm New Password</label>
+        <input class="finput" type="password" id="forgotConfirmPasswordInput" placeholder="Confirm new password" minlength="6" required>
+        
+        <button class="submit-btn" type="submit" style="margin-top: 15px;">✅ Reset Password & Login</button>
+      </form>
     </div>
 
     <div id="authSwitchContainer" style="text-align: center; margin-top: 1.2rem; font-size: 13px; color: var(--text2);">
@@ -5484,6 +5542,178 @@ function openAuth() {
 
 function closeAuth() {
   document.getElementById("authModal").classList.remove("open");
+}
+
+let forgotPasswordEmail = "";
+let forgotResendSeconds = 0;
+let forgotResendTimerInterval = null;
+
+function openForgotPassword() {
+  document.getElementById("authForm").style.display = "none";
+  document.getElementById("otpVerificationBlock").style.display = "none";
+  document.getElementById("forgotPasswordEmailBlock").style.display = "flex";
+  document.getElementById("forgotPasswordOtpBlock").style.display = "none";
+  document.getElementById("forgotPasswordNewBlock").style.display = "none";
+  document.getElementById("authSwitchContainer").style.display = "none";
+  document.getElementById("authModalTitle").innerHTML = "🔑 Forgot Password";
+}
+
+function backToLogin() {
+  document.getElementById("authForm").style.display = "block";
+  document.getElementById("otpVerificationBlock").style.display = "none";
+  document.getElementById("forgotPasswordEmailBlock").style.display = "none";
+  document.getElementById("forgotPasswordOtpBlock").style.display = "none";
+  document.getElementById("forgotPasswordNewBlock").style.display = "none";
+  document.getElementById("authSwitchContainer").style.display = "block";
+  authMode = "login";
+  updateAuthModalDOM();
+}
+
+async function handleForgotPasswordEmailSubmit(e) {
+  e.preventDefault();
+  const inputEl = document.getElementById("forgotEmailInput");
+  const val = inputEl.value.trim();
+  if (!val) return;
+
+  toast("⏳ Sending reset code...");
+  try {
+    const res = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: val })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      forgotPasswordEmail = data.email || val;
+      document.getElementById("resetEmailDisplay").textContent = forgotPasswordEmail;
+      
+      document.getElementById("forgotPasswordEmailBlock").style.display = "none";
+      document.getElementById("forgotPasswordOtpBlock").style.display = "flex";
+      document.getElementById("authModalTitle").innerHTML = "✉️ Verify Code";
+      
+      startForgotOtpCountdown();
+      toast("📧 Password reset code sent!");
+    } else {
+      toast("⚠️ " + (data.message || "Failed to send reset code"));
+    }
+  } catch (err) {
+    toast("⚠️ Network error sending reset code.");
+  }
+}
+
+async function handleForgotPasswordOtpSubmit(e) {
+  e.preventDefault();
+  const otpVal = document.getElementById("forgotOtpInput").value.trim();
+  if (otpVal.length !== 6) {
+    toast("⚠️ Please enter a 6-digit OTP code.");
+    return;
+  }
+  
+  document.getElementById("forgotPasswordOtpBlock").style.display = "none";
+  document.getElementById("forgotPasswordNewBlock").style.display = "flex";
+  document.getElementById("authModalTitle").innerHTML = "🛡️ New Password";
+}
+
+async function handleForgotPasswordNewSubmit(e) {
+  e.preventDefault();
+  const newPass = document.getElementById("forgotNewPasswordInput").value;
+  const confirmPass = document.getElementById("forgotConfirmPasswordInput").value;
+  const otpVal = document.getElementById("forgotOtpInput").value.trim();
+
+  if (newPass !== confirmPass) {
+    toast("⚠️ Passwords do not match!");
+    return;
+  }
+  if (newPass.length < 6) {
+    toast("⚠️ Password must be at least 6 characters.");
+    return;
+  }
+
+  toast("⏳ Resetting password...");
+  try {
+    const res = await fetch("/api/auth/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: forgotPasswordEmail,
+        otp: otpVal,
+        newPassword: newPass
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      toast("✅ Password reset successful! Logging in...");
+      
+      // Clear inputs
+      document.getElementById("forgotEmailInput").value = "";
+      document.getElementById("forgotOtpInput").value = "";
+      document.getElementById("forgotNewPasswordInput").value = "";
+      document.getElementById("forgotConfirmPasswordInput").value = "";
+      
+      // Log in automatically using the new credentials
+      const loginRes = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: forgotPasswordEmail, password: newPass })
+      });
+      const loginData = await loginRes.json();
+      if (loginRes.ok) {
+        localStorage.setItem("aethra_token", loginData.token);
+        localStorage.setItem("aethra_user", JSON.stringify(loginData.user));
+        currentUser = loginData.user;
+        checkAuth();
+        closeAuth();
+      } else {
+        backToLogin();
+      }
+    } else {
+      toast("⚠️ " + (data.message || "Failed to reset password"));
+    }
+  } catch (err) {
+    toast("⚠️ Network error resetting password.");
+  }
+}
+
+async function resendForgotPasswordOtp() {
+  toast("⏳ Resending code...");
+  try {
+    const res = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: forgotPasswordEmail })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      startForgotOtpCountdown();
+      toast("📧 New reset code sent to your email!");
+    } else {
+      toast("⚠️ " + (data.message || "Failed to resend code"));
+    }
+  } catch (err) {
+    toast("⚠️ Network error resending code.");
+  }
+}
+
+function startForgotOtpCountdown() {
+  const countdownEl = document.getElementById("forgotResendCountdown");
+  const linkEl = document.getElementById("forgotResendOtpLink");
+  if (!countdownEl || !linkEl) return;
+
+  linkEl.style.display = "none";
+  countdownEl.style.display = "inline-block";
+  forgotResendSeconds = 30;
+  
+  if (forgotResendTimerInterval) clearInterval(forgotResendTimerInterval);
+  
+  forgotResendTimerInterval = setInterval(() => {
+    forgotResendSeconds--;
+    countdownEl.textContent = `Resend available in ${forgotResendSeconds}s`;
+    if (forgotResendSeconds <= 0) {
+      clearInterval(forgotResendTimerInterval);
+      countdownEl.style.display = "none";
+      linkEl.style.display = "inline-block";
+    }
+  }, 1000);
 }
 
 function toggleAuthMode() {
