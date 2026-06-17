@@ -3131,11 +3131,11 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
     
     <div class="sub-grid">
       <!-- Plan 1 -->
-      <div class="sub-card" onclick="purchaseSubscription('2 Months Boost', 299, 2)">
+      <div class="sub-card" onclick="purchaseSubscription('2 Months Boost', 99, 2)">
         <div>
           <div class="sub-name" data-en="Starter Boost" data-hi="शुरुआती बूस्ट">Starter Boost</div>
           <div class="sub-duration" data-en="2 Months Plan" data-hi="2 महीने का प्लान">2 Months Plan</div>
-          <div class="sub-price">₹299<span>/2mo</span></div>
+          <div class="sub-price">₹99<span>/2mo</span></div>
           <ul class="sub-benefits">
             <li data-en="Red Tick (✓) on profile" data-hi="प्रोफ़ाइल पर रेड टिक (✓)">Red Tick (✓) on profile</li>
             <li data-en="2x Popularity boost" data-hi="2x लोकप्रियता बूस्ट">2x Popularity boost</li>
@@ -3146,11 +3146,11 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
       </div>
 
       <!-- Plan 2 -->
-      <div class="sub-card popular" onclick="purchaseSubscription('6 Months Creator Plus', 499, 6)">
+      <div class="sub-card popular" onclick="purchaseSubscription('6 Months Creator Plus', 199, 6)">
         <div>
           <div class="sub-name" data-en="Creator Plus" data-hi="क्रिएटर प्लस">Creator Plus</div>
           <div class="sub-duration" data-en="6 Months Plan" data-hi="6 महीने का प्लान">6 Months Plan</div>
-          <div class="sub-price">₹499<span>/6mo</span></div>
+          <div class="sub-price">₹199<span>/6mo</span></div>
           <ul class="sub-benefits">
             <li data-en="Red Tick (✓) on profile" data-hi="प्रोफ़ाइल पर रेड टिक (✓)">Red Tick (✓) on profile</li>
             <li data-en="5x Popularity boost" data-hi="5x लोकप्रियता बूस्ट">5x Popularity boost</li>
@@ -3162,11 +3162,11 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
       </div>
 
       <!-- Plan 3 -->
-      <div class="sub-card" onclick="purchaseSubscription('1 Year Elite VIP', 799, 12)">
+      <div class="sub-card" onclick="purchaseSubscription('1 Year Elite VIP', 299, 12)">
         <div>
           <div class="sub-name" data-en="Elite VIP" data-hi="एलीट VIP">Elite VIP</div>
           <div class="sub-duration" data-en="1 Year Plan" data-hi="1 साल का प्लान">1 Year Plan</div>
-          <div class="sub-price">₹799<span>/yr</span></div>
+          <div class="sub-price">₹299<span>/yr</span></div>
           <ul class="sub-benefits">
             <li data-en="Red Tick (✓) on profile" data-hi="प्रोफ़ाइल पर रेड टिक (✓)">Red Tick (✓) on profile</li>
             <li data-en="10x Popularity boost" data-hi="10x लोकप्रियता बूस्ट">10x लोकप्रियता बूस्ट</li>
@@ -6888,7 +6888,7 @@ function showUpiQrModal(payeeName, payeeUpi, amount, purposeText = "Payment", pa
   const isValidUpi = payeeUpi && payeeUpi.includes("@");
 
   if (payeeUpi === "8178287835@fam") {
-    customQrImg.src = "/aethra_payment_qr.jpg";
+    customQrImg.src = "/uploads/aethra_payment_qr.jpg";
     customQr.style.display = "block";
     defaultQr.style.display = "none";
   } else if (isValidUpi) {
@@ -6902,7 +6902,7 @@ function showUpiQrModal(payeeName, payeeUpi, amount, purposeText = "Payment", pa
     customQr.style.display = "block";
     defaultQr.style.display = "none";
   } else {
-    customQrImg.src = "/aethra_payment_qr.jpg";
+    customQrImg.src = "/uploads/aethra_payment_qr.jpg";
     customQr.style.display = "block";
     defaultQr.style.display = "none";
   }
