@@ -1154,59 +1154,268 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
   from { transform: translateY(20px) scale(0.95); opacity: 0; }
   to { transform: translateY(0) scale(1); opacity: 1; }
 }
-.chat-panel{position:fixed;bottom:5.5rem;right:2rem;z-index:1010;width:360px;height:min(490px,70vh);background:var(--panel);border:1px solid var(--border2);border-radius:var(--r3);overflow:hidden;display:none;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,8,0.7),0 0 0 1px rgba(59,130,246,0.05)}
-.chat-panel.open{display:flex;animation: chatSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards}
-.chat-header{padding:1rem 1.2rem;background:linear-gradient(135deg,rgba(29,78,216,0.25),rgba(99,102,241,0.15));border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
-.chat-av{width:38px;height:38px;background:linear-gradient(135deg,var(--blue-deep),var(--indigo));border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(59,130,246,0.35)}
-.chat-av svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.chat-hinfo{}
-.chat-title{font-size:14px;font-weight:700;font-family:var(--font2);letter-spacing:-0.2px}
-.chat-sub{font-size:11px;color:var(--cyan);display:flex;align-items:center;gap:5px;margin-top:1px}
-.chat-sub::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--cyan);animation:pulseBlue 2s infinite;flex-shrink:0}
-.chat-close{margin-left:auto;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text2);width:28px;height:28px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all 0.2s}
-.chat-close:hover{border-color:var(--blue);color:var(--blue2)}
- 
+
+.chat-panel {
+  position: fixed;
+  bottom: 5.5rem;
+  right: 2rem;
+  z-index: 1010;
+  width: 650px !important;
+  max-width: 90vw !important;
+  height: 520px !important;
+  max-height: 80vh !important;
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: var(--r3);
+  overflow: hidden;
+  display: none;
+  flex-direction: row !important; /* Flex row for side-by-side pane */
+  box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+}
+.chat-panel.open {
+  display: flex !important;
+  animation: chatSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Left Sidebar - Chat List */
+.chat-list-pane {
+  width: 230px !important;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  background: rgba(255,255,255,0.01);
+  flex-shrink: 0;
+}
+.chat-list-header {
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+}
+.chat-list-title {
+  font-family: var(--font2);
+  font-size: 14px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  letter-spacing: -0.2px;
+}
+.chat-search-box input {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  outline: none;
+  font-family: var(--font);
+  box-sizing: border-box;
+}
+.chat-search-box input::placeholder {
+  color: var(--text3);
+}
+.chat-list-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
+}
+.chat-list-items::-webkit-scrollbar {
+  width: 3px;
+}
+.chat-list-items::-webkit-scrollbar-thumb {
+  background: rgba(59,130,246,0.1);
+  border-radius: 2px;
+}
+
+/* Chat list item details */
+.chat-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 2px;
+  transition: all 0.2s;
+  position: relative;
+}
+.chat-list-item:hover {
+  background: rgba(255,255,255,0.03);
+}
+.chat-list-item.active {
+  background: rgba(59,130,246,0.08);
+  border-left: 3px solid var(--cyan);
+  padding-left: 7px;
+}
+.chat-item-av {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  position: relative;
+}
+.chat-item-online-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border: 1.5px solid var(--panel);
+  border-radius: 50%;
+}
+.chat-item-details {
+  flex: 1;
+  min-width: 0;
+}
+.chat-item-name {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-item-lastmsg {
+  font-size: 10px;
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+/* Right Side - Conversation Pane */
+.chat-convo-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: rgba(0,0,0,0.02);
+  min-width: 0;
+}
+.chat-header {
+  padding: 1rem 1.2rem;
+  background: linear-gradient(135deg, rgba(29,78,216,0.08), rgba(99,102,241,0.03));
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.chat-back-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-right: -4px;
+}
+.chat-av {
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, var(--blue-deep), var(--indigo));
+  border-radius: 50% !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(59,130,246,0.2);
+}
+.chat-av svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2; }
+.chat-title { font-size: 13px; font-weight: 700; font-family: var(--font2); letter-spacing: -0.2px; }
+.chat-sub { font-size: 10px; color: var(--cyan); display: flex; align-items: center; gap: 4px; margin-top: 1px; }
+.chat-sub::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--cyan); animation: pulseBlue 2s infinite; flex-shrink: 0; }
+.chat-close {
+  margin-left: auto;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.chat-close:hover { border-color: var(--blue); color: var(--blue2); }
+
 /* Quick prompts */
-.qp-bar{padding:0.75rem 1rem;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.015)}
-.qp-bar::-webkit-scrollbar{display:none}
-.qp{background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.15);color:var(--text2);padding:5px 12px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.2s;font-family:var(--font);flex-shrink:0}
-.qp:hover{background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.35);color:var(--blue2)}
- 
-/* Messages */
-.chat-msgs{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
-.chat-msgs::-webkit-scrollbar{width:3px}
-.chat-msgs::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.2);border-radius:2px}
-.msg{display:flex;flex-direction:column;max-width:88%}
-.msg.bot{align-self:flex-start}
-.msg.user{align-self:flex-end}
-.msg-bubble{padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.65;word-break:break-word}
-.msg.bot .msg-bubble{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-bottom-left-radius:4px;color:var(--text)}
-.msg.user .msg-bubble{background:linear-gradient(135deg,var(--blue),var(--indigo));color:#fff;border-bottom-right-radius:4px}
-.msg-time{font-size:10px;color:var(--text3);margin-top:3px;padding:0 2px}
-.msg.user .msg-time{text-align:right}
-.msg-sender{font-size:10px;color:var(--blue2);margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:0 2px}
-.typing-dots{display:flex;align-items:center;gap:4px;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:16px;border-bottom-left-radius:4px;width:fit-content}
-.typing-dots span{width:6px;height:6px;border-radius:50%;background:var(--blue2);animation:bounce 1.2s ease infinite}
-.typing-dots span:nth-child(2){animation-delay:0.15s}
-.typing-dots span:nth-child(3){animation-delay:0.3s}
-@keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:0.35}40%{transform:translateY(-5px);opacity:1}}
-.msg-bubble strong{font-weight:700}
-.msg-bubble em{font-style:italic;opacity:0.8}
-.msg-bubble code{background:rgba(0,0,0,0.35);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:11px}
-.msg-bubble ul{margin:6px 0 0 16px}
-.msg-bubble li{margin-bottom:3px}
- 
+.qp-bar { padding: 0.6rem 0.8rem; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; flex-shrink: 0; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.01) }
+.qp-bar::-webkit-scrollbar { display: none }
+.qp { background: rgba(59,130,246,0.05); border: 1px solid rgba(59,130,246,0.12); color: var(--text2); padding: 4px 10px; border-radius: 100px; font-size: 10px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; font-family: var(--font); flex-shrink: 0 }
+.qp:hover { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.25); color: var(--blue2) }
+
+/* Messages styling */
+.chat-msgs { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth }
+.chat-msgs::-webkit-scrollbar { width: 3px }
+.chat-msgs::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.15); border-radius: 2px }
+.msg { display: flex; flex-direction: column; max-width: 82% }
+.msg.bot { align-self: flex-start }
+.msg.user { align-self: flex-end }
+.msg-bubble { padding: 8px 12px; border-radius: 14px; font-size: 12.5px; line-height: 1.55; word-break: break-word; font-family: var(--font) }
+.msg.bot .msg-bubble { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-bottom-left-radius: 4px; color: var(--text) }
+.msg.user .msg-bubble { background: linear-gradient(135deg, var(--blue), var(--indigo)); color: #fff; border-bottom-right-radius: 4px }
+.msg-time { font-size: 9px; color: var(--text3); margin-top: 2px; padding: 0 2px }
+.msg.user .msg-time { text-align: right }
+.msg-sender { font-size: 9px; color: var(--blue2); margin-bottom: 2px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 0 2px }
+.typing-bubble { display: flex; align-items: center; gap: 4px; padding: 8px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 14px; border-bottom-left-radius: 4px; width: fit-content }
+.typing-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--blue2); animation: bounce 1.2s ease infinite }
+.typing-dot:nth-child(2) { animation-delay: 0.15s }
+.typing-dot:nth-child(3) { animation-delay: 0.3s }
+@keyframes bounce { 0%,80%,100% { transform: translateY(0); opacity: 0.35 } 40% { transform: translateY(-4px); opacity: 1 } }
+.msg-bubble strong { font-weight: 700 }
+.msg-bubble em { font-style: italic; opacity: 0.8 }
+.msg-bubble code { background: rgba(0,0,0,0.35); padding: 1px 5px; border-radius: 4px; font-family: monospace; font-size: 11px }
+.msg-bubble ul { margin: 6px 0 0 16px }
+.msg-bubble li { margin-bottom: 3px }
+
 /* Chat input */
-.chat-foot{padding:0.8rem 1rem;border-top:1px solid var(--border);flex-shrink:0;background:rgba(255,255,255,0.015)}
-.chat-row{display:flex;gap:8px;align-items:flex-end}
-.chat-in{flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border2);color:var(--text);padding:9px 14px;border-radius:12px;font-size:13px;font-family:var(--font);outline:none;resize:none;max-height:100px;line-height:1.55;transition:border-color 0.2s;min-height:40px}
-.chat-in:focus{border-color:rgba(59,130,246,0.5)}
-.chat-in::placeholder{color:var(--text3)}
-.send-btn{width:38px;height:38px;background:linear-gradient(135deg,var(--blue),var(--indigo));border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;box-shadow:0 4px 12px rgba(59,130,246,0.3)}
-.send-btn:hover:not(:disabled){transform:scale(1.08);box-shadow:0 6px 20px rgba(59,130,246,0.5)}
-.send-btn:disabled{opacity:0.45;cursor:not-allowed;transform:none}
-.send-btn svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.chat-note{font-size:10px;color:var(--text3);text-align:center;margin-top:6px}
+.chat-foot { padding: 0.6rem 0.8rem; border-top: 1px solid var(--border); flex-shrink: 0; background: rgba(255,255,255,0.01) }
+.chat-row { display: flex; gap: 6px; align-items: flex-end }
+.chat-in { flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border2); color: var(--text); padding: 8px 12px; border-radius: 10px; font-size: 12.5px; font-family: var(--font); outline: none; resize: none; max-height: 80px; line-height: 1.45; transition: border-color 0.2s; min-height: 36px; box-sizing: border-box; }
+.chat-in:focus { border-color: rgba(59,130,246,0.4) }
+.chat-in::placeholder { color: var(--text3) }
+.send-btn { width: 36px; height: 36px; background: linear-gradient(135deg, var(--blue), var(--indigo)); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; box-shadow: 0 4px 10px rgba(59,130,246,0.25) }
+.send-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 6px 15px rgba(59,130,246,0.35) }
+.send-btn:disabled { opacity: 0.4; cursor: not-allowed }
+.send-btn svg { width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 2.5; }
+.chat-note { font-size: 9px; color: var(--text3); text-align: center; margin-top: 4px }
+
+/* Mobile responsiveness stack behavior */
+@media (max-width: 768px) {
+  .chat-panel {
+    width: 340px !important;
+    max-width: calc(100vw - 2rem) !important;
+    height: 480px !important;
+    bottom: 5.5rem !important;
+    right: 1rem !important;
+  }
+  .chat-list-pane {
+    width: 100% !important;
+    border-right: none;
+  }
+  .chat-convo-pane {
+    display: none !important;
+    width: 100% !important;
+  }
+  .chat-panel.show-convo .chat-list-pane {
+    display: none !important;
+  }
+  .chat-panel.show-convo .chat-convo-pane {
+    display: flex !important;
+  }
+  .chat-back-btn {
+    display: block !important;
+  }
+}
  
 /* TOAST */
 .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--panel2);border:1px solid var(--border2);color:var(--text);padding:11px 22px;border-radius:100px;font-size:13px;font-weight:500;z-index:3000;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);white-space:nowrap;box-shadow:0 16px 40px rgba(0,0,8,0.6)}
@@ -3190,46 +3399,60 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
  
 <!-- CHAT PANEL -->
 <div class="chat-panel" id="chatPanel">
-  <div class="chat-header">
-    <div class="chat-av" id="activeChatAvatar" style="background: linear-gradient(135deg, var(--blue), var(--indigo)); font-weight: bold; border-radius: 50%; width: 32px; height: 32px; display: grid; place-items: center; font-size: 13px; color: #fff;">Ae</div>
-    <div class="chat-hinfo">
-      <div class="chat-title" id="activeChatTitle">Aethra AI</div>
-      <div class="chat-sub" id="activeChatSub" data-en="Online · Powered by Gemini" data-hi="ऑनलाइन · Gemini द्वारा">Online · Powered by Gemini</div>
+  <!-- Left Side: Chat Channels / Direct Messages List -->
+  <div class="chat-list-pane">
+    <div class="chat-list-header">
+      <div class="chat-list-title">Direct Messages</div>
+      <div class="chat-search-box">
+        <input type="text" id="chatSearchInput" placeholder="Search creators..." oninput="filterChatList()">
+      </div>
     </div>
-    <button class="chat-close" onclick="toggleChat()">✕</button>
-  </div>
-  
-  <!-- Active Channels Horizontal Story Bar -->
-  <div style="display: flex; gap: 14px; padding: 10px 16px; border-bottom: 1px solid var(--border); overflow-x: auto; background: rgba(255,255,255,0.01); align-items: center;" id="activeChannelsBar">
-    <!-- Channel cards will be populated here -->
+    <div class="chat-list-items" id="chatListItems">
+      <!-- Populated dynamically -->
+    </div>
   </div>
 
-  <div class="qp-bar" id="qpBar">
-    <!-- Quick reply buttons populated dynamically based on active channel -->
-  </div>
-  <div class="chat-msgs" id="chatMsgs">
-    <!-- Messages dynamically rendered here -->
+  <!-- Right Side: Active Conversation -->
+  <div class="chat-convo-pane" id="chatConvoPane">
+    <div class="chat-header">
+      <button class="chat-back-btn" onclick="showChatListOnly()">←</button>
+      <div class="chat-av" id="activeChatAvatar" style="background: linear-gradient(135deg, var(--blue), var(--indigo)); font-weight: bold; color: #fff;">Ae</div>
+      <div class="chat-hinfo">
+        <div class="chat-title" id="activeChatTitle">Aethra AI</div>
+        <div class="chat-sub" id="activeChatSub" data-en="Online · Powered by Gemini" data-hi="ऑनलाइन · Gemini द्वारा">Online · Powered by Gemini</div>
+      </div>
+      <button class="chat-close" onclick="toggleChat()">✕</button>
+    </div>
     
-    <!-- Typing indicator container -->
-    <div id="chatTypingIndicator" style="display: none; margin-top: 8px;">
-      <div class="msg bot" style="margin-bottom: 0;">
-        <div class="msg-sender" id="typingSender">Aethra AI</div>
-        <div class="typing-bubble">
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
+    <div class="qp-bar" id="qpBar">
+      <!-- Quick reply buttons -->
+    </div>
+    
+    <div class="chat-msgs" id="chatMsgs">
+      <!-- Messages dynamically rendered here -->
+      
+      <!-- Typing indicator container -->
+      <div id="chatTypingIndicator" style="display: none; margin-top: 8px;">
+        <div class="msg bot" style="margin-bottom: 0;">
+          <div class="msg-sender" id="typingSender">Aethra AI</div>
+          <div class="typing-bubble">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  <div class="chat-foot">
-    <div class="chat-row">
-      <textarea class="chat-in" id="chatInput" placeholder="Ask anything about creating content..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-      <button class="send-btn" id="sendBtn" onclick="sendChat()">
-        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      </button>
+    
+    <div class="chat-foot">
+      <div class="chat-row">
+        <textarea class="chat-in" id="chatInput" placeholder="Write a message..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendChat()">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+      <div class="chat-note" id="chatFootNote">Aethra AI · Response simulation</div>
     </div>
-    <div class="chat-note" id="chatFootNote">Aethra AI · Powered by Gemini · Responses may vary</div>
   </div>
 </div>
  
@@ -3616,20 +3839,11 @@ async function renderProfilePage() {
 
     const statsContainer = document.querySelector(".profile-stats");
     if (statsContainer) {
-      if (isSelf) {
-        statsContainer.innerHTML = `
-          <div><div class="pstat-n">${postCount}</div><div class="pstat-l" data-en="Posts" data-hi="पोस्ट">Posts</div></div>
-          <div><div class="pstat-n">${followerCount}</div><div class="pstat-l" data-en="Followers" data-hi="फ़ॉलोअर्स">Followers</div></div>
-          <div><div class="pstat-n">${followingCount}</div><div class="pstat-l" data-en="Following" data-hi="फ़ॉलोइंग">Following</div></div>
-          <div><div class="pstat-n">${formattedEarnings}</div><div class="pstat-l" data-en="Earned" data-hi="कमाई">Earned</div></div>
-        `;
-      } else {
-        statsContainer.innerHTML = `
-          <div><div class="pstat-n">${postCount}</div><div class="pstat-l" data-en="Posts" data-hi="पोस्ट">Posts</div></div>
-          <div><div class="pstat-n">${followerCount}</div><div class="pstat-l" data-en="Followers" data-hi="फ़ॉलोअर्स">Followers</div></div>
-          <div><div class="pstat-n">${followingCount}</div><div class="pstat-l" data-en="Following" data-hi="फ़ॉलोइंग">Following</div></div>
-        `;
-      }
+      statsContainer.innerHTML = `
+        <div><div class="pstat-n">${postCount}</div><div class="pstat-l" data-en="Posts" data-hi="पोस्ट">Posts</div></div>
+        <div><div class="pstat-n">${followerCount}</div><div class="pstat-l" data-en="Followers" data-hi="फ़ॉलोअर्स">Followers</div></div>
+        <div><div class="pstat-n">${followingCount}</div><div class="pstat-l" data-en="Following" data-hi="फ़ॉlowइंग">Following</div></div>
+      `;
     }
 
   } catch (err) {
@@ -5403,21 +5617,33 @@ let activeChannel = chatChannels[0];
 let isLoading = false;
 
 function renderChatChannels() {
-  const bar = document.getElementById("activeChannelsBar");
-  if (!bar) return;
+  const listItems = document.getElementById("chatListItems");
+  if (!listItems) return;
   
-  bar.innerHTML = chatChannels.map(ch => {
+  listItems.innerHTML = chatChannels.map(ch => {
     const isActive = ch.id === activeChannel.id;
-    const activeBorder = isActive ? 'border: 2px solid var(--cyan);' : 'border: 2px solid transparent;';
-    const activeOpacity = isActive ? 'opacity: 1;' : 'opacity: 0.6;';
-    const isOnline = ch.subtitle.includes("Online") || ch.subtitle.includes("Active now");
-    const dotColor = isOnline ? '#10b981' : '#8892b0';
+    const activeClass = isActive ? 'active' : '';
+    const isOnline = ch.subtitle.includes("Online") || ch.subtitle.includes("Active now") || ch.subtitle.includes("online") || ch.subtitle.includes("Active");
+    const onlineDot = isOnline ? `<span class="chat-item-online-dot"></span>` : '';
+    
+    let lastMsg = "No messages yet";
+    if (ch.history && ch.history.length > 0) {
+      const last = ch.history[ch.history.length - 1];
+      lastMsg = last.content.replace(/<[^>]*>/g, '');
+    } else {
+      lastMsg = ch.initialMessage.replace(/<[^>]*>/g, '');
+    }
     
     return `
-      <div onclick="selectChatChannel('${ch.id}')" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; flex-shrink: 0; position: relative; ${activeOpacity} transition: all 0.2s;">
-        <div style="width: 40px; height: 40px; border-radius: 50%; ${ch.avatarStyle} display: grid; place-items: center; font-size: 13px; font-weight: bold; ${activeBorder}">${ch.avatar}</div>
-        <span style="position: absolute; bottom: 16px; right: 2px; width: 10px; height: 10px; background: ${dotColor}; border: 2px solid var(--panel); border-radius: 50%;"></span>
-        <span style="font-size: 9px; color: var(--text2); margin-top: 4px; white-space: nowrap;">${ch.name}</span>
+      <div class="chat-list-item ${activeClass}" onclick="selectChatChannel('${ch.id}')" data-name="${ch.name.toLowerCase()}">
+        <div class="chat-item-av" style="${ch.avatarStyle}">
+          ${ch.avatar}
+          ${onlineDot}
+        </div>
+        <div class="chat-item-details">
+          <div class="chat-item-name">${escapeHtml(ch.name)}</div>
+          <div class="chat-item-lastmsg">${escapeHtml(lastMsg)}</div>
+        </div>
       </div>
     `;
   }).join('');
@@ -5431,16 +5657,42 @@ function selectChatChannel(id) {
   activeChannel = channel;
   renderChatChannels();
   
-  // Update header details
-  document.getElementById("activeChatAvatar").textContent = channel.avatar;
-  document.getElementById("activeChatAvatar").style.cssText = `border-radius: 50%; width: 32px; height: 32px; display: grid; place-items: center; font-size: 13px; color: #fff; ${channel.avatarStyle}`;
+  const avatarEl = document.getElementById("activeChatAvatar");
+  avatarEl.textContent = channel.avatar;
+  const avBg = channel.avatarStyle.includes("background:") ? channel.avatarStyle.split("background:")[1].split(";")[0] : "linear-gradient(135deg, var(--blue), var(--indigo))";
+  avatarEl.style.cssText = `background: ${avBg} !important; border-radius: 50% !important; font-weight: bold; color: #fff;`;
+  
   document.getElementById("activeChatTitle").textContent = channel.name;
   document.getElementById("activeChatSub").textContent = channel.subtitle;
   document.getElementById("chatFootNote").textContent = `${channel.name} · Aethra Connected`;
   
-  // Render quick replies & messages
   renderQuickReplies();
   renderChannelMessages();
+  
+  const chatPanel = document.getElementById("chatPanel");
+  if (chatPanel) {
+    chatPanel.classList.add("show-convo");
+  }
+}
+
+function showChatListOnly() {
+  const chatPanel = document.getElementById("chatPanel");
+  if (chatPanel) {
+    chatPanel.classList.remove("show-convo");
+  }
+}
+
+function filterChatList() {
+  const query = document.getElementById("chatSearchInput").value.toLowerCase();
+  const items = document.querySelectorAll(".chat-list-item");
+  items.forEach(item => {
+    const name = item.getAttribute("data-name") || "";
+    if (name.includes(query)) {
+      item.style.display = "flex";
+    } else {
+      item.style.display = "none";
+    }
+  });
 }
 
 function renderQuickReplies() {
