@@ -3015,7 +3015,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
         <input class="finput" type="email" id="authEmail" placeholder="Enter email">
       </div>
       
-      <label class="flabel">Password</label>
+      <label class="flabel" id="passwordLabel">Password</label>
       <input class="finput" type="password" id="authPassword" placeholder="Enter password" required>
       
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: -6px; margin-bottom: 12px; font-size: 12px;">
@@ -6285,6 +6285,8 @@ function updateAuthModalDOM() {
   const submitBtn = document.getElementById("authSubmitBtn");
   const switchText = document.getElementById("authSwitchText");
   const switchLink = document.getElementById("authSwitchLink");
+  const passwordLabel = document.getElementById("passwordLabel");
+  const authPassword = document.getElementById("authPassword");
 
   if (authMode === "login") {
     title.innerHTML = "🔐 Log In";
@@ -6297,6 +6299,8 @@ function updateAuthModalDOM() {
     switchLink.textContent = "Sign Up";
     document.getElementById("googleAuthDivider").style.display = "flex";
     document.getElementById("googleBtnContainer").style.display = "flex";
+    if (passwordLabel) passwordLabel.textContent = "Password";
+    if (authPassword) authPassword.placeholder = "Enter password";
   } else {
     title.innerHTML = "📝 Sign Up";
     userLabel.textContent = "Username";
@@ -6308,6 +6312,8 @@ function updateAuthModalDOM() {
     switchLink.textContent = "Log In";
     document.getElementById("googleAuthDivider").style.display = "none";
     document.getElementById("googleBtnContainer").style.display = "none";
+    if (passwordLabel) passwordLabel.textContent = "Create Password";
+    if (authPassword) authPassword.placeholder = "Create a strong password (not your email password)";
   }
 }
 
