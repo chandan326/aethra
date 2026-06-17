@@ -5625,20 +5625,24 @@ function renderChatChannels() {
   listItems.innerHTML = chatChannels.map(ch => {
     const isActive = ch.id === activeChannel.id;
     const activeClass = isActive ? 'active' : '';
-    const isOnline = ch.subtitle.includes("Online") || ch.subtitle.includes("Active now") || ch.subtitle.includes("online") || ch.subtitle.includes("Active");
+    const isOnline = ch.subtitle && (ch.subtitle.includes("Online") || ch.subtitle.includes("Active now") || ch.subtitle.includes("online") || ch.subtitle.includes("Active"));
     const onlineDot = isOnline ? `<span class="chat-item-online-dot"></span>` : '';
     
     let lastMsg = "No messages yet";
     if (ch.history && ch.history.length > 0) {
       const last = ch.history[ch.history.length - 1];
-      lastMsg = last.content.replace(/<[^>]*>/g, '');
-    } else {
+      lastMsg = typeof last.content === "string" ? last.content.replace(/<[^>]*>/g, '') : "No messages yet";
+    } else if (typeof ch.lastMessage === "string") {
+      lastMsg = ch.lastMessage.replace(/<[^>]*>/g, '');
+    } else if (typeof ch.initialMessage === "string") {
       lastMsg = ch.initialMessage.replace(/<[^>]*>/g, '');
     }
     
+    const avStyle = ch.avatarStyle || "background: linear-gradient(135deg, var(--blue), var(--indigo)); color: #fff;";
+    
     return `
       <div class="chat-list-item ${activeClass}" onclick="selectChatChannel('${ch.id}')" data-name="${ch.name.toLowerCase()}">
-        <div class="chat-item-av" style="${ch.avatarStyle}">
+        <div class="chat-item-av" style="${avStyle}">
           ${ch.avatar}
           ${onlineDot}
         </div>
@@ -5701,7 +5705,8 @@ function selectChatChannel(id) {
   
   const avatarEl = document.getElementById("activeChatAvatar");
   avatarEl.textContent = channel.avatar;
-  const avBg = channel.avatarStyle.includes("background:") ? channel.avatarStyle.split("background:")[1].split(";")[0] : "linear-gradient(135deg, var(--blue), var(--indigo))";
+  const avStyle = channel.avatarStyle || "background: linear-gradient(135deg, var(--blue), var(--indigo)); color: #fff;";
+  const avBg = avStyle.includes("background:") ? avStyle.split("background:")[1].split(";")[0] : "linear-gradient(135deg, var(--blue), var(--indigo))";
   avatarEl.style.cssText = `background: ${avBg} !important; border-radius: 50% !important; font-weight: bold; color: #fff;`;
   
   document.getElementById("activeChatTitle").textContent = channel.name;
