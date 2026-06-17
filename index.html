@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <script>
+  document.documentElement.setAttribute('data-theme', localStorage.getItem('aethra-theme') || 'nebula');
   window.onerror = function(message, source, lineno, colno, error) {
     const div = document.createElement('div');
     div.style.position = 'fixed';
