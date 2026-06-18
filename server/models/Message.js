@@ -7,4 +7,8 @@ const messageSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+messageSchema.index({ sender: 1, recipient: 1 });
+messageSchema.index({ recipient: 1, sender: 1 });
+messageSchema.index({ createdAt: 1 });
+
 module.exports = mongoose.model("Message", messageSchema);

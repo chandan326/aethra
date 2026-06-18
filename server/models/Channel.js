@@ -10,4 +10,6 @@ const ChannelSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+ChannelSchema.index({ owner: 1 });
+
 module.exports = mongoose.model("Channel", ChannelSchema);

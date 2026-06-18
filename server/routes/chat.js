@@ -76,6 +76,25 @@ router.get("/conversations", auth, async (req, res) => {
       }
     }
 
+    // Pre-fetch all user profiles in one single query to avoid N+1 query overhead
+    const otherUserIds = [];
+    for (const [otherId] of convoMap.entries()) {
+      if (mongoose.Types.ObjectId.isValid(otherId)) {
+        otherUserIds.push(otherId);
+      }
+    }
+    const userMap = new Map();
+    if (isOnline && otherUserIds.length > 0) {
+      try {
+        const users = await User.find({ _id: { $in: otherUserIds } }).select("displayName username avatar");
+        for (const u of users) {
+          userMap.set(u._id.toString(), u);
+        }
+      } catch (dbErr) {
+        console.warn("Failed to pre-fetch conversation users:", dbErr.message);
+      }
+    }
+
     // Build the conversations list
     const list = [];
     const defaults = ["aethra", "meera", "ravi", "priya"];
@@ -99,7 +118,7 @@ router.get("/conversations", auth, async (req, res) => {
         let subtitle = "Active now · Creator";
 
         if (isValidObjectId && isOnline) {
-          const u = await User.findById(otherId);
+          const u = userMap.get(otherId);
           if (u) {
             name = u.displayName || u.username;
             avatar = name.slice(0, 2).toUpperCase();

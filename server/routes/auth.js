@@ -951,6 +951,24 @@ router.get("/dashboard", auth, async (req, res) => {
     // Fetch all posts by this creator
     const creatorPosts = await Post.find({ creator: creatorId });
 
+    // Fetch all user records who purchased any of the creator's posts in one query
+    const postIds = creatorPosts.map(p => p._id);
+    const purchases = postIds.length > 0 ? await User.find({
+      _id: { $ne: creatorId },
+      purchasedPosts: { $in: postIds }
+    }).select("purchasedPosts") : [];
+
+    // Pre-calculate sales count in memory
+    const salesMap = new Map();
+    for (const u of purchases) {
+      if (u.purchasedPosts) {
+        for (const pId of u.purchasedPosts) {
+          const key = pId.toString();
+          salesMap.set(key, (salesMap.get(key) || 0) + 1);
+        }
+      }
+    }
+
     let totalLikes = 0;
     let totalComments = 0;
     let totalSales = 0;
@@ -960,11 +978,8 @@ router.get("/dashboard", auth, async (req, res) => {
       const likesCount = post.likes ? post.likes.length : 0;
       const commentsCount = post.commentsCount || 0;
 
-      // Count how many users purchased this post
-      const sales = await User.countDocuments({
-        _id: { $ne: creatorId }, // exclude self
-        purchasedPosts: post._id
-      });
+      // Get how many users purchased this post from cached map
+      const sales = salesMap.get(post._id.toString()) || 0;
 
       totalLikes += likesCount;
       totalComments += commentsCount;

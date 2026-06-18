@@ -1095,7 +1095,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
  
 /* CREATORS */
 .creators-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px}
-.creator-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r2);padding:1.4rem 1rem;text-align:center;cursor:pointer;transition:all 0.25s}
+.creator-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r2);padding:1.4rem 1rem;text-align:center;cursor:pointer;transition:transform 0.25s cubic-bezier(0.2,0.8,0.2,1),box-shadow 0.25s ease,border-color 0.25s ease;position:relative;will-change:transform}
 .creator-card:hover{transform:translateY(-4px);border-color:rgba(59,130,246,0.2);box-shadow:0 20px 40px rgba(0,0,8,0.5)}
 .creator-av{width:60px;height:60px;border-radius:50%;margin:0 auto 0.8rem;display:flex;align-items:center;justify-content:center;font-size:1.7rem}
 .creator-name{font-size:13px;font-weight:700;margin-bottom:2px;font-family:var(--font2)}
@@ -5134,16 +5134,38 @@ window.addEventListener('click', e => {
   }
 });
 
-// Delegated mousemove listener for premium spotlight border tracking
-document.addEventListener("mousemove", (e) => {
+// Optimized delegated spotlight card mouse tracking (prevents layout thrashing by caching bounding rect coordinates on enter)
+let activeCardOffsetLeft = 0;
+let activeCardOffsetTop = 0;
+let activeHoveredCard = null;
+
+document.addEventListener("mouseover", (e) => {
   const card = e.target.closest(".pcard, .creator-card, .mkt-card, .scard, .exp-item");
-  if (!card) return;
-  const rect = card.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  card.style.setProperty("--mouse-x", `${x}px`);
-  card.style.setProperty("--mouse-y", `${y}px`);
+  if (card && card !== activeHoveredCard) {
+    activeHoveredCard = card;
+    const rect = card.getBoundingClientRect();
+    activeCardOffsetLeft = rect.left + window.scrollX;
+    activeCardOffsetTop = rect.top + window.scrollY;
+  }
 });
+
+document.addEventListener("mouseout", (e) => {
+  const card = e.target.closest(".pcard, .creator-card, .mkt-card, .scard, .exp-item");
+  if (card && (!e.relatedTarget || !card.contains(e.relatedTarget))) {
+    if (activeHoveredCard === card) {
+      activeHoveredCard = null;
+    }
+  }
+});
+
+document.addEventListener("mousemove", (e) => {
+  if (activeHoveredCard) {
+    const x = e.pageX - activeCardOffsetLeft;
+    const y = e.pageY - activeCardOffsetTop;
+    activeHoveredCard.style.setProperty("--mouse-x", `${x}px`);
+    activeHoveredCard.style.setProperty("--mouse-y", `${y}px`);
+  }
+}, { passive: true });
 
 async function switchPTab(el, tab) {
   document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));

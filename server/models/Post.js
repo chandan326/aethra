@@ -15,4 +15,8 @@ const PostSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+PostSchema.index({ creator: 1, visibility: 1 });
+PostSchema.index({ createdAt: -1 });
+PostSchema.index({ visibility: 1, contentType: 1, pricing: 1, createdAt: -1 });
+
 module.exports = mongoose.model("Post", PostSchema);
