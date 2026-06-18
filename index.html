@@ -3464,7 +3464,7 @@ const C=['#6366f1','#3b82f6','#06b6d4','#14b8a6','#0ea5e9','#818cf8','#38bdf8','
 const gc=i=>C[i%C.length];
 
 let currentUser = null;
-let token = localStorage.getItem("token") || null;
+let token = localStorage.getItem("token") || localStorage.getItem("aethra_token") || null;
 let authMode = "login";
 let selectedFile = null;
 
@@ -3566,12 +3566,8 @@ async function populate() {
       } else {
         const savedUser = currentUser;
         if (savedUser && (savedUser.id === "mock_user_id" || savedUser._id === "mock_user_id" || (typeof (savedUser.id || savedUser._id) === "string" && (savedUser.id || savedUser._id).startsWith("mock_")))) {
-          console.warn("MongoDB is Online. Clearing offline mockup user session.");
-          localStorage.removeItem("token");
-          token = null;
-          currentUser = null;
-          updateAuthUI();
-          toast("🔒 Offline session ended. Please log in or sign up!");
+          console.warn("MongoDB is Online. Refreshing session with persistent database user.");
+          await checkAuth();
         }
       }
     }
@@ -6019,9 +6015,13 @@ async function checkAuth() {
     });
     if (res.ok) {
       currentUser = await res.json();
-    } else {
+      localStorage.setItem("token", token);
+      localStorage.setItem("aethra_token", token);
+    } else if (res.status === 401) {
       localStorage.removeItem("token");
+      localStorage.removeItem("aethra_token");
       token = null;
+      currentUser = null;
     }
   } catch (err) {
     console.error("Auth check failed:", err);
@@ -6214,7 +6214,9 @@ async function handleForgotPasswordNewSubmit(e) {
       });
       const loginData = await loginRes.json();
       if (loginRes.ok) {
-        localStorage.setItem("aethra_token", loginData.token);
+        token = loginData.token;
+        localStorage.setItem("token", token);
+        localStorage.setItem("aethra_token", token);
         localStorage.setItem("aethra_user", JSON.stringify(loginData.user));
         currentUser = loginData.user;
         checkAuth();
@@ -6372,6 +6374,7 @@ async function handleAuthSubmit(e) {
     
     token = data.token;
     localStorage.setItem("token", token);
+    localStorage.setItem("aethra_token", token);
     currentUser = data.user;
     closeAuth();
     toast(`🎉 Welcome back, ${currentUser.username}!`);
@@ -6418,6 +6421,7 @@ async function handleOtpSubmit(e) {
     
     token = data.token;
     localStorage.setItem("token", token);
+    localStorage.setItem("aethra_token", token);
     currentUser = data.user;
     closeAuth();
     toast("🎉 Email verified! Welcome to Aethra!");
@@ -6492,6 +6496,7 @@ async function handleGoogleCredentialResponse(response) {
     
     token = data.token;
     localStorage.setItem("token", token);
+    localStorage.setItem("aethra_token", token);
     currentUser = data.user;
     closeAuth();
     toast(`🎉 Sign-in successful! Welcome, ${currentUser.displayName || currentUser.username}!`);
@@ -6545,6 +6550,7 @@ function logout() {
   token = null;
   currentUser = null;
   localStorage.removeItem("token");
+  localStorage.removeItem("aethra_token");
   toast("🔒 Logged out successfully");
   updateAuthUI();
   populate();
