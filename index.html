@@ -5076,6 +5076,10 @@ async function submitPost() {
       await renderProfilePage();
 
     } else {
+      if (res.status === 401) {
+        handleInvalidSession();
+        return;
+      }
       const errData = await res.json().catch(() => ({}));
       toast("⚠️ Upload failed: " + (errData.message || "Server error. Please try again."));
       if (submitBtn) {
@@ -6026,6 +6030,18 @@ async function sendChat(){
   }
 }
 
+function handleInvalidSession() {
+  console.warn("Invalid session token detected. Clearing auth state.");
+  localStorage.removeItem("token");
+  localStorage.removeItem("aethra_token");
+  localStorage.removeItem("aethra_user");
+  token = null;
+  currentUser = null;
+  updateAuthUI();
+  toast("🔑 Session expired or account invalid. Please log in again!");
+  openAuth();
+}
+
 async function checkAuth() {
   if (!token) {
     updateAuthUI();
@@ -6040,10 +6056,8 @@ async function checkAuth() {
       localStorage.setItem("token", token);
       localStorage.setItem("aethra_token", token);
     } else if (res.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("aethra_token");
-      token = null;
-      currentUser = null;
+      handleInvalidSession();
+      return;
     }
   } catch (err) {
     console.error("Auth check failed:", err);
@@ -6922,7 +6936,11 @@ async function submitComment() {
         renderHomeFeed();
       }
     } else {
-      const err = await res.json();
+      if (res.status === 401) {
+        handleInvalidSession();
+        return;
+      }
+      const err = await res.json().catch(() => ({}));
       toast("⚠️ " + (err.message || "Failed to post comment"));
     }
   } catch (err) {

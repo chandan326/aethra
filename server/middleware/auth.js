@@ -46,6 +46,17 @@ module.exports = async (req, res, next) => {
       }
     }
 
+    if (state === 1 && !isMockUser) {
+      try {
+        const userExists = await User.findById(decoded.id).select("_id");
+        if (!userExists) {
+          return res.status(401).json({ message: "User account no longer exists in database" });
+        }
+      } catch (dbErr) {
+        console.error("Error verifying user existence in auth middleware:", dbErr);
+      }
+    }
+
     req.user = decoded;
     next();
   } catch (err) {
