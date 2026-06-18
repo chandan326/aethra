@@ -70,7 +70,10 @@ router.get("/conversations", auth, async (req, res) => {
 
     const convoMap = new Map();
     for (const msg of userMessages) {
-      const otherId = msg.sender.toString() === userId ? msg.recipient : msg.sender.toString();
+      let otherId = msg.sender.toString() === userId ? msg.recipient : msg.sender.toString();
+      if (otherId === "60c72b2f9b1d8a001c8c8c8c") {
+        otherId = "aethra";
+      }
       if (!convoMap.has(otherId)) {
         convoMap.set(otherId, msg);
       }
@@ -108,7 +111,8 @@ router.get("/conversations", auth, async (req, res) => {
           avatar: "Ae",
           avatarStyle: "background: linear-gradient(135deg, var(--blue), var(--indigo)); color: #fff;",
           lastMessage: lastMsg.content,
-          lastMessageTime: lastMsg.createdAt
+          lastMessageTime: lastMsg.createdAt,
+          lastMessageSender: lastMsg.sender.toString() === "60c72b2f9b1d8a001c8c8c8c" ? "aethra" : lastMsg.sender.toString()
         });
       } else {
         const isValidObjectId = mongoose.Types.ObjectId.isValid(otherId);
@@ -150,7 +154,8 @@ router.get("/conversations", auth, async (req, res) => {
           avatar,
           avatarStyle,
           lastMessage: lastMsg.content,
-          lastMessageTime: lastMsg.createdAt
+          lastMessageTime: lastMsg.createdAt,
+          lastMessageSender: lastMsg.sender.toString()
         });
       }
     }
@@ -191,7 +196,8 @@ router.get("/conversations", auth, async (req, res) => {
           avatar,
           avatarStyle,
           lastMessage: initialMessage,
-          lastMessageTime: new Date(Date.now() - 3600000) // 1 hour ago placeholder
+          lastMessageTime: new Date(Date.now() - 3600000), // 1 hour ago placeholder
+          lastMessageSender: defId
         });
       }
     });
@@ -219,12 +225,22 @@ router.get("/messages", auth, async (req, res) => {
 
     let messages = [];
     if (isOnline) {
+      const targetChatWith = chatWith === "aethra" ? "60c72b2f9b1d8a001c8c8c8c" : chatWith;
       messages = await Message.find({
         $or: [
-          { sender: userId, recipient: chatWith },
-          { sender: chatWith, recipient: userId }
+          { sender: userId, recipient: targetChatWith },
+          { sender: targetChatWith, recipient: userId }
         ]
       }).sort({ createdAt: 1 });
+
+      // Map static AI ID back to "aethra" for frontend matching
+      messages = messages.map(m => {
+        const msgObj = m.toObject();
+        if (msgObj.sender && msgObj.sender.toString() === "60c72b2f9b1d8a001c8c8c8c") {
+          msgObj.sender = "aethra";
+        }
+        return msgObj;
+      });
     } else {
       messages = global.mockMessages
         .filter(m => (m.sender === userId && m.recipient === chatWith) || (m.sender === chatWith && m.recipient === userId))
@@ -300,9 +316,10 @@ router.post("/messages", auth, async (req, res) => {
           recipient: userId,
           content: replyText
         });
-        // Override sender display label in frontend using the 'aethra' string match
-        botMsg.sender = "aethra"; 
-        savedBotMsg = await botMsg.save();
+        await botMsg.save();
+        
+        savedBotMsg = botMsg.toObject();
+        savedBotMsg.sender = "aethra"; 
       } else {
         savedBotMsg = {
           _id: new mongoose.Types.ObjectId().toString(),

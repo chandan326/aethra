@@ -1147,7 +1147,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
 .chat-fab{position:fixed;bottom:2rem;right:2rem;z-index:900;width:54px;height:54px;background:rgba(15,23,42,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid rgba(99,102,241,0.45);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 32px rgba(0,0,0,0.5),0 0 15px rgba(99,102,241,0.2);transition:all 0.3s}
 .chat-fab:hover{transform:scale(1.1);box-shadow:0 12px 40px rgba(99,102,241,0.45);border-color:rgba(99,102,241,0.8)}
 .chat-fab svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.chat-badge{position:absolute;top:-2px;right:-2px;width:14px;height:14px;background:var(--cyan);border-radius:50%;border:2px solid var(--bg);animation:pulseBlue 2s infinite}
+.chat-badge{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;background:var(--cyan);border-radius:10px;border:2px solid var(--bg);animation:pulseBlue 2s infinite;display:none;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#fff;padding:0 3px;box-sizing:content-box}
  
 /* CHAT PANEL */
 @keyframes chatSlideUp {
@@ -5678,6 +5678,116 @@ function renderChatChannels() {
 }
 
 let chatPollInterval = null;
+let chatPollTimeout = null;
+
+function playNotificationSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12); // A5
+    
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 0.35);
+  } catch (err) {
+    console.warn("Could not play notification tone:", err);
+  }
+}
+
+function markChannelAsRead(chId) {
+  if (!chId) return;
+  const readStatus = JSON.parse(localStorage.getItem("aethra_chat_read") || "{}");
+  readStatus[chId] = new Date().toISOString();
+  localStorage.setItem("aethra_chat_read", JSON.stringify(readStatus));
+  
+  if (chatChannels && chatChannels.length > 0) {
+    updateUnreadBadges(chatChannels);
+  }
+}
+
+function updateUnreadBadges(convoList) {
+  if (!convoList) return;
+  let totalUnread = 0;
+  const p = document.getElementById("chatPanel");
+  const activeOpen = p && p.classList.contains("open");
+  const readStatus = JSON.parse(localStorage.getItem("aethra_chat_read") || "{}");
+  const myId = currentUser ? (currentUser.id || currentUser._id) : null;
+
+  convoList.forEach(ch => {
+    const chId = ch.id;
+    const isActive = activeOpen && activeChannel && activeChannel.id === chId;
+    
+    const lastSender = ch.lastMessageSender;
+    const isSentByMe = myId && lastSender && lastSender.toString() === myId.toString();
+    
+    const lastTime = ch.lastMessageTime ? new Date(ch.lastMessageTime).getTime() : 0;
+    const lastReadTime = readStatus[chId] ? new Date(readStatus[chId]).getTime() : 0;
+    
+    if (!isSentByMe && !isActive && lastTime > lastReadTime) {
+      totalUnread++;
+      
+      const lastToastTime = window.lastToastedMessageTime || 0;
+      if (lastTime > lastToastTime) {
+        window.lastToastedMessageTime = lastTime;
+        if (window.chatInitCompleted) {
+          playNotificationSound();
+          toast(`💬 New message from ${ch.name}: "${ch.lastMessage.substring(0, 30)}..."`);
+        }
+      }
+    }
+  });
+
+  const badge = document.querySelector(".chat-badge");
+  if (badge) {
+    if (totalUnread > 0) {
+      badge.style.display = "flex";
+      badge.textContent = totalUnread;
+    } else {
+      badge.style.display = "none";
+    }
+  }
+}
+
+async function runChatPoll() {
+  if (!token) {
+    if (chatPollTimeout) clearTimeout(chatPollTimeout);
+    return;
+  }
+  
+  const p = document.getElementById("chatPanel");
+  const panelOpen = p && p.classList.contains("open");
+  
+  try {
+    if (panelOpen && activeChannel) {
+      await fetchMessagesForActiveChannel();
+    }
+    
+    await initializeChatChannels();
+    updateUnreadBadges(chatChannels);
+    renderChatChannels();
+  } catch (err) {
+    console.error("Chat polling error:", err);
+  }
+  
+  const delay = panelOpen ? 1500 : 4000;
+  chatPollTimeout = setTimeout(runChatPoll, delay);
+}
+
+function startChatPolling() {
+  if (chatPollTimeout) clearTimeout(chatPollTimeout);
+  runChatPoll().then(() => {
+    window.chatInitCompleted = true;
+  });
+}
 
 async function fetchMessagesForActiveChannel() {
   if (!token || !activeChannel) return;
@@ -5695,6 +5805,7 @@ async function fetchMessagesForActiveChannel() {
           time: fmtTime(new Date(m.createdAt))
         };
       });
+      markChannelAsRead(activeChannel.id);
       renderChannelMessages();
     }
   } catch (err) {
@@ -5710,7 +5821,9 @@ async function initializeChatChannels() {
     });
     if (res.ok) {
       const data = await res.json();
-      chatChannels = data;
+      // Preserve any unsaved/mock DMs that we started in the current session
+      const mockDms = chatChannels.filter(ch => !data.some(d => d.id === ch.id) && ch.id !== "aethra");
+      chatChannels = [...mockDms, ...data];
     }
   } catch (err) {
     console.error("Error loading chat channels:", err);
@@ -5723,6 +5836,8 @@ function selectChatChannel(id) {
   if (!channel) return;
   
   activeChannel = channel;
+  window.forceChatScrollToBottom = true;
+  markChannelAsRead(id);
   renderChatChannels();
   
   const avatarEl = document.getElementById("activeChatAvatar");
@@ -5777,6 +5892,7 @@ function renderChannelMessages() {
   const msgs = document.getElementById("chatMsgs");
   if (!msgs) return;
   
+  const isScrolledToBottom = msgs.scrollHeight - msgs.clientHeight - msgs.scrollTop < 60;
   const history = activeChannel.history || [];
   
   if (history.length === 0 && activeChannel.initialMessage) {
@@ -5816,7 +5932,11 @@ function renderChannelMessages() {
       </div>
     </div>
   `;
-  msgs.scrollTop = msgs.scrollHeight;
+  
+  if (isScrolledToBottom || window.forceChatScrollToBottom) {
+    msgs.scrollTop = msgs.scrollHeight;
+    window.forceChatScrollToBottom = false;
+  }
 }
 
 function toggleChat(){
@@ -5837,20 +5957,10 @@ function toggleChat(){
       selectChatChannel(activeChannel.id);
     });
     
-    // Start real-time messages & DMs polling (every 1.5 seconds)
-    clearInterval(chatPollInterval);
-    chatPollInterval = setInterval(async () => {
-      if (p.classList.contains('open') && activeChannel) {
-        await fetchMessagesForActiveChannel();
-        await initializeChatChannels();
-        renderChatChannels();
-      }
-    }, 1500);
-    
+    startChatPolling();
     document.getElementById('chatInput').focus();
   } else {
-    // Clear polling interval when panel is closed
-    clearInterval(chatPollInterval);
+    startChatPolling();
   }
 }
 
@@ -5897,17 +6007,7 @@ function startChatWithCreator(creatorId, username) {
     chatChannels.unshift(channel);
   }
   
-  // Setup real-time polling interval if it hasn't been started yet
-  if (!chatPollInterval) {
-    chatPollInterval = setInterval(async () => {
-      if (p.classList.contains('open') && activeChannel) {
-        await fetchMessagesForActiveChannel();
-        await initializeChatChannels();
-        renderChatChannels();
-      }
-    }, 1500);
-  }
-  
+  startChatPolling();
   selectChatChannel(targetChanId);
   
   document.getElementById('chatInput').value = `Hi @${username}, I want to learn more about your creations!`;
@@ -5988,6 +6088,7 @@ async function sendChat(){
   // Optimistically show user message
   const nowStr = fmtTime(new Date());
   activeChannel.history.push({role:'user',content:text,time:nowStr});
+  window.forceChatScrollToBottom = true;
   renderChannelMessages();
   
   // Hide quick replies
@@ -6014,6 +6115,7 @@ async function sendChat(){
     
     if (res.ok) {
       const data = await res.json();
+      markChannelAsRead(activeChannel.id);
       await fetchMessagesForActiveChannel();
       await initializeChatChannels();
       renderChatChannels();
@@ -6055,6 +6157,7 @@ async function checkAuth() {
       currentUser = await res.json();
       localStorage.setItem("token", token);
       localStorage.setItem("aethra_token", token);
+      startChatPolling();
     } else if (res.status === 401) {
       handleInvalidSession();
       return;
@@ -6415,6 +6518,7 @@ async function handleAuthSubmit(e) {
     closeAuth();
     toast(`🎉 Welcome back, ${currentUser.username}!`);
     updateAuthUI();
+    startChatPolling();
     await populate();
   } catch (err) {
     if (err.name === "AbortError") {
@@ -6462,6 +6566,7 @@ async function handleOtpSubmit(e) {
     closeAuth();
     toast("🎉 Email verified! Welcome to Aethra!");
     updateAuthUI();
+    startChatPolling();
     await populate();
   } catch (err) {
     toast("⚠️ Verification error. Please try again.");
@@ -6537,6 +6642,7 @@ async function handleGoogleCredentialResponse(response) {
     closeAuth();
     toast(`🎉 Sign-in successful! Welcome, ${currentUser.displayName || currentUser.username}!`);
     updateAuthUI();
+    startChatPolling();
     await populate();
   } catch (err) {
     toast("⚠️ Google verification connection failed.");
@@ -6587,6 +6693,10 @@ function logout() {
   currentUser = null;
   localStorage.removeItem("token");
   localStorage.removeItem("aethra_token");
+  if (chatPollInterval) {
+    clearInterval(chatPollInterval);
+    chatPollInterval = null;
+  }
   toast("🔒 Logged out successfully");
   updateAuthUI();
   populate();
