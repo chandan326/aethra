@@ -196,7 +196,7 @@ router.get("/conversations", auth, async (req, res) => {
           avatar,
           avatarStyle,
           lastMessage: initialMessage,
-          lastMessageTime: new Date(Date.now() - 3600000), // 1 hour ago placeholder
+          lastMessageTime: new Date("2026-06-15T12:00:00Z"), // stable placeholder
           lastMessageSender: defId
         });
       }
