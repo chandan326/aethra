@@ -4946,7 +4946,17 @@ function selPrice(el,t){document.querySelectorAll('.price-opt').forEach(o=>o.cla
 
 function fileSelected(input) {
   if (input.files && input.files[0]) {
-    selectedFile = input.files[0];
+    const file = input.files[0];
+    const allowedTypes = /jpeg|jpg|png|gif|webp/i;
+    const extension = file.name.split('.').pop().toLowerCase();
+    
+    if (!allowedTypes.test(file.type) && !allowedTypes.test(extension)) {
+      toast("⚠️ Only image files (PNG, JPG, WEBP) and GIFs are allowed!");
+      input.value = "";
+      return;
+    }
+    
+    selectedFile = file;
     document.getElementById("fileLabel").textContent = `Selected: ${selectedFile.name} (${(selectedFile.size/1024/1024).toFixed(2)} MB)`;
   }
 }
@@ -5007,6 +5017,20 @@ async function submitPost() {
   if (selectedFile && selectedFile.type.startsWith("image/") && selectedFile.type !== "image/gif") {
     try { fileToUpload = await compressImage(selectedFile); }
     catch (err) { console.error("Compression failed, uploading original:", err); }
+  }
+
+  // Size limit validation for Vercel payloads (4.5MB = 4.5 * 1024 * 1024 bytes)
+  if (fileToUpload && fileToUpload.size > 4.2 * 1024 * 1024) {
+    if (selectedFile.type === "image/gif") {
+      toast("⚠️ GIFs must be under 4.5MB due to serverless limits. Please optimize your GIF size.");
+    } else {
+      toast("⚠️ File size exceeds the 4.5MB serverless limit. Please choose a smaller image.");
+    }
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = origBtnText || 'Publish Post';
+    }
+    return;
   }
 
   const formData = new FormData();
@@ -6029,7 +6053,7 @@ function compressImage(file) {
         const canvas = document.createElement("canvas");
         let width = img.width;
         let height = img.height;
-        const maxDim = 800;
+        const maxDim = 1920;
         
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -6046,17 +6070,21 @@ function compressImage(file) {
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
         
+        const outputType = file.type === "image/png" ? "image/png" : "image/jpeg";
+        const quality = outputType === "image/jpeg" ? 0.8 : undefined;
+        
         canvas.toBlob((blob) => {
           if (blob) {
-            const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
-              type: "image/jpeg",
+            const ext = outputType === "image/png" ? ".png" : ".jpg";
+            const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ext, {
+              type: outputType,
               lastModified: Date.now()
             });
             resolve(compressedFile);
           } else {
             resolve(file);
           }
-        }, "image/jpeg", 0.7);
+        }, outputType, quality);
       };
       img.onerror = () => resolve(file);
     };
@@ -7752,6 +7780,35 @@ function setupQrCodeUploadListeners() {
   });
 }
 
+function setupPostUploadListeners() {
+  const zone = document.querySelector("#panelUploadFile .drop-zone");
+  const fileInput = document.getElementById("fileInput");
+
+  if (!zone || !fileInput) return;
+
+  zone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    zone.style.borderColor = "var(--blue)";
+    zone.style.background = "rgba(59, 130, 246, 0.08)";
+  });
+
+  zone.addEventListener("dragleave", (e) => {
+    e.preventDefault();
+    zone.style.borderColor = "rgba(255,255,255,0.15)";
+    zone.style.background = "rgba(255,255,255,0.03)";
+  });
+
+  zone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    zone.style.borderColor = "rgba(255,255,255,0.15)";
+    zone.style.background = "rgba(255,255,255,0.03)";
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      fileInput.files = e.dataTransfer.files;
+      fileSelected(fileInput);
+    }
+  });
+}
+
 async function handleProfileUpdate(e) {
   e.preventDefault();
   const displayName = document.getElementById("editDisplayName").value.trim();
@@ -7761,6 +7818,12 @@ async function handleProfileUpdate(e) {
 
   try {
     toast("⏳ Updating profile...");
+    
+    if (selectedQrFile && selectedQrFile.size > 4.2 * 1024 * 1024) {
+      toast("⚠️ QR Code image must be under 4.5MB.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("displayName", displayName);
     formData.append("location", location);
@@ -7889,6 +7952,7 @@ async function handleProfileFollow(creatorId, btn) {
 // Call updateCartBadge initially
 updateCartBadge();
 setupQrCodeUploadListeners();
+setupPostUploadListeners();
 setTheme(localStorage.getItem('aethra-theme') || 'nebula');
 
 /* DEVELOPER DIAGNOSTICS HUD JS */
