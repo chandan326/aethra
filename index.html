@@ -6572,6 +6572,12 @@ async function handleAuthSubmit(e) {
       toast("📧 Verification code sent to your email!");
       return;
     }
+
+    if (data.accountExists) {
+      toast("💡 " + data.message);
+      setAuthMode("login");
+      return;
+    }
     
     if (!res.ok) {
       toast("⚠️ " + (data.message || "Authentication failed"));

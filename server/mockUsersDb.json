@@ -357,5 +357,27 @@
     "isEmailVerified": false,
     "emailVerificationOtp": "683429",
     "emailVerificationOtpExpires": 1785436388670
+  },
+  "mock_user_1785437058466": {
+    "_id": "mock_user_1785437058466",
+    "id": "mock_user_1785437058466",
+    "username": "mahesh_student",
+    "email": "mahesh.25gcebcsaiml135@galgotiacollege.edu",
+    "password": "$2b$10$VFbR20JUNxMyFi/FhrUW9./FfKqAatYM7tBoBrAY5IcmVbls.29MS",
+    "displayName": "mahesh_student",
+    "avatar": "MA",
+    "bio": "Aethra User",
+    "location": "India 🇮🇳",
+    "upiId": "user@okaxis",
+    "followers": [],
+    "following": [],
+    "purchasedPosts": [],
+    "verified": false,
+    "earnings": 0,
+    "hasPremium": false,
+    "subscriptionPlan": "",
+    "isEmailVerified": true,
+    "emailVerificationOtp": "",
+    "emailVerificationOtpExpires": 1785437658466
   }
 }
