@@ -73,12 +73,14 @@ const postRoutes    = require("./routes/posts");
 const channelRoutes = require("./routes/channels");
 const chatRoutes    = require("./routes/chat");
 const supportRoutes = require("./routes/support");
+const paymentRoutes = require("./routes/payment");
 
 app.use("/api/auth",     authRoutes);
 app.use("/api/posts",    postRoutes);
 app.use("/api/channels", channelRoutes);
 app.use("/api/chat",     chatRoutes);
 app.use("/api/support",  supportRoutes);
+app.use("/api/payment",  paymentRoutes);
 
 app.get("/api/db-status", (req, res) => {
   const state = mongoose.connection.readyState;

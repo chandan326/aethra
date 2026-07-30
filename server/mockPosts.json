@@ -17,9 +17,10 @@
       "hasPremium": true
     },
     "likes": [
-      "u1"
+      "u1",
+      "mock_user_1785415219836"
     ],
-    "commentsCount": 89,
+    "commentsCount": 90,
     "visibility": "public"
   },
   {

@@ -33,7 +33,11 @@
       "mock_user_id"
     ],
     "following": [],
-    "purchasedPosts": []
+    "purchasedPosts": [
+      "p1"
+    ],
+    "password": "$2b$10$DtxL0snUpDLeSQunwbuQPeZSHsgOmUt1ZJOvMV1nDQ08I.2z4eoyK",
+    "earnings": 99
   },
   "u2": {
     "id": "u2",
@@ -310,5 +314,48 @@
     "isEmailVerified": false,
     "emailVerificationOtp": "305380",
     "emailVerificationOtpExpires": 1785414015921
+  },
+  "mock_user_1785415219836": {
+    "_id": "mock_user_1785415219836",
+    "id": "mock_user_1785415219836",
+    "username": "audit_user_19807",
+    "email": "test_audit_1785415219807@gmail.com",
+    "displayName": "Audited User",
+    "avatar": "AU",
+    "bio": "Automated test user",
+    "location": "India 🇮🇳",
+    "upiId": "audited@okaxis",
+    "followers": [],
+    "following": [],
+    "purchasedPosts": [],
+    "verified": false,
+    "earnings": 0,
+    "hasPremium": false,
+    "subscriptionPlan": "",
+    "isEmailVerified": false,
+    "emailVerificationOtp": "723092",
+    "emailVerificationOtpExpires": 1785415819836
+  },
+  "mock_user_1785435788669": {
+    "_id": "mock_user_1785435788669",
+    "id": "mock_user_1785435788669",
+    "username": "testuser_1785435788507",
+    "email": "testuser_1785435788507@gmail.com",
+    "password": "$2b$10$dP0BIdKkMDmt03wgubmyVOSp0Zne2aKqVjeJ6Gw3oIYmfXYItAi7.",
+    "displayName": "testuser_1785435788507",
+    "avatar": "TE",
+    "bio": "Aethra User",
+    "location": "India 🇮🇳",
+    "upiId": "user@okaxis",
+    "followers": [],
+    "following": [],
+    "purchasedPosts": [],
+    "verified": false,
+    "earnings": 0,
+    "hasPremium": false,
+    "subscriptionPlan": "",
+    "isEmailVerified": false,
+    "emailVerificationOtp": "683429",
+    "emailVerificationOtpExpires": 1785436388670
   }
 }

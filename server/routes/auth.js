@@ -144,6 +144,7 @@ function escapeRegex(text) {
 }
 
 // Register
+// Register
 router.post("/register", async (req, res) => {
   console.log("🔥 REGISTER ROUTE HIT");
   console.log("Mongo State:", mongoose.connection.readyState);
@@ -157,6 +158,7 @@ router.post("/register", async (req, res) => {
 
   const cleanEmail = email ? email.toString().toLowerCase().trim() : "";
   const cleanUsername = username.toString().trim();
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   if (mongoose.connection.readyState !== 1) {
     let existingUser = findMockUser(cleanEmail) || findMockUser(cleanUsername);
@@ -171,6 +173,7 @@ router.post("/register", async (req, res) => {
       id: newId,
       username: cleanUsername,
       email: cleanEmail,
+      password: hashedPassword,
       displayName: cleanUsername,
       avatar: cleanUsername.slice(0, 2).toUpperCase(),
       bio: "Aethra User",
@@ -214,7 +217,6 @@ router.post("/register", async (req, res) => {
     });
     if (user) return res.status(400).json({ message: "Username or email already exists" });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOtp();
     const otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
@@ -229,6 +231,19 @@ router.post("/register", async (req, res) => {
       emailVerificationOtpExpires: otpExpires
     });
     await user.save();
+
+    // Also update mock cache for consistency
+    mockUsersDb[user._id.toString()] = {
+      _id: user._id.toString(),
+      id: user._id.toString(),
+      username: cleanUsername,
+      email: cleanEmail,
+      password: hashedPassword,
+      displayName: cleanUsername,
+      avatar: user.avatar,
+      isEmailVerified: false
+    };
+    saveMockUsers();
 
     // Send verification email
     await sendVerificationEmail(cleanEmail, otp);
@@ -257,15 +272,18 @@ router.post("/login", async (req, res) => {
 
   const cleanInput = username.toString().trim();
 
+  // If MongoDB is offline, verify credentials using mockUsersDb
   if (mongoose.connection.readyState !== 1) {
     let foundUser = findMockUser(cleanInput);
     if (!foundUser) {
+      const hashedPassword = await bcrypt.hash(password, 10);
       const newId = "mock_user_" + Date.now();
       mockUsersDb[newId] = {
         _id: newId,
         id: newId,
         username: cleanInput,
-        email: cleanInput.includes("@") ? cleanInput.toLowerCase() : "",
+        email: cleanInput.includes("@") ? cleanInput.toLowerCase() : `${cleanInput}@aethra.app`,
+        password: hashedPassword,
         displayName: cleanInput,
         avatar: cleanInput.slice(0, 2).toUpperCase(),
         bio: "Aethra User",
@@ -282,6 +300,25 @@ router.post("/login", async (req, res) => {
       };
       foundUser = mockUsersDb[newId];
       saveMockUsers();
+    } else {
+      if (foundUser.password) {
+        let isMatch = false;
+        if (foundUser.password.startsWith("$2a$") || foundUser.password.startsWith("$2b$")) {
+          isMatch = await bcrypt.compare(password, foundUser.password);
+        } else {
+          isMatch = (password === foundUser.password);
+          if (isMatch) {
+            foundUser.password = await bcrypt.hash(password, 10);
+            saveMockUsers();
+          }
+        }
+        if (!isMatch) {
+          return res.status(400).json({ message: "Invalid credentials. Password incorrect." });
+        }
+      } else {
+        foundUser.password = await bcrypt.hash(password, 10);
+        saveMockUsers();
+      }
     }
     const token = jwt.sign({ id: foundUser.id, username: foundUser.username }, JWT_SECRET, { expiresIn: "7d" });
     saveMockUsers();
@@ -289,38 +326,100 @@ router.post("/login", async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({
+    // 1. Search in MongoDB Database
+    let user = await User.findOne({
       $or: [
         { email: { $regex: new RegExp("^" + escapeRegex(cleanInput) + "$", "i") } },
         { username: { $regex: new RegExp("^" + escapeRegex(cleanInput) + "$", "i") } }
       ]
     });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(400).json({ message: "Invalid credentials" });
+
+    // 2. Fallback: If user created during offline/mock mode, sync user into MongoDB
+    if (!user) {
+      const mockUser = findMockUser(cleanInput);
+      if (mockUser) {
+        let isPasswordCorrect = false;
+        if (mockUser.password) {
+          if (mockUser.password.startsWith("$2a$") || mockUser.password.startsWith("$2b$")) {
+            isPasswordCorrect = await bcrypt.compare(password, mockUser.password);
+          } else {
+            isPasswordCorrect = (password === mockUser.password);
+          }
+        } else {
+          isPasswordCorrect = true; // Auto provision if first time
+        }
+
+        if (isPasswordCorrect) {
+          const hashedPassword = mockUser.password && (mockUser.password.startsWith("$2a$") || mockUser.password.startsWith("$2b$"))
+            ? mockUser.password
+            : await bcrypt.hash(password, 10);
+
+          user = new User({
+            username: mockUser.username || cleanInput,
+            email: mockUser.email || (cleanInput.includes("@") ? cleanInput.toLowerCase() : `${cleanInput}@aethra.app`),
+            password: hashedPassword,
+            displayName: mockUser.displayName || mockUser.username || cleanInput,
+            avatar: mockUser.avatar || cleanInput.slice(0, 2).toUpperCase(),
+            isEmailVerified: true
+          });
+          await user.save();
+        }
+      }
+    }
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials. User not found." });
+    }
+
+    // Verify Password
+    let isMatch = false;
+    if (user.password.startsWith("$2a$") || user.password.startsWith("$2b$")) {
+      isMatch = await bcrypt.compare(password, user.password);
+    } else {
+      isMatch = (password === user.password);
+      if (isMatch) {
+        user.password = await bcrypt.hash(password, 10);
+        await user.save();
+      }
+    }
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials. Incorrect password." });
     }
 
     // Check email verification status
     if (!user.isEmailVerified) {
-      const otp = generateOtp();
-      user.emailVerificationOtp = otp;
-      user.emailVerificationOtpExpires = Date.now() + 10 * 60 * 1000;
-      await user.save();
+      // If email server credentials are not configured, auto-verify for convenience
+      if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+        user.isEmailVerified = true;
+        await user.save();
+      } else {
+        const otp = generateOtp();
+        user.emailVerificationOtp = otp;
+        user.emailVerificationOtpExpires = Date.now() + 10 * 60 * 1000;
+        await user.save();
 
-      await sendVerificationEmail(user.email, otp);
+        await sendVerificationEmail(user.email, otp);
 
-      const responsePayload = {
-        message: "Please verify your email address to log in. Verification code sent.",
-        verificationRequired: true,
-        email: user.email
-      };
+        const responsePayload = {
+          message: "Please verify your email address to log in. Verification code sent.",
+          verificationRequired: true,
+          email: user.email
+        };
 
-      return res.status(403).json(responsePayload);
+        return res.status(403).json(responsePayload);
+      }
     }
 
     const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: "7d" });
     const userObj = user.toObject();
     delete userObj.password;
     userObj.id = user._id;
+
+    // Cache in mock db for seamless offline switching
+    mockUsersDb[user._id.toString()] = { ...userObj, password: user.password };
+    saveMockUsers();
+
     res.json({ token, user: userObj });
   } catch (err) {
     res.status(500).json({ message: err.message });

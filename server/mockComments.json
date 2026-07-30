@@ -33,5 +33,18 @@
     },
     "text": "Love the neon dragon! Great color palette.",
     "createdAt": "2026-06-10T11:11:20.198Z"
+  },
+  {
+    "_id": "c_mock_1785415219877",
+    "post": "p1",
+    "user": {
+      "_id": "mock_user_1785415219836",
+      "username": "audit_user_19807",
+      "displayName": "Audited User",
+      "avatar": "AU",
+      "hasPremium": false
+    },
+    "text": "Awesome creation! Keep it up.",
+    "createdAt": "2026-07-30T12:40:19.877Z"
   }
 ]

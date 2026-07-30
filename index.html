@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
   document.documentElement.setAttribute('data-theme', localStorage.getItem('aethra-theme') || 'nebula');
   window.onerror = function(message, source, lineno, colno, error) {
@@ -2878,7 +2879,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
       <ul>
         <li><a href="#" onclick="goPage('support'); return false" data-en="Help Center" data-hi="सहायता केंद्र">Help Center</a></li>
         <li><a href="#" onclick="goPage('support'); return false" data-en="Submit Ticket" data-hi="टिकट जमा करें">Submit Ticket</a></li>
-        <li><a href="#" onclick="goPage('support'); return false" data-en="FAQs" data-hi="अक्सर पूछे जाने वाले प्रश्न">FAQs</a></li>
+        <li><a href="#" onclick="openRefundPolicyModal(); return false" data-en="Refund Policy" data-hi="रिफंड पॉलिसी">Refund Policy</a></li>
         <li><a href="#" onclick="toast('🔒 Privacy Policy & Cookies'); return false" data-en="Privacy Policy" data-hi="गोपनीयता नीति">Privacy Policy</a></li>
         <li><a href="#" onclick="toast('📜 Terms of Service'); return false" data-en="Terms of Service" data-hi="सेवा की शर्तें">Terms of Service</a></li>
       </ul>
@@ -3217,7 +3218,45 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
       </div>
     </div>
     
-    <button class="submit-btn" id="cartCheckoutBtn" onclick="checkoutCart()">💳 <span data-en="Checkout & Pay (UPI)" data-hi="चेकआउट और भुगतान">Checkout & Pay (UPI)</span></button>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="submit-btn" id="cartCheckoutBtn" onclick="checkoutCartWithRazorpay()" style="background: linear-gradient(135deg, #0284c7, #2563eb);">💳 <span data-en="Pay with Razorpay (Instant Download)" data-hi="Razorpay से भुगतान (तुरंत डाउनलोड)">Pay with Razorpay (Instant Download)</span></button>
+      <button class="btn-outline" onclick="checkoutCartWithUpi()" style="width:100%; justify-content: center; padding: 9px; font-size: 13px; border-radius: var(--r);">📱 <span data-en="Pay via Manual UPI QR" data-hi="मैनुअल UPI QR से भुगतान करें">Pay via Manual UPI QR</span></button>
+    </div>
+    <div style="text-align: center; font-size: 11px; color: var(--text3); display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px;">
+      <span>🔒 256-Bit Encrypted</span>
+      <span>•</span>
+      <a href="javascript:void(0)" onclick="openRefundPolicyModal()" style="color: var(--cyan); text-decoration: underline;" data-en="7-Day Refund Policy" data-hi="7 दिनों की रिफंड पॉलिसी">7-Day Refund Policy</a>
+    </div>
+  </div>
+</div>
+
+<!-- REFUND POLICY MODAL -->
+<div class="modal-bg" id="refundPolicyModal">
+  <div class="modal" style="max-width: 580px; text-align: left; background: var(--bg2); color: var(--text); border-radius: var(--r3); padding: 2rem; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+    <button class="modal-x" onclick="closeRefundPolicyModal()">✕</button>
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem;">
+      <span style="font-size: 1.8rem;">🛡️</span>
+      <div>
+        <h2 style="margin: 0; font-size: 1.3rem; font-weight: 700; color: var(--text);" data-en="Aethra Digital Refund Policy" data-hi="Aethra डिजिटल रिफंड पॉलिसी">Aethra Digital Refund Policy</h2>
+        <span style="font-size: 11px; color: var(--text3);" data-en="7-Day Money-Back Guarantee & Transparent Guidelines" data-hi="7 दिनों की मनी-बैक गारंटी और पारदर्शी नियम">7-Day Money-Back Guarantee & Transparent Guidelines</span>
+      </div>
+    </div>
+    <div style="max-height: 60vh; overflow-y: auto; padding-right: 8px; font-size: 13px; line-height: 1.6; color: var(--text2);">
+      <h4 style="color: var(--cyan); margin-top: 0.5rem; margin-bottom: 0.3rem;" data-en="1. 100% Satisfaction & 7-Day Guarantee" data-hi="1. 100% संतुष्टि और 7-दिन की गारंटी">1. 100% Satisfaction & 7-Day Guarantee</h4>
+      <p data-en="We want you to be completely satisfied with your digital creations on Aethra. If a digital download is corrupt, incomplete, missing content, or significantly different from description, you are eligible for a 100% full refund within 7 days of purchase." data-hi="हम चाहते हैं कि आप Aethra पर अपनी डिजिटल खरीदारी से पूरी तरह संतुष्ट रहें। यदि कोई डिजिटल डाउनलोड खराब, अधूरा या विवरण से भिन्न है, तो आप खरीद के 7 दिनों के भीतर 100% पूर्ण रिफंड के पात्र हैं।">We want you to be completely satisfied with your digital creations on Aethra. If a digital download is corrupt, incomplete, missing content, or significantly different from description, you are eligible for a 100% full refund within 7 days of purchase.</p>
+
+      <h4 style="color: var(--cyan); margin-top: 1rem; margin-bottom: 0.3rem;" data-en="2. Instant Automatic Product Download" data-hi="2. त्वरित स्वचालित प्रोडक्ट डाउनलोड">2. Instant Automatic Product Download</h4>
+      <p data-en="Upon successful payment via Razorpay (UPI, Credit/Debit Cards, NetBanking, Wallets), your digital file download starts automatically in your browser and is saved to your account library under 'Purchased Creations'." data-hi="Razorpay (UPI, कार्ड, नेटबैंकिंग) के माध्यम से सफल भुगतान के बाद, आपका डिजिटल फ़ाइल डाउनलोड आपके ब्राउज़र में स्वचालित रूप से शुरू हो जाता है।">Upon successful payment via Razorpay (UPI, Credit/Debit Cards, NetBanking, Wallets), your digital file download starts automatically in your browser and is saved to your account library under 'Purchased Creations'.</p>
+
+      <h4 style="color: var(--cyan); margin-top: 1rem; margin-bottom: 0.3rem;" data-en="3. Manual Admin Review & Request Process" data-hi="3. मैन्युअल एडमिन समीक्षा और अनुरोध प्रक्रिया">3. Manual Admin Review & Request Process</h4>
+      <p data-en="For your security and protection, automatic refunds are completely disabled. Every refund request is manually inspected by the platform owner/admin. To request a refund, submit a ticket in Support Center or email with your Payment ID. The Admin will review if your claim is valid before taking action." data-hi="आपकी सुरक्षा के लिए, स्वचालित रिफंड पूरी तरह से अक्षम हैं। प्रत्येक रिफंड अनुरोध की समीक्षा प्लेटफ़ॉर्म स्वामी/एडमिन द्वारा मैन्युअल रूप से की जाती है। रिफंड के लिए सपोर्ट सेंटर में टिकट जमा करें। एडमिन द्वारा मैन्युअल स्वीकृति के बाद ही रिफंड संसाधित होता है।">For your security and protection, automatic refunds are completely disabled. Every refund request is manually inspected by the platform owner/admin. To request a refund, submit a ticket in Support Center or email with your Payment ID. The Admin will review if your claim is valid before taking action.</p>
+
+      <h4 style="color: var(--cyan); margin-top: 1rem; margin-bottom: 0.3rem;" data-en="4. Refund Approval & Razorpay Timeline" data-hi="4. रिफंड स्वीकृति और Razorpay समयसीमा">4. Refund Approval & Razorpay Timeline</h4>
+      <p data-en="Once manually approved by the Admin, refunds are processed directly back to your original source payment method (UPI account, bank account, or card). Funds typically reflect within 5-7 business days." data-hi="एडमिन द्वारा मैन्युअल स्वीकृति के बाद, रिफंड सीधे आपके मूल भुगतान स्रोत (UPI, बैंक खाता, या कार्ड) में 5-7 कार्य दिवसों के भीतर जमा कर दिए जाते हैं।">Once manually approved by the Admin, refunds are processed directly back to your original source payment method (UPI account, bank account, or card). Funds typically reflect within 5-7 business days.</p>
+    </div>
+    <div style="margin-top: 1.2rem; display: flex; gap: 10px; justify-content: flex-end;">
+      <button class="submit-btn" onclick="closeRefundPolicyModal()" style="padding: 8px 20px;" data-en="Got It, Thanks" data-hi="समझ गया, धन्यवाद">Got It, Thanks</button>
+    </div>
   </div>
 </div>
 
@@ -7117,14 +7156,9 @@ async function handleProductAction() {
       return;
     }
     
-    // Direct payment UPI QR scan
-    const creator = currentSelectedProduct.creator;
-    const payeeName = creator ? (creator.displayName || creator.username) : "Aethra Platform";
-    const payeeUpi = creator ? (creator.upiId || "8178287835@fam") : "8178287835@fam";
-    const payeeQr = creator ? (creator.qrCodeImage || "") : "";
-    pendingPaidDownloadItem = currentSelectedProduct;
-    showUpiQrModal(payeeName, payeeUpi, currentSelectedProduct.price, `Buy "${currentSelectedProduct.title}"`, payeeQr);
+    const targetPostId = currentSelectedProduct._id;
     closeProductModal();
+    await payWithRazorpay({ postId: targetPostId });
   }
 }
 
@@ -7365,6 +7399,24 @@ function removeFromCart(index) {
 }
 
 function checkoutCart() {
+  checkoutCartWithRazorpay();
+}
+
+function checkoutCartWithRazorpay() {
+  if (cart.length === 0) return;
+  if (!token) {
+    toast("🔑 Please log in first to checkout!");
+    document.getElementById("cartModal").classList.remove("open");
+    openAuth();
+    return;
+  }
+
+  const cartItemIds = cart.map(item => item._id);
+  document.getElementById("cartModal").classList.remove("open");
+  payWithRazorpay({ items: cartItemIds, promoCode: appliedPromo });
+}
+
+function checkoutCartWithUpi() {
   if (cart.length === 0) return;
   if (!token) {
     toast("🔑 Please log in first to checkout!");
@@ -7394,6 +7446,269 @@ function checkoutCart() {
   
   document.getElementById("cartModal").classList.remove("open");
   showUpiQrModal("Aethra Platform Checkout", "8178287835@fam", grandTotal, "Checkout Cart Order");
+}
+
+/* RAZORPAY INTEGRATION & AUTOMATIC DOWNLOAD ENGINE */
+async function payWithRazorpay({ items = null, postId = null, promoCode = null } = {}) {
+  if (!token) {
+    toast("🔑 Please log in first to purchase!");
+    openAuth();
+    return;
+  }
+
+  const payloadItemIds = items || (postId ? [postId] : []);
+  if (payloadItemIds.length === 0) {
+    toast("⚠️ No item selected for payment.");
+    return;
+  }
+
+  toast("⚡ Initializing secure Razorpay gateway...");
+
+  try {
+    const res = await fetch("/api/payment/create-order", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ items: payloadItemIds, promoCode: promoCode || appliedPromo })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast("⚠️ Order creation failed: " + (err.message || "Server error"));
+      return;
+    }
+
+    const orderData = await res.json();
+    const { orderId, amount, amountPaise, currency, keyId, isMock, items: orderItems } = orderData;
+
+    const userEmail = (currentUser && currentUser.email) ? currentUser.email : "customer@aethra.app";
+    const userName = (currentUser && (currentUser.displayName || currentUser.username)) ? (currentUser.displayName || currentUser.username) : "Aethra Customer";
+
+    const handleVerificationSuccess = async (verificationResult) => {
+      toast(`🎉 Payment of ₹${amount} successful!`);
+      toast(`📥 Automatic download started for your product(s)...`);
+
+      if (!currentUser.purchasedPosts) currentUser.purchasedPosts = [];
+      const purchasedSet = new Set(currentUser.purchasedPosts.map(id => id.toString()));
+      
+      const itemsToDownload = verificationResult.purchasedItems || orderItems;
+      for (const pId of itemsToDownload) {
+        purchasedSet.add(pId.toString());
+      }
+      currentUser.purchasedPosts = Array.from(purchasedSet);
+
+      if (items && items.length > 0) {
+        cart = [];
+        localStorage.setItem("cart", JSON.stringify(cart));
+        updateCartBadge();
+      }
+
+      // Automatically trigger file download for each item
+      for (const pId of itemsToDownload) {
+        let itemObj = (global.mockPosts || []).find(p => p._id === pId || p.id === pId);
+        if (!itemObj && currentSelectedProduct && currentSelectedProduct._id === pId) {
+          itemObj = currentSelectedProduct;
+        }
+        if (!itemObj) {
+          itemObj = { _id: pId, title: "Purchased Creation" };
+        }
+        await downloadProductFile(itemObj);
+      }
+
+      if (typeof populate === "function") {
+        await populate();
+      }
+    };
+
+    const isRazorpayLoaded = typeof window.Razorpay === "function";
+
+    if (isRazorpayLoaded && !isMock && keyId && keyId !== "rzp_test_aethra_sandbox") {
+      const options = {
+        key: keyId,
+        amount: amountPaise,
+        currency: currency || "INR",
+        name: "Aethra Platform",
+        description: `Payment for ${orderItems.length} digital product(s)`,
+        image: "/uploads/default_og_image.png",
+        order_id: orderId,
+        prefill: {
+          name: userName,
+          email: userEmail
+        },
+        theme: {
+          color: "#0284c7"
+        },
+        handler: async function (response) {
+          toast("🔐 Verifying payment signature with security gateway...");
+          try {
+            const verifyRes = await fetch("/api/payment/verify-payment", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                items: orderItems
+              })
+            });
+
+            if (verifyRes.ok) {
+              const verifyData = await verifyRes.json();
+              await handleVerificationSuccess(verifyData);
+            } else {
+              const err = await verifyRes.json().catch(() => ({}));
+              toast("❌ Payment verification failed: " + (err.message || "Invalid signature"));
+            }
+          } catch (err) {
+            toast("⚠️ Connection error during payment verification.");
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            toast("ℹ️ Razorpay checkout cancelled.");
+          }
+        }
+      };
+
+      const rzpInstance = new window.Razorpay(options);
+      rzpInstance.on('payment.failed', function (response) {
+        toast(`❌ Payment failed: ${response.error.description || 'Transaction declined'}`);
+      });
+      rzpInstance.open();
+
+    } else {
+      showRazorpaySandboxModal({
+        orderId,
+        amount,
+        items: orderItems,
+        onVerifySuccess: handleVerificationSuccess
+      });
+    }
+
+  } catch (err) {
+    console.error("Razorpay payment error:", err);
+    toast("⚠️ Error initiating payment: " + err.message);
+  }
+}
+
+function showRazorpaySandboxModal({ orderId, amount, items, onVerifySuccess }) {
+  let sandboxModal = document.getElementById("razorpaySandboxModal");
+  if (!sandboxModal) {
+    sandboxModal = document.createElement("div");
+    sandboxModal.className = "modal-bg";
+    sandboxModal.id = "razorpaySandboxModal";
+    sandboxModal.innerHTML = `
+      <div class="modal" style="max-width: 440px; border-radius: 16px; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 25px 60px rgba(0,0,0,0.7); overflow: hidden; padding: 0;">
+        <div style="background: linear-gradient(135deg, #0284c7, #1e40af); padding: 1.2rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="background: #fff; padding: 4px 8px; border-radius: 6px; font-weight: 900; color: #0284c7; font-size: 13px; font-family: sans-serif;">RAZORPAY</div>
+            <span style="font-size: 11px; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 20px; font-weight: 600;">Sandbox Test Mode</span>
+          </div>
+          <button onclick="closeRazorpaySandboxModal()" style="background: none; border: none; color: #fff; font-size: 18px; cursor: pointer;">✕</button>
+        </div>
+
+        <div style="padding: 1.5rem;">
+          <div style="text-align: center; margin-bottom: 1.2rem;">
+            <div style="font-size: 12px; color: #94a3b8;" data-en="Total Amount Payable" data-hi="कुल देय राशि">Total Amount Payable</div>
+            <div id="rzpSandboxAmount" style="font-size: 2.2rem; font-weight: 800; color: #38bdf8; margin: 4px 0;">₹${amount}</div>
+            <div style="font-size: 11px; color: #64748b;">Order ID: <span id="rzpSandboxOrderId">${orderId}</span></div>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; margin-bottom: 1.2rem; border: 1px solid rgba(255,255,255,0.08);">
+            <div style="font-size: 12px; font-weight: 600; color: #cbd5e1; margin-bottom: 8px;">💳 Select Payment Method (Test Mode)</div>
+            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #94a3b8;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: rgba(255,255,255,0.04); padding: 8px 10px; border-radius: 6px;">
+                <input type="radio" name="rzpMethod" value="upi" checked> 📱 Instant UPI (GPay, PhonePe, Paytm)
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: rgba(255,255,255,0.04); padding: 8px 10px; border-radius: 6px;">
+                <input type="radio" name="rzpMethod" value="card"> 💳 Credit / Debit Card (Visa, Mastercard)
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: rgba(255,255,255,0.04); padding: 8px 10px; border-radius: 6px;">
+                <input type="radio" name="rzpMethod" value="netbanking"> 🏦 NetBanking (HDFC, SBI, ICICI, Axis)
+              </label>
+            </div>
+          </div>
+
+          <div style="font-size: 11px; color: #94a3b8; text-align: center; margin-bottom: 1.2rem; line-height: 1.4;">
+            💡 <strong>Note for Admin</strong>: To activate Live Razorpay payments, enter your Razorpay Key ID & Secret in <code style="background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px;">server/.env</code>.
+          </div>
+
+          <button id="rzpSandboxPayBtn" class="submit-btn" style="width: 100%; height: 44px; font-size: 14px; background: linear-gradient(135deg, #0284c7, #2563eb); border: none; border-radius: 8px; font-weight: 700; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            🔒 Pay Now & Auto-Download Product
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(sandboxModal);
+  }
+
+  document.getElementById("rzpSandboxAmount").textContent = `₹${amount}`;
+  document.getElementById("rzpSandboxOrderId").textContent = orderId;
+
+  const payBtn = document.getElementById("rzpSandboxPayBtn");
+  payBtn.disabled = false;
+  payBtn.innerHTML = `🔒 Pay Now & Auto-Download Product`;
+
+  payBtn.onclick = async function() {
+    payBtn.disabled = true;
+    payBtn.innerHTML = `⏳ Verifying payment with server...`;
+
+    const mockPaymentId = `pay_mock_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+
+    try {
+      const verifyRes = await fetch("/api/payment/verify-payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          razorpay_order_id: orderId,
+          razorpay_payment_id: mockPaymentId,
+          razorpay_signature: "sandbox_verified_signature",
+          items
+        })
+      });
+
+      closeRazorpaySandboxModal();
+
+      if (verifyRes.ok) {
+        const verifyData = await verifyRes.json();
+        if (onVerifySuccess) await onVerifySuccess(verifyData);
+      } else {
+        const err = await verifyRes.json().catch(() => ({}));
+        toast("❌ Payment verification failed: " + (err.message || "Verification error"));
+      }
+    } catch (err) {
+      closeRazorpaySandboxModal();
+      toast("⚠️ Connection error during payment verification.");
+    }
+  };
+
+  sandboxModal.classList.add("open");
+}
+
+function closeRazorpaySandboxModal() {
+  const modal = document.getElementById("razorpaySandboxModal");
+  if (modal) modal.classList.remove("open");
+}
+
+function openRefundPolicyModal() {
+  const modal = document.getElementById("refundPolicyModal");
+  if (modal) {
+    modal.classList.add("open");
+    if (typeof setLang === "function") setLang(lang);
+  }
+}
+
+function closeRefundPolicyModal() {
+  const modal = document.getElementById("refundPolicyModal");
+  if (modal) modal.classList.remove("open");
 }
 
 /* UPI QR MODAL HANDLERS */
