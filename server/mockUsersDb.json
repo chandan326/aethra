@@ -313,7 +313,8 @@
     "subscriptionPlan": "",
     "isEmailVerified": false,
     "emailVerificationOtp": "305380",
-    "emailVerificationOtpExpires": 1785414015921
+    "emailVerificationOtpExpires": 1785414015921,
+    "password": "$2b$10$ku4qfvZY/kdJE7WYZwLVdeKMKPnI/GSuzEyFcgxWK81dktlsVTNNW"
   },
   "mock_user_1785415219836": {
     "_id": "mock_user_1785415219836",
