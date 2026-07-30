@@ -2,8 +2,8 @@ const nodemailer = require("nodemailer");
 
 async function sendVerificationEmail(toEmail, otp) {
   // Check if SMTP environment variables are defined
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
+  const smtpUser = (process.env.SMTP_USER || "").trim();
+  const smtpPass = (process.env.SMTP_PASS || "").replace(/\s+/g, "");
 
   if (!smtpUser || !smtpPass) {
     throw new Error("SMTP email credentials are not configured on the server. Please set SMTP_USER and SMTP_PASS in the .env file.");
@@ -12,6 +12,9 @@ async function sendVerificationEmail(toEmail, otp) {
   try {
     const transporter = nodemailer.createTransport({
       service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
       auth: {
         user: smtpUser,
         pass: smtpPass
@@ -48,8 +51,8 @@ async function sendVerificationEmail(toEmail, otp) {
 
 async function sendResetPasswordEmail(toEmail, otp) {
   // Check if SMTP environment variables are defined
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
+  const smtpUser = (process.env.SMTP_USER || "").trim();
+  const smtpPass = (process.env.SMTP_PASS || "").replace(/\s+/g, "");
 
   if (!smtpUser || !smtpPass) {
     throw new Error("SMTP email credentials are not configured on the server. Please set SMTP_USER and SMTP_PASS in the .env file.");
@@ -58,6 +61,9 @@ async function sendResetPasswordEmail(toEmail, otp) {
   try {
     const transporter = nodemailer.createTransport({
       service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
       auth: {
         user: smtpUser,
         pass: smtpPass
