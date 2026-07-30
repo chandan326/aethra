@@ -289,5 +289,26 @@
     "earnings": 0,
     "hasPremium": false,
     "subscriptionPlan": ""
+  },
+  "mock_user_1785413415920": {
+    "_id": "mock_user_1785413415920",
+    "id": "mock_user_1785413415920",
+    "username": "test_otp_user_5836",
+    "email": "chandan.rai771714@gmail.com",
+    "displayName": "test_otp_user_5836",
+    "avatar": "TE",
+    "bio": "Aethra User",
+    "location": "India 🇮🇳",
+    "upiId": "user@okaxis",
+    "followers": [],
+    "following": [],
+    "purchasedPosts": [],
+    "verified": false,
+    "earnings": 0,
+    "hasPremium": false,
+    "subscriptionPlan": "",
+    "isEmailVerified": false,
+    "emailVerificationOtp": "305380",
+    "emailVerificationOtpExpires": 1785414015921
   }
 }

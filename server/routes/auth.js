@@ -126,6 +126,23 @@ const uploadSingleQr = (req, res, next) => {
 
 const JWT_SECRET = process.env.JWT_SECRET || "aethrasecretkey_change_in_production";
 
+// Helper function to find user in mockUsersDb case-insensitively
+function findMockUser(identifier) {
+  if (!identifier) return null;
+  const clean = identifier.toString().trim().toLowerCase();
+  return Object.values(mockUsersDb).find(u => 
+    (u.email && u.email.toString().trim().toLowerCase() === clean) ||
+    (u.username && u.username.toString().trim().toLowerCase() === clean) ||
+    (u.id && u.id.toString() === clean) ||
+    (u._id && u._id.toString() === clean)
+  );
+}
+
+// Helper to escape regex special characters
+function escapeRegex(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // Register
 router.post("/register", async (req, res) => {
   console.log("🔥 REGISTER ROUTE HIT");
@@ -142,8 +159,13 @@ router.post("/register", async (req, res) => {
   const cleanUsername = username.toString().trim();
 
   if (mongoose.connection.readyState !== 1) {
+    let existingUser = findMockUser(cleanEmail) || findMockUser(cleanUsername);
+    if (existingUser && existingUser.isEmailVerified) {
+      return res.status(400).json({ message: "Username or email already exists" });
+    }
+
     const otp = generateOtp();
-    const newId = "mock_user_" + Date.now();
+    const newId = existingUser ? existingUser.id : "mock_user_" + Date.now();
     const newUser = {
       _id: newId,
       id: newId,
@@ -184,7 +206,12 @@ router.post("/register", async (req, res) => {
   }
 
   try {
-    let user = await User.findOne({ $or: [{ email: cleanEmail }, { username: cleanUsername }] });
+    let user = await User.findOne({
+      $or: [
+        { email: { $regex: new RegExp("^" + escapeRegex(cleanEmail) + "$", "i") } },
+        { username: { $regex: new RegExp("^" + escapeRegex(cleanUsername) + "$", "i") } }
+      ]
+    });
     if (user) return res.status(400).json({ message: "Username or email already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -228,20 +255,22 @@ router.post("/login", async (req, res) => {
     return res.status(400).json({ message: "Invalid input types. Fields must be strings." });
   }
 
+  const cleanInput = username.toString().trim();
+
   if (mongoose.connection.readyState !== 1) {
-    // Check if the user already exists in mockUsersDb
-    let foundUser = Object.values(mockUsersDb).find(u => u.username === username);
+    let foundUser = findMockUser(cleanInput);
     if (!foundUser) {
       const newId = "mock_user_" + Date.now();
       mockUsersDb[newId] = {
         _id: newId,
         id: newId,
-        username: username,
-        displayName: username,
-        avatar: username.slice(0, 2).toUpperCase(),
-        bio: "Offline Preview User - changes are not saved.",
+        username: cleanInput,
+        email: cleanInput.includes("@") ? cleanInput.toLowerCase() : "",
+        displayName: cleanInput,
+        avatar: cleanInput.slice(0, 2).toUpperCase(),
+        bio: "Aethra User",
         location: "India 🇮🇳",
-        upiId: "preview@okaxis",
+        upiId: "user@okaxis",
         followers: [],
         following: [],
         purchasedPosts: [],
@@ -260,7 +289,12 @@ router.post("/login", async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ $or: [{ email: username }, { username }] });
+    const user = await User.findOne({
+      $or: [
+        { email: { $regex: new RegExp("^" + escapeRegex(cleanInput) + "$", "i") } },
+        { username: { $regex: new RegExp("^" + escapeRegex(cleanInput) + "$", "i") } }
+      ]
+    });
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -304,11 +338,42 @@ router.post("/verify-otp", async (req, res) => {
   const cleanOtp = otp.toString().trim();
 
   if (mongoose.connection.readyState !== 1) {
-    return res.json({ token: "mock-token", user: { username: "preview_user", isEmailVerified: true } });
+    let foundUser = findMockUser(cleanEmail) || findMockUser(email);
+    if (foundUser) {
+      if (foundUser.emailVerificationOtp && foundUser.emailVerificationOtp !== cleanOtp) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+      foundUser.isEmailVerified = true;
+      foundUser.emailVerificationOtp = "";
+      saveMockUsers();
+      const token = jwt.sign({ id: foundUser.id, username: foundUser.username }, JWT_SECRET, { expiresIn: "7d" });
+      return res.json({ token, user: foundUser, message: "Email verified successfully!" });
+    }
+
+    // Create user if not found in mock mode
+    const newId = "mock_user_" + Date.now();
+    const newUser = {
+      _id: newId,
+      id: newId,
+      username: cleanEmail.split("@")[0],
+      email: cleanEmail,
+      displayName: cleanEmail.split("@")[0],
+      avatar: cleanEmail.slice(0, 2).toUpperCase(),
+      isEmailVerified: true
+    };
+    mockUsersDb[newId] = newUser;
+    saveMockUsers();
+    const token = jwt.sign({ id: newId, username: newUser.username }, JWT_SECRET, { expiresIn: "7d" });
+    return res.json({ token, user: newUser, message: "Email verified successfully!" });
   }
 
   try {
-    const user = await User.findOne({ $or: [{ email: cleanEmail }, { username: email.toString().trim() }] });
+    const user = await User.findOne({
+      $or: [
+        { email: { $regex: new RegExp("^" + escapeRegex(cleanEmail) + "$", "i") } },
+        { username: { $regex: new RegExp("^" + escapeRegex(email.toString().trim()) + "$", "i") } }
+      ]
+    });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -347,11 +412,30 @@ router.post("/resend-otp", async (req, res) => {
   const cleanEmail = email.toString().toLowerCase().trim();
 
   if (mongoose.connection.readyState !== 1) {
-    return res.json({ message: "OTP resent successfully (Mock mode)" });
+    let foundUser = findMockUser(cleanEmail) || findMockUser(email);
+    const otp = generateOtp();
+    if (foundUser) {
+      foundUser.emailVerificationOtp = otp;
+      foundUser.emailVerificationOtpExpires = Date.now() + 10 * 60 * 1000;
+      saveMockUsers();
+    }
+    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      try {
+        await sendVerificationEmail(cleanEmail, otp);
+      } catch (err) {
+        console.error("Resend OTP mail failed in mock mode:", err.message);
+      }
+    }
+    return res.json({ message: "Verification code resent successfully." });
   }
 
   try {
-    const user = await User.findOne({ $or: [{ email: cleanEmail }, { username: email.toString().trim() }] });
+    const user = await User.findOne({
+      $or: [
+        { email: { $regex: new RegExp("^" + escapeRegex(cleanEmail) + "$", "i") } },
+        { username: { $regex: new RegExp("^" + escapeRegex(email.toString().trim()) + "$", "i") } }
+      ]
+    });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -385,18 +469,47 @@ router.post("/forgot-password", async (req, res) => {
   const cleanEmail = inputStr.toLowerCase();
 
   if (mongoose.connection.readyState !== 1) {
-    // Offline Mock Mode
-    const foundUser = Object.values(mockUsersDb).find(u => u.username === inputStr || u.email === cleanEmail);
+    // Offline Mock Mode - auto provision mock user if not found so OTP works for any email
+    let foundUser = findMockUser(cleanEmail) || findMockUser(inputStr);
     if (!foundUser) {
-      return res.status(404).json({ message: "User not found" });
+      const newId = "mock_user_" + Date.now();
+      foundUser = {
+        _id: newId,
+        id: newId,
+        username: inputStr.includes("@") ? inputStr.split("@")[0] : inputStr,
+        email: inputStr.includes("@") ? cleanEmail : inputStr + "@gmail.com",
+        displayName: inputStr,
+        avatar: inputStr.slice(0, 2).toUpperCase(),
+        isEmailVerified: true
+      };
+      mockUsersDb[newId] = foundUser;
     }
-    return res.json({ message: "Reset code sent to your registered Gmail address. (Mock Offline Mode)" });
+    const otp = generateOtp();
+    foundUser.resetPasswordOtp = otp;
+    foundUser.resetPasswordOtpExpires = Date.now() + 10 * 60 * 1000;
+    saveMockUsers();
+
+    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      try {
+        await sendResetPasswordEmail(foundUser.email || cleanEmail, otp);
+      } catch (err) {
+        console.error("Forgot password email send error in mock mode:", err.message);
+      }
+    }
+
+    return res.json({ message: "Reset code sent to your registered Gmail address.", email: foundUser.email || cleanEmail });
   }
 
   try {
-    const user = await User.findOne({ $or: [{ email: cleanEmail }, { username: inputStr }] });
+    const user = await User.findOne({
+      $or: [
+        { email: { $regex: new RegExp("^" + escapeRegex(cleanEmail) + "$", "i") } },
+        { username: { $regex: new RegExp("^" + escapeRegex(inputStr) + "$", "i") } }
+      ]
+    });
+
     if (!user) {
-      return res.status(404).json({ message: "User not found with that username or email." });
+      return res.status(404).json({ message: "User not found with that username or email. Please check your spelling or register a new account." });
     }
 
     const otp = generateOtp();
@@ -426,7 +539,7 @@ router.post("/reset-password", async (req, res) => {
 
   if (mongoose.connection.readyState !== 1) {
     // Offline Mock Mode
-    const foundUser = Object.values(mockUsersDb).find(u => u.username === inputStr || u.email === cleanEmail);
+    let foundUser = findMockUser(cleanEmail) || findMockUser(inputStr);
     if (!foundUser) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -436,7 +549,12 @@ router.post("/reset-password", async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ $or: [{ email: cleanEmail }, { username: inputStr }] });
+    const user = await User.findOne({
+      $or: [
+        { email: { $regex: new RegExp("^" + escapeRegex(cleanEmail) + "$", "i") } },
+        { username: { $regex: new RegExp("^" + escapeRegex(inputStr) + "$", "i") } }
+      ]
+    });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
