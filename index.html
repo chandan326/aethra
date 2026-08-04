@@ -6257,6 +6257,9 @@ function updateAuthUI() {
       <button class="btn-ghost" style="padding: 0 16px; height: 38px; border-radius: 19px; font-size: 13px; font-weight: 500;" onclick="logout()">Log out</button>
     `;
     navEnd.insertBefore(div, createBtn);
+    if (typeof loadCartFromStorage === "function") {
+      loadCartFromStorage();
+    }
   } else {
     const btn = document.createElement("button");
     btn.className = "btn-ghost";
@@ -6268,6 +6271,11 @@ function updateAuthUI() {
     btn.style.fontWeight = "500";
     btn.onclick = openAuth;
     navEnd.insertBefore(btn, createBtn);
+    
+    cart = [];
+    if (typeof updateCartBadge === "function") {
+      updateCartBadge();
+    }
   }
   populate();
 }
@@ -6764,14 +6772,20 @@ async function initGoogleAuth() {
 function logout() {
   token = null;
   currentUser = null;
+  cart = [];
   localStorage.removeItem("token");
   localStorage.removeItem("aethra_token");
+  localStorage.removeItem("cart");
   if (chatPollInterval) {
     clearInterval(chatPollInterval);
     chatPollInterval = null;
   }
+  const modal = document.getElementById("cartModal");
+  if (modal) modal.classList.remove("open");
+
   toast("🔒 Logged out successfully");
   updateAuthUI();
+  updateCartBadge();
   populate();
 }
 
@@ -6886,7 +6900,7 @@ function handlePurchase(postId, isFree) {
     // Add to cart if not already present
     if (!cart.some(c => c._id === item._id)) {
       cart.push(item);
-      localStorage.setItem("cart", JSON.stringify(cart));
+      saveCartToStorage();
       updateCartBadge();
     }
     
@@ -7170,14 +7184,23 @@ async function handleProductAction() {
 
 function handleProductCart() {
   if (!currentSelectedProduct) return;
+
+  if (!token || !currentUser) {
+    toast("🔑 Please log in to add items to your cart!");
+    if (typeof closeProductModal === "function") closeProductModal();
+    openAuth();
+    return;
+  }
   
+  loadCartFromStorage();
+
   if (cart.some(item => item._id === currentSelectedProduct._id)) {
     toast(`⚠️ "${currentSelectedProduct.title}" is already in your cart!`);
     return;
   }
-  
+
   cart.push(currentSelectedProduct);
-  localStorage.setItem("cart", JSON.stringify(cart));
+  saveCartToStorage();
   updateCartBadge();
   toast(`🛒 Added "${currentSelectedProduct.title}" to your cart!`);
   closeProductModal();
@@ -7193,9 +7216,39 @@ function handleProductShare() {
   });
 }
 
-/* SHOPPING CART LOGIC */
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
+/* USER-SCOPED SECURE SHOPPING CART LOGIC */
+let cart = [];
 let pendingPaidDownloadItem = null;
+
+function getCartStorageKey() {
+  if (!currentUser || !token) return null;
+  const userId = currentUser._id || currentUser.id || currentUser.username;
+  return userId ? `aethra_cart_${userId}` : null;
+}
+
+function loadCartFromStorage() {
+  localStorage.removeItem("cart"); // Purge legacy global key to avoid privacy leak
+  const key = getCartStorageKey();
+  if (key) {
+    try {
+      cart = JSON.parse(localStorage.getItem(key)) || [];
+    } catch (e) {
+      cart = [];
+    }
+  } else {
+    cart = [];
+  }
+  updateCartBadge();
+}
+
+function saveCartToStorage() {
+  const key = getCartStorageKey();
+  if (key) {
+    localStorage.setItem(key, JSON.stringify(cart));
+  } else {
+    cart = [];
+  }
+}
 
 async function downloadProductFile(item) {
   if (!item) return;
@@ -7283,16 +7336,36 @@ async function downloadProductFile(item) {
 
 function updateCartBadge() {
   const badge = document.getElementById("cartBadge");
-  if (!badge) return;
-  if (cart.length > 0) {
-    badge.textContent = cart.length;
-    badge.style.display = "flex";
-  } else {
-    badge.style.display = "none";
+  const fab = document.getElementById("cartFab");
+
+  if (!currentUser || !token) {
+    cart = [];
+    if (badge) {
+      badge.textContent = "0";
+      badge.style.display = "none";
+    }
+    if (fab) fab.style.display = "none";
+    return;
+  }
+
+  if (fab) fab.style.display = "flex";
+
+  if (badge) {
+    if (cart.length > 0) {
+      badge.textContent = cart.length;
+      badge.style.display = "flex";
+    } else {
+      badge.style.display = "none";
+    }
   }
 }
 
 function toggleCartModal(forceOpen = false) {
+  if (!token || !currentUser) {
+    toast("🔑 Please log in to access your shopping cart!");
+    openAuth();
+    return;
+  }
   const modal = document.getElementById("cartModal");
   if (forceOpen) {
     modal.classList.add("open");
@@ -7398,7 +7471,7 @@ function renderCartItems() {
 
 function removeFromCart(index) {
   cart.splice(index, 1);
-  localStorage.setItem("cart", JSON.stringify(cart));
+  saveCartToStorage();
   updateCartBadge();
   renderCartItems();
   toast("🗑️ Item removed from cart");
@@ -7507,7 +7580,7 @@ async function payWithRazorpay({ items = null, postId = null, promoCode = null }
 
       if (items && items.length > 0) {
         cart = [];
-        localStorage.setItem("cart", JSON.stringify(cart));
+        saveCartToStorage();
         updateCartBadge();
       }
 
@@ -7813,7 +7886,7 @@ function showUpiQrModal(payeeName, payeeUpi, amount, purposeText = "Payment", pa
         await downloadProductFile(item);
       }
       cart = [];
-      localStorage.setItem("cart", JSON.stringify(cart));
+      saveCartToStorage();
       updateCartBadge();
       await populate();
     } else if (purposeText.startsWith("Buy \"") && pendingPaidDownloadItem) {
