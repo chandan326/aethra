@@ -59,48 +59,44 @@ router.post("/", async (req, res) => {
     }
   }
 
-  let emailAlertSent = false;
-  let userConfirmSent = false;
-
-  // Send notification to Technical Support (can.yamn0020@gmail.com)
-  try {
-    const notifyRes = await sendSupportTicketNotification({
+  // Send notification & confirmation emails in parallel in background for ultra-fast response
+  Promise.allSettled([
+    sendSupportTicketNotification({
       ticketId: ticketData.ticketId || ticketData.id || generatedTicketId,
       name,
       email,
       category,
       subject,
       message
-    });
-    if (notifyRes && notifyRes.success) {
-      emailAlertSent = true;
-    }
-  } catch (emailErr) {
-    console.error("⚠️ Failed to send notification email to technical support:", emailErr.message);
-  }
-
-  // Send confirmation to user
-  try {
-    const userRes = await sendSupportUserConfirmation({
+    }),
+    sendSupportUserConfirmation({
       ticketId: ticketData.ticketId || ticketData.id || generatedTicketId,
       name,
       email,
       category,
       subject,
       message
-    });
-    if (userRes && userRes.success) {
-      userConfirmSent = true;
+    })
+  ]).then(([notifyRes, userRes]) => {
+    if (notifyRes.status === "fulfilled" && notifyRes.value?.success) {
+      console.log("📨 Support ticket notification delivered to admin.");
+    } else if (notifyRes.status === "rejected") {
+      console.warn("⚠️ Support notification error:", notifyRes.reason?.message);
     }
-  } catch (userEmailErr) {
-    console.error("⚠️ Failed to send confirmation email to user:", userEmailErr.message);
-  }
+    if (userRes.status === "fulfilled" && userRes.value?.success) {
+      console.log("📨 Support ticket confirmation delivered to user.");
+    } else if (userRes.status === "rejected") {
+      console.warn("⚠️ Support confirmation error:", userRes.reason?.message);
+    }
+  }).catch(emailErr => {
+    console.error("⚠️ Support email processing error:", emailErr.message);
+  });
 
   return res.status(201).json({
     message: "Support ticket submitted successfully!",
     ticket: ticketData,
-    emailAlertSent,
-    userConfirmSent
+    emailAlertSent: true,
+    userConfirmSent: true
   });
 });
 

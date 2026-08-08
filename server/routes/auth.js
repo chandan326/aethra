@@ -217,13 +217,21 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // 2. Online MongoDB Registration
+    // 2. Online MongoDB Registration (Fast indexed lookup)
     let user = await User.findOne({
       $or: [
-        { email: { $regex: new RegExp("^" + escapeRegex(cleanEmail) + "$", "i") } },
-        { username: { $regex: new RegExp("^" + escapeRegex(cleanUsername) + "$", "i") } }
+        { email: cleanEmail.toLowerCase() },
+        { username: cleanUsername }
       ]
     });
+    if (!user) {
+      user = await User.findOne({
+        $or: [
+          { email: { $regex: new RegExp("^" + escapeRegex(cleanEmail) + "$", "i") } },
+          { username: { $regex: new RegExp("^" + escapeRegex(cleanUsername) + "$", "i") } }
+        ]
+      });
+    }
 
     if (user) {
       if (user.isEmailVerified) {
@@ -356,13 +364,21 @@ router.post("/login", async (req, res) => {
       return res.json({ token, user: foundUser });
     }
 
-    // 2. Online MongoDB Login
+    // 2. Online MongoDB Login (Fast indexed lookup)
     let user = await User.findOne({
       $or: [
-        { email: { $regex: new RegExp("^" + escapeRegex(cleanInput) + "$", "i") } },
-        { username: { $regex: new RegExp("^" + escapeRegex(cleanInput) + "$", "i") } }
+        { email: cleanInput.toLowerCase() },
+        { username: cleanInput }
       ]
     });
+    if (!user) {
+      user = await User.findOne({
+        $or: [
+          { email: { $regex: new RegExp("^" + escapeRegex(cleanInput) + "$", "i") } },
+          { username: { $regex: new RegExp("^" + escapeRegex(cleanInput) + "$", "i") } }
+        ]
+      });
+    }
 
     let mockUser = findMockUser(cleanInput);
 
