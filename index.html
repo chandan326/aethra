@@ -2596,9 +2596,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
       <div class="stat-n" id="statPosts" data-target="18" data-suffix="M+">0</div>
       <div class="stat-l" data-en="Posts Shared" data-hi="पोस्ट शेयर">Posts Shared</div>
     </div>
-    <div class="stat-cell">
-      <div class="stat-n" id="statCountries" data-target="140" data-suffix="+">0</div>
-      <div class="stat-l" data-en="Countries" data-hi="देश">Countries</div>
+    <div class="stat-cell" style="position: relative;">
+      <div class="stat-n" id="statActiveUsers" data-target="0" data-suffix="" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+        <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#10b981; animation: livePulse 1.5s infinite; flex-shrink: 0;"></span>
+        <span id="statActiveUsersNum">0</span>
+      </div>
+      <div class="stat-l" data-en="Live Active Users" data-hi="लाइव सक्रिय यूज़र्स">Live Active Users</div>
     </div>
     <div class="stat-cell">
       <div class="stat-n" id="statEarnings" data-target="50" data-prefix="₹" data-suffix="L+">0</div>
@@ -3926,6 +3929,9 @@ function goPage(id,btn){
   target.classList.add('active');
   if(btn)btn.classList.add('active');
   window.scrollTo(0,0);
+  if (typeof currentUser !== "undefined" && currentUser) {
+    sendUserHeartbeat();
+  }
 }
 function getDeviceLimitConfig() {
   const width = window.innerWidth;
@@ -4250,8 +4256,13 @@ async function fetchAndAnimateStats() {
       
       const creatorsEl = document.getElementById("statCreators");
       const postsEl = document.getElementById("statPosts");
-      const countriesEl = document.getElementById("statCountries");
+      const activeUsersEl = document.getElementById("statActiveUsers");
+      const activeUsersNum = document.getElementById("statActiveUsersNum");
       const earningsEl = document.getElementById("statEarnings");
+      
+      if (data.activeUserIds && Array.isArray(data.activeUserIds)) {
+        activeUserIdsList = data.activeUserIds;
+      }
       
       // Helper to format values dynamically based on database scale
       function formatStat(el, val, type) {
@@ -4272,9 +4283,10 @@ async function fetchAndAnimateStats() {
             target = val;
             suffix = "+";
           }
-        } else if (type === "countries") {
-          target = val;
-          suffix = "+";
+        } else if (type === "activeUsers") {
+          target = val || 0;
+          suffix = "";
+          if (activeUsersNum) activeUsersNum.textContent = target;
         } else if (type === "earnings") {
           prefix = "₹";
           if (val >= 100000) {
@@ -4296,7 +4308,7 @@ async function fetchAndAnimateStats() {
       
       formatStat(creatorsEl, data.creators, "creators");
       formatStat(postsEl, data.posts, "posts");
-      formatStat(countriesEl, data.countries, "countries");
+      formatStat(activeUsersEl, data.activeUsers || 0, "activeUsers");
       formatStat(earningsEl, data.earnings, "earnings");
     }
   } catch (err) {
@@ -5713,7 +5725,7 @@ function renderChatChannels() {
   listItems.innerHTML = chatChannels.map(ch => {
     const isActive = ch.id === activeChannel.id;
     const activeClass = isActive ? 'active' : '';
-    const isOnline = ch.subtitle && (ch.subtitle.includes("Online") || ch.subtitle.includes("Active now") || ch.subtitle.includes("online") || ch.subtitle.includes("Active"));
+    const isOnline = ch.id === "aethra" || (activeUserIdsList && Array.isArray(activeUserIdsList) && (activeUserIdsList.includes(ch.id) || activeUserIdsList.includes(ch.creatorId))) || (ch.subtitle && ch.subtitle.startsWith("Online"));
     const onlineDot = isOnline ? `<span class="chat-item-online-dot"></span>` : '';
     
     let lastMsg = "No messages yet";
@@ -6202,8 +6214,83 @@ async function sendChat(){
   }
 }
 
+// ── Real-Time Active Users Heartbeat Manager ──────────────────────────────
+let heartbeatInterval = null;
+let activeUserIdsList = [];
+
+async function sendUserHeartbeat() {
+  if (!currentUser) return;
+  const curPageEl = document.querySelector('.page.active');
+  const curPage = curPageEl ? curPageEl.id.replace('page-', '') : 'home';
+  const userId = currentUser._id || currentUser.id || currentUser.username;
+  try {
+    const res = await fetch("/api/auth/heartbeat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": token ? `Bearer ${token}` : ""
+      },
+      body: JSON.stringify({
+        userId: userId,
+        username: currentUser.username,
+        displayName: currentUser.displayName || currentUser.username,
+        avatar: currentUser.avatar || "👤",
+        page: curPage
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.activeUserIds && Array.isArray(data.activeUserIds)) {
+        activeUserIdsList = data.activeUserIds;
+      }
+      if (typeof data.activeUsersCount === "number") {
+        const activeUsersNum = document.getElementById("statActiveUsersNum");
+        if (activeUsersNum) activeUsersNum.textContent = data.activeUsersCount;
+      }
+    }
+  } catch (err) {
+    console.warn("Heartbeat ping error:", err);
+  }
+}
+
+function startHeartbeatLoop() {
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
+  sendUserHeartbeat();
+  heartbeatInterval = setInterval(() => {
+    if (document.visibilityState === "visible" && currentUser) {
+      sendUserHeartbeat();
+    }
+  }, 15000);
+}
+
+function stopHeartbeatLoop() {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && currentUser) {
+    sendUserHeartbeat();
+  }
+});
+
+window.addEventListener("beforeunload", () => {
+  if (currentUser) {
+    const userId = currentUser._id || currentUser.id || currentUser.username;
+    try {
+      const data = JSON.stringify({ userId: userId });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon("/api/auth/logout", new Blob([data], { type: "application/json" }));
+      }
+    } catch (e) {}
+  }
+});
+
 function handleInvalidSession() {
   console.warn("Invalid session token detected. Clearing auth state.");
+  stopHeartbeatLoop();
   localStorage.removeItem("token");
   localStorage.removeItem("aethra_token");
   localStorage.removeItem("aethra_user");
@@ -6228,6 +6315,7 @@ async function checkAuth() {
       localStorage.setItem("token", token);
       localStorage.setItem("aethra_token", token);
       startChatPolling();
+      startHeartbeatLoop();
     } else if (res.status === 401) {
       handleInvalidSession();
       return;
@@ -6603,6 +6691,7 @@ async function handleAuthSubmit(e) {
     toast(`🎉 Welcome back, ${currentUser.username}!`);
     updateAuthUI();
     startChatPolling();
+    startHeartbeatLoop();
     await populate();
   } catch (err) {
     if (err.name === "AbortError") {
@@ -6651,6 +6740,7 @@ async function handleOtpSubmit(e) {
     toast("🎉 Email verified! Welcome to Aethra!");
     updateAuthUI();
     startChatPolling();
+    startHeartbeatLoop();
     await populate();
   } catch (err) {
     toast("⚠️ Verification error. Please try again.");
@@ -6727,6 +6817,7 @@ async function handleGoogleCredentialResponse(response) {
     toast(`🎉 Sign-in successful! Welcome, ${currentUser.displayName || currentUser.username}!`);
     updateAuthUI();
     startChatPolling();
+    startHeartbeatLoop();
     await populate();
   } catch (err) {
     toast("⚠️ Google verification connection failed.");
@@ -6773,6 +6864,19 @@ async function initGoogleAuth() {
 }
 
 function logout() {
+  if (currentUser) {
+    const userId = currentUser._id || currentUser.id || currentUser.username;
+    fetch("/api/auth/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": token ? `Bearer ${token}` : ""
+      },
+      body: JSON.stringify({ userId: userId })
+    }).catch(() => {});
+  }
+  stopHeartbeatLoop();
+  activeUserIdsList = [];
   token = null;
   currentUser = null;
   cart = [];
@@ -6790,6 +6894,7 @@ function logout() {
   updateAuthUI();
   updateCartBadge();
   populate();
+  fetchAndAnimateStats();
 }
 
 async function handleLike(postId, btn) {

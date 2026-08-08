@@ -1328,4 +1328,135 @@ router.get("/dashboard", auth, async (req, res) => {
   }
 });
 
+// ── Real-Time Active Users & Heartbeat Manager ──────────────────────────────
+if (!global.activeSessions) {
+  global.activeSessions = new Map();
+}
+
+function cleanupActiveSessions() {
+  const now = Date.now();
+  const timeoutMs = 40000; // 40 seconds inactivity timeout
+  for (const [userId, session] of global.activeSessions.entries()) {
+    if (now - session.lastActiveAt > timeoutMs) {
+      global.activeSessions.delete(userId);
+    }
+  }
+}
+
+global.cleanupActiveSessions = cleanupActiveSessions;
+
+// POST /api/auth/heartbeat - Record heartbeat from logged-in active users
+router.post("/heartbeat", async (req, res) => {
+  try {
+    cleanupActiveSessions();
+    
+    // Check auth header or body user info
+    let userId = null;
+    let username = null;
+    let displayName = null;
+    let avatar = null;
+
+    const authHeader = req.header("Authorization");
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        userId = decoded.id;
+      } catch (e) {
+        // invalid token
+      }
+    }
+
+    if (!userId && req.body.userId) {
+      userId = req.body.userId;
+    }
+
+    if (req.body.username) username = req.body.username;
+    if (req.body.displayName) displayName = req.body.displayName;
+    if (req.body.avatar) avatar = req.body.avatar;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Only authenticated logged-in users can send active heartbeats",
+        activeUsersCount: global.activeSessions.size,
+        activeUserIds: Array.from(global.activeSessions.keys())
+      });
+    }
+
+    // Try to get user details if missing
+    if (!username || !displayName) {
+      const mockU = findMockUser(userId);
+      if (mockU) {
+        username = username || mockU.username;
+        displayName = displayName || mockU.displayName;
+        avatar = avatar || mockU.avatar;
+      }
+    }
+
+    const sessionData = {
+      userId: userId.toString(),
+      username: username || "user",
+      displayName: displayName || username || "User",
+      avatar: avatar || "👤",
+      page: req.body.page || "home",
+      lastActiveAt: Date.now()
+    };
+
+    global.activeSessions.set(userId.toString(), sessionData);
+
+    return res.json({
+      success: true,
+      activeUsersCount: global.activeSessions.size,
+      activeUserIds: Array.from(global.activeSessions.keys()),
+      activeUsers: Array.from(global.activeSessions.values())
+    });
+  } catch (err) {
+    console.error("Heartbeat error:", err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/auth/active-users - Return list and count of currently active logged-in users
+router.get("/active-users", (req, res) => {
+  cleanupActiveSessions();
+  const activeList = Array.from(global.activeSessions.values());
+  res.json({
+    success: true,
+    count: activeList.length,
+    activeUserIds: Array.from(global.activeSessions.keys()),
+    activeUsers: activeList
+  });
+});
+
+// POST /api/auth/logout - Immediately remove user from active sessions on logout
+router.post("/logout", (req, res) => {
+  try {
+    let userId = req.body.userId;
+    const authHeader = req.header("Authorization");
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        userId = decoded.id;
+      } catch (e) {}
+    }
+
+    if (userId && global.activeSessions) {
+      global.activeSessions.delete(userId.toString());
+    }
+
+    cleanupActiveSessions();
+
+    res.json({
+      success: true,
+      message: "Logged out from active sessions",
+      activeUsersCount: global.activeSessions ? global.activeSessions.size : 0
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
+

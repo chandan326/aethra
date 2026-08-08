@@ -694,6 +694,12 @@ router.post("/:id/comments", auth, async (req, res) => {
 router.get("/stats", async (req, res) => {
   const mongoose = require("mongoose");
   
+  if (typeof global.cleanupActiveSessions === "function") {
+    global.cleanupActiveSessions();
+  }
+  const activeUsersCount = global.activeSessions ? global.activeSessions.size : 0;
+  const activeUserIds = global.activeSessions ? Array.from(global.activeSessions.keys()) : [];
+  
   if (mongoose.connection.readyState !== 1) {
     // Offline Mock Mode Stats
     const totalCreators = Object.keys(global.mockUsersDb || {}).length || 15;
@@ -714,7 +720,9 @@ router.get("/stats", async (req, res) => {
       creators: totalCreators,
       posts: totalPosts,
       countries: totalCountries,
-      earnings: totalEarnings
+      earnings: totalEarnings,
+      activeUsers: activeUsersCount,
+      activeUserIds: activeUserIds
     });
   }
   
@@ -736,7 +744,9 @@ router.get("/stats", async (req, res) => {
       creators: creatorsCount,
       posts: postsCount,
       countries: countriesCount,
-      earnings: totalEarnings
+      earnings: totalEarnings,
+      activeUsers: activeUsersCount,
+      activeUserIds: activeUserIds
     });
   } catch (err) {
     console.error("Error fetching stats:", err.message);

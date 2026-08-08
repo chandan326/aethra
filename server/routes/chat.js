@@ -119,7 +119,8 @@ router.get("/conversations", auth, async (req, res) => {
         let name = "Creator";
         let avatar = "CR";
         let avatarStyle = "background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff;";
-        let subtitle = "Active now · Creator";
+        let isUserActive = global.activeSessions && global.activeSessions.has(otherId.toString());
+        let subtitle = isUserActive ? "Online · Creator" : "Offline · Creator";
 
         if (isValidObjectId && isOnline) {
           const u = userMap.get(otherId);
@@ -129,21 +130,21 @@ router.get("/conversations", auth, async (req, res) => {
           }
         } else {
           // Defaults or mock creators fallback
-          if (otherId === "meera") {
+          if (otherId === "meera" || otherId === "u1") {
             name = "Artist Meera";
             avatar = "ME";
             avatarStyle = "background: #f43f5e; color: #fff;";
-            subtitle = "Online · Digital Artist";
-          } else if (otherId === "ravi") {
+            subtitle = isUserActive ? "Online · Digital Artist" : "Offline · Digital Artist";
+          } else if (otherId === "ravi" || otherId === "u2") {
             name = "Ravi Photo";
             avatar = "RV";
             avatarStyle = "background: #10b981; color: #fff;";
-            subtitle = "Active 2h ago · Creator";
-          } else if (otherId === "priya") {
+            subtitle = isUserActive ? "Online · VFX Director" : "Offline · VFX Director";
+          } else if (otherId === "priya" || otherId === "u3") {
             name = "Pixel Priya";
             avatar = "PP";
             avatarStyle = "background: #0ea5e9; color: #fff;";
-            subtitle = "Online · Photographer";
+            subtitle = isUserActive ? "Online · Photographer" : "Offline · Photographer";
           }
         }
 
