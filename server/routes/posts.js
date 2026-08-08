@@ -355,8 +355,9 @@ router.get("/", async (req, res) => {
       .populate("creator", "username displayName avatar verified hasPremium qrCodeImage followers")
       .sort({ createdAt: -1 });
 
-    // Fallback: If MongoDB query yields 0 posts (e.g. fresh DB), serve mock posts
-    if ((!posts || posts.length === 0) && global.mockPosts && global.mockPosts.length > 0) {
+    // Fallback: Only if the database itself has 0 total posts (e.g. unseeded fresh DB), serve mock posts
+    const totalDbPostsCount = await Post.countDocuments();
+    if (totalDbPostsCount === 0 && (!posts || posts.length === 0) && global.mockPosts && global.mockPosts.length > 0) {
       let filtered = [...global.mockPosts];
       if (creator) {
         filtered = filtered.filter(p => {

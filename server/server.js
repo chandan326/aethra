@@ -87,19 +87,54 @@ app.use((req, res, next) => {
   next();
 });
 
-// Fast non-blocking database readiness check (avoids stalling API requests)
-app.use(async (req, res, next) => {
-  if (mongoose.connection.readyState === 2) {
-    // Wait max 150ms if currently connecting, otherwise proceed to route handler with fallback
-    await new Promise((resolve) => {
-      const start = Date.now();
-      const interval = setInterval(() => {
-        if (mongoose.connection.readyState !== 2 || Date.now() - start > 150) {
-          clearInterval(interval);
-          resolve();
+// ── MongoDB Connection Manager ───────────────────────────────────────────────
+const atlasUri = process.env.MONGO_URI || "mongodb+srv://chandanrai771714_db_user:Test12345@cluster0.cxkc0uv.mongodb.net/aethra?retryWrites=true&w=majority";
+const localUri = process.env.LOCAL_MONGO_URI || "mongodb://127.0.0.1:27017/aethra";
+
+let dbConnectPromise = null;
+
+async function ensureDbConnected() {
+  if (mongoose.connection.readyState === 1) return true;
+  if (dbConnectPromise) return dbConnectPromise;
+
+  dbConnectPromise = (async () => {
+    try {
+      if (atlasUri) {
+        await mongoose.connect(atlasUri, { serverSelectionTimeoutMS: 5000 });
+        console.log("✅ Connected to MongoDB Atlas");
+        await seedDatabase();
+        return true;
+      }
+    } catch (err) {
+      console.error("❌ Atlas connection failed:", err.message);
+      global.mongoConnectionError = err.message;
+      const isVercelEnv = process.env.VERCEL === "1" || process.env.NOW_REGION !== undefined;
+      if (!isVercelEnv) {
+        try {
+          await mongoose.connect(localUri, { serverSelectionTimeoutMS: 2000 });
+          console.log("✅ Connected to local MongoDB");
+          await seedDatabase();
+          return true;
+        } catch (e) {
+          console.error("❌ Local Mongo failed:", e.message);
         }
-      }, 25);
-    });
+      }
+    } finally {
+      dbConnectPromise = null;
+    }
+    return false;
+  })();
+
+  return dbConnectPromise;
+}
+
+// Immediately trigger DB connection on load
+ensureDbConnected();
+
+// Ensure DB connection is established before serving any API route
+app.use(async (req, res, next) => {
+  if (req.path.startsWith("/api")) {
+    await ensureDbConnected();
   }
   next();
 });
@@ -221,54 +256,11 @@ app.get(/.*/, async (req, res, next) => {
 // Serve static files from project root with caching
 app.use(express.static(path.join(__dirname, "../"), staticOptions));
 
-// ── MongoDB: disable buffering so offline fallback triggers immediately ────────
-mongoose.set("bufferCommands", false);
-
-const port     = process.env.PORT || 5000;
-const atlasUri = process.env.MONGO_URI || "mongodb+srv://chandanrai771714_db_user:Test12345@cluster0.cxkc0uv.mongodb.net/aethra?retryWrites=true&w=majority";
-const localUri = process.env.LOCAL_MONGO_URI || "mongodb://127.0.0.1:27017/aethra";
-
-/**
- * ✅ FIXED: ONE startup connection attempt only.
- * DO NOT add per-request reconnect middleware — it causes 5s timeouts on Vercel.
- * Every route already checks mongoose.connection.readyState and falls back to mock data.
- */
-async function startServer() {
-  const isVercel = process.env.VERCEL === "1" || process.env.NOW_REGION !== undefined;
-  
-  if (atlasUri) {
-    try {
-      // Direct connection with 5s timeout to support Vercel cold starts
-      await mongoose.connect(atlasUri, { serverSelectionTimeoutMS: 5000 });
-      console.log("✅ Connected to MongoDB Atlas");
-      await seedDatabase();
-      return;
-    } catch (err) {
-      console.error("❌ Atlas connection failed:", err.message);
-      global.mongoConnectionError = err.message;
-    }
-  }
-
-  // Skip trying local MongoDB on Vercel
-  if (!isVercel) {
-    try {
-      await mongoose.connect(localUri, { serverSelectionTimeoutMS: 2000 });
-      console.log("✅ Connected to local MongoDB");
-      await seedDatabase();
-      return;
-    } catch (err) {
-      console.error("❌ Local MongoDB failed:", err.message);
-    }
-  }
-
-  console.log("⚠️  Offline mock-database mode — data served from JSON cache.");
-}
+const port = process.env.PORT || 5000;
 
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
   console.warn("🚨 JWT_SECRET not set in production!");
 }
-
-startServer();
 
 if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
   app.listen(port, () => console.log(`🚀 Server running on http://localhost:${port}`));
