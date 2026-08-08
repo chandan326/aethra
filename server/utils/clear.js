@@ -1,4 +1,11 @@
 require("dotenv").config({ path: require("path").join(__dirname, "../.env") });
+const dns = require("dns");
+try {
+  dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4"]);
+} catch (e) {}
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder("ipv4first");
+}
 const mongoose = require("mongoose");
 const User = require("../models/User");
 const Post = require("../models/Post");

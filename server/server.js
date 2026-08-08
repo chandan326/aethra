@@ -1,6 +1,12 @@
 require("dotenv").config();
 
 const dns = require("dns");
+// Fix Node.js DNS SRV resolution error (ECONNREFUSED querySrv) on Windows local network adapters
+try {
+  dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4"]);
+} catch (e) {
+  console.warn("⚠️ Could not override DNS servers:", e.message);
+}
 if (dns.setDefaultResultOrder) {
   dns.setDefaultResultOrder("ipv4first");
 }
