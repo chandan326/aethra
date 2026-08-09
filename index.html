@@ -2551,7 +2551,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
           <p class="hero-slide-sub" id="heroSlideSub">Post your Midjourney, Stable Diffusion, or Canvas creations. Monetize your prompts.</p>
           
           <div class="hero-slide-stats">
-            <span class="slide-stat-pill" id="heroSlideCount">⚡ 0 items active</span>
+            <span class="slide-stat-pill" id="heroSlideCount">⚡ 0 Featured Creations</span>
           </div>
 
           <div class="hero-slide-actions">
@@ -4212,12 +4212,37 @@ function initBeforeAfterSlider() {
   window.addEventListener("touchend", onEnd);
 }
 
+function updateActiveUserUI(count) {
+  const activeUsersEl = document.getElementById("statActiveUsers");
+  const activeUsersNum = document.getElementById("statActiveUsersNum");
+  
+  // If user is logged in locally, active users is at least 1 (the current user)
+  const effectiveCount = (typeof currentUser !== "undefined" && currentUser) ? Math.max(1, count || 0) : (count || 0);
+  
+  if (activeUsersEl) {
+    activeUsersEl.setAttribute("data-target", effectiveCount);
+  }
+  if (activeUsersNum) {
+    activeUsersNum.textContent = effectiveCount;
+  } else if (activeUsersEl) {
+    activeUsersEl.innerHTML = `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#10b981; animation: livePulse 1.5s infinite; flex-shrink: 0;"></span> <span id="statActiveUsersNum">${effectiveCount}</span>`;
+  }
+}
+
 function animateStatsCounters() {
   const counters = document.querySelectorAll('.stat-n');
   const observer = new IntersectionObserver((entries, obs) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         const el = entry.target;
+        
+        if (el.id === "statActiveUsers") {
+          const targetVal = parseInt(el.getAttribute('data-target') || '0', 10);
+          updateActiveUserUI(targetVal);
+          obs.unobserve(el);
+          return;
+        }
+        
         const targetVal = parseFloat(el.getAttribute('data-target') || '0');
         const prefix = el.getAttribute('data-prefix') || '';
         const suffix = el.getAttribute('data-suffix') || '';
@@ -4257,7 +4282,6 @@ async function fetchAndAnimateStats() {
       const creatorsEl = document.getElementById("statCreators");
       const postsEl = document.getElementById("statPosts");
       const activeUsersEl = document.getElementById("statActiveUsers");
-      const activeUsersNum = document.getElementById("statActiveUsersNum");
       const earningsEl = document.getElementById("statEarnings");
       
       if (data.activeUserIds && Array.isArray(data.activeUserIds)) {
@@ -4283,10 +4307,11 @@ async function fetchAndAnimateStats() {
             target = val;
             suffix = "+";
           }
+          el.setAttribute("data-target", target);
+          el.setAttribute("data-prefix", prefix);
+          el.setAttribute("data-suffix", suffix);
         } else if (type === "activeUsers") {
-          target = val || 0;
-          suffix = "";
-          if (activeUsersNum) activeUsersNum.textContent = target;
+          updateActiveUserUI(val || 0);
         } else if (type === "earnings") {
           prefix = "₹";
           if (val >= 100000) {
@@ -4299,20 +4324,22 @@ async function fetchAndAnimateStats() {
             target = val;
             suffix = "";
           }
+          el.setAttribute("data-target", target);
+          el.setAttribute("data-prefix", prefix);
+          el.setAttribute("data-suffix", suffix);
         }
-        
-        el.setAttribute("data-target", target);
-        el.setAttribute("data-prefix", prefix);
-        el.setAttribute("data-suffix", suffix);
       }
       
       formatStat(creatorsEl, data.creators, "creators");
       formatStat(postsEl, data.posts, "posts");
       formatStat(activeUsersEl, data.activeUsers || 0, "activeUsers");
       formatStat(earningsEl, data.earnings, "earnings");
+    } else {
+      updateActiveUserUI(0);
     }
   } catch (err) {
     console.warn("Failed to load real-time stats:", err);
+    updateActiveUserUI(0);
   } finally {
     animateStatsCounters();
   }
@@ -4383,7 +4410,7 @@ function updateHeroSlide(categories, idx) {
 
     // Update Count Pill
     const countPill = document.getElementById("heroSlideCount");
-    if (countPill) countPill.innerHTML = `⚡ ${count} ${count === 1 ? 'item' : 'items'} active`;
+    if (countPill) countPill.innerHTML = `⚡ ${count} ${count === 1 ? 'Featured Creation' : 'Featured Creations'}`;
 
 
 
@@ -6244,8 +6271,9 @@ async function sendUserHeartbeat() {
         activeUserIdsList = data.activeUserIds;
       }
       if (typeof data.activeUsersCount === "number") {
-        const activeUsersNum = document.getElementById("statActiveUsersNum");
-        if (activeUsersNum) activeUsersNum.textContent = data.activeUsersCount;
+        updateActiveUserUI(data.activeUsersCount);
+      } else {
+        updateActiveUserUI(1);
       }
     }
   } catch (err) {
@@ -6338,6 +6366,7 @@ function updateAuthUI() {
   const createBtn = navEnd.querySelector(".btn-cta");
 
   if (currentUser) {
+    updateActiveUserUI(1);
     const div = document.createElement("div");
     div.className = "user-nav-profile";
     div.style.display = "flex";
