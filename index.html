@@ -1832,6 +1832,35 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
   }
 }
 
+.relatedWork {
+  --rw-text: #172b4d; --rw-muted: #53647c; --rw-border: #dce4ef;
+  --rw-card: #f8fafc; --rw-hover: #edf4ff; --rw-accent: #2563eb; --rw-icon: #e8f0fe;
+  box-sizing: border-box; width: 100%; max-width: 1280px; margin: 20px auto;
+  padding: 18px 20px 0; border-top: 1px solid var(--rw-border); text-align: left;
+  font-family: inherit; color: var(--rw-text);
+}
+.relatedWork[data-theme="dark"] {
+  --rw-text: #edf3ff; --rw-muted: #a6b6ce; --rw-border: #2b3850;
+  --rw-card: #111d31; --rw-hover: #1b2c47; --rw-accent: #93baff; --rw-icon: #203557;
+}
+.relatedWork[hidden] { display: none; }
+.relatedWork .heading { margin: 0 0 4px; font-size: 15px; font-weight: 700; line-height: 1.4; color: var(--rw-text); letter-spacing: -.015em; }
+.relatedWork .intro { margin: 0 0 12px; font-size: 12px; line-height: 1.5; color: var(--rw-muted); }
+.relatedWork .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.relatedWork .grid > li { min-width: 0; margin: 0; padding: 0; list-style: none; }
+.relatedWork .card { box-sizing: border-box; display: flex; align-items: center; gap: 9px; min-height: 62px; height: 100%; padding: 10px; border: 1px solid var(--rw-border); border-radius: 10px; background: var(--rw-card); color: var(--rw-text); text-decoration: none; transition: background .15s ease, border-color .15s ease; }
+.relatedWork .card:hover { background: var(--rw-hover); border-color: var(--rw-accent); text-decoration: none; }
+.relatedWork .card:focus-visible { outline: 2px solid var(--rw-accent); outline-offset: 3px; }
+.relatedWork .badge { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 30px; border-radius: 8px; background: var(--rw-icon); color: var(--rw-accent); font-size: 11px; font-weight: 800; line-height: 1; padding: 0; }
+.relatedWork .copy { min-width: 0; flex: 1; }
+.relatedWork .name { display: block; font-size: 12px; font-weight: 650; line-height: 1.4; color: var(--rw-text); overflow-wrap: anywhere; }
+.relatedWork .description { display: block; margin-top: 2px; font-size: 10px; line-height: 1.4; color: var(--rw-muted); }
+.relatedWork .arrow { flex-shrink: 0; font-size: 15px; color: var(--rw-accent); }
+@media (min-width: 700px) { .relatedWork .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .relatedWork .grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (max-width: 380px) { .relatedWork { padding-right: 12px; padding-left: 12px; } .relatedWork .card { gap: 6px; padding: 8px; } .relatedWork .badge { display: none; } }
+@media (prefers-reduced-motion: reduce) { .relatedWork .card { transition: none; } }
+
 /* FOOTER CSS */
 .aethra-footer {
   background: rgba(6, 8, 15, 0.95);
@@ -2900,6 +2929,18 @@ nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:76px;background:var(
     </div>
   </div>
   
+<nav class="relatedWork" aria-labelledby="related-work-heading" data-theme="dark">
+  <h2 class="heading" id="related-work-heading">Related Work</h2>
+  <p class="intro">Explore more projects by Chandan.</p>
+  <ul class="grid">
+    <li><a class="card" href="https://sabd-studio.vercel.app/"><span class="badge" aria-hidden="true">S</span><span class="copy"><span class="name">Sabd Studio</span><span class="description">AI content studio</span></span><span class="arrow" aria-hidden="true">→</span></a></li>
+    <li><a class="card" href="https://book-tau-green.vercel.app/"><span class="badge" aria-hidden="true">P</span><span class="copy"><span class="name">PANNA.AI</span><span class="description">Read, write & publish</span></span><span class="arrow" aria-hidden="true">→</span></a></li>
+    <li><a class="card" href="https://greenhealth-indol.vercel.app/"><span class="badge" aria-hidden="true">G</span><span class="copy"><span class="name">GreenHealth</span><span class="description">AI plant health</span></span><span class="arrow" aria-hidden="true">→</span></a></li>
+    <li><a class="card" href="https://agentflow-mu.vercel.app/"><span class="badge" aria-hidden="true">Af</span><span class="copy"><span class="name">AgentFlow</span><span class="description">AI data workflows</span></span><span class="arrow" aria-hidden="true">→</span></a></li>
+    <li><a class="card" href="https://bluthoth.vercel.app/"><span class="badge" aria-hidden="true">B</span><span class="copy"><span class="name">BlueHub</span><span class="description">Bluetooth management</span></span><span class="arrow" aria-hidden="true">→</span></a></li>
+    <li><a class="card" href="https://sih-project-ivory-theta.vercel.app/"><span class="badge" aria-hidden="true">Bv</span><span class="copy"><span class="name">BhoomiVerify</span><span class="description">Land records & maps</span></span><span class="arrow" aria-hidden="true">→</span></a></li>
+  </ul>
+</nav>
   <div class="footer-bottom">
     <div class="footer-copy" data-en="© 2026 Aethra Inc. All rights reserved. Made for creators in India 🇮🇳" data-hi="© 2026 एथ्रा इंक. सर्वाधिकार सुरक्षित। भारत में क्रिएटर्स के लिए बनाया गया 🇮🇳">
       © 2026 Aethra Inc. All rights reserved. Made for creators in India 🇮🇳
@@ -3927,6 +3968,8 @@ function goPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.npill').forEach(t=>t.classList.remove('active'));
   target.classList.add('active');
+  const relatedWork = document.querySelector('.aethra-footer .relatedWork');
+  if (relatedWork) relatedWork.hidden = id !== 'home';
   if(btn)btn.classList.add('active');
   window.scrollTo(0,0);
   if (typeof currentUser !== "undefined" && currentUser) {
